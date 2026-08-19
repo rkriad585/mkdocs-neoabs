@@ -4,7 +4,7 @@ title: Design System Overview
 
 # Design System Overview
 
-NeoAbs blends two design languages into one coherent system: the translucency and depth of **Apple Liquid Glass** with the minimalism and grid-driven identity of **NothingOS**.
+NeoAbs blends two design languages into one coherent system: the translucency and depth of **Glass** with the minimalism and grid-driven identity of **NothingOS**.
 
 ## Design Principles
 

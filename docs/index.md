@@ -5,16 +5,16 @@
 <h1 align="center">Welcome to NeoAbs</h1>
 
 <p align="center">
-  <strong>Apple Liquid Glass + NothingOS Design Language for MkDocs</strong>
+  <strong>Glass + NothingOS Design Language for MkDocs</strong>
 </p>
 
 ---
 
-NeoAbs combines the translucent depth of Apple's Liquid Glass with the industrial minimalism of NothingOS to create a unique documentation experience.
+NeoAbs combines the translucent depth of Glass with the industrial minimalism of NothingOS to create a unique documentation experience.
 
 ## Design Principles
 
-### Liquid Glass
+### Glass
 
 - Translucent glass panels with `backdrop-filter` blur
 - Dynamic transparency that adapts to content

@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "mkdocs-neoabs"
 version = "0.1.0"
-description = "NeoAbs - Apple Liquid Glass + NothingOS design language for MkDocs"
+description = "NeoAbs - Glass + NothingOS design language for MkDocs"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-keywords = ["mkdocs", "theme", "documentation", "liquid-glass", "nothingos", "neoabs"]
+keywords = ["mkdocs", "theme", "documentation", "glass", "nothingos", "neoabs"]
 authors = [
   { name = "rkriad585", email = "rkriad585@gmail.com" },
 ]

@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Initial release of NeoAbs theme
-- Apple Liquid Glass design system with `backdrop-filter` blur
+- Glass design system with `backdrop-filter` blur
 - NothingOS-inspired pure black canvas and monochrome palette
 - Dot-matrix texture overlay
 - Dark and light mode toggle

@@ -1,6 +1,6 @@
 /**
  * NeoAbs Theme JavaScript
- * Apple Liquid Glass + NothingOS Design System
+ * Glass + NothingOS Design System
  * Vanilla ES6+ — zero dependencies
  */
 ;(function () {
@@ -496,13 +496,11 @@
     const tCopy = t.copy || "Copy to clipboard"
     const tCopied = t.copied || "Copied to clipboard"
 
-    const blocks = $$(".highlight pre")
+    const blocks = $$(".highlight pre, .codehilite pre, .neoabs-code pre")
     blocks.forEach((pre) => {
-      if (pre.closest(".neoabs-code")) return
-      if (pre.querySelector(".neoabs-code__copy")) return
-
-      const wrapper = pre.parentNode
+      const wrapper = pre.closest(".highlight, .codehilite, .neoabs-code") || pre.parentNode
       if (!wrapper) return
+      if (pre.querySelector(".neoabs-code__copy") || wrapper.querySelector(".neoabs-code__copy")) return
 
       if (getComputedStyle(wrapper).position === "static") {
         wrapper.style.position = "relative"

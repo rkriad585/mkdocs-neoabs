@@ -8,15 +8,15 @@ title: FAQ
 
 ### What is NeoAbs?
 
-NeoAbs is a custom MkDocs theme that combines Apple Liquid Glass design (translucent glass panels with backdrop blur) with NothingOS aesthetics (pure black canvas, dot-matrix patterns, monochrome palette, Nothing Red accents).
+NeoAbs is a custom MkDocs theme that combines Glass design (translucent glass panels with backdrop blur) with NothingOS aesthetics (pure black canvas, dot-matrix patterns, monochrome palette, Nothing Red accents).
 
 ### Is NeoAbs free?
 
 Yes. NeoAbs is open-source under the MIT License.
 
-### Does NeoAbs work with MkDocs Material plugins?
+### Does NeoAbs work with MkDocs plugins?
 
-NeoAbs is compatible with standard MkDocs plugins (search, etc.). It does not depend on or include Material for MkDocs.
+NeoAbs is compatible with standard MkDocs plugins (search, etc.).
 
 ## Installation
 

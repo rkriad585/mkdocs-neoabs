@@ -5,7 +5,7 @@
 <h1 align="center">mkdocs-neoabs</h1>
 
 <p align="center">
-  <strong>Apple Liquid Glass + NothingOS Design Language for MkDocs</strong>
+  <strong>Glass + NothingOS Design Language for MkDocs</strong>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## Overview
 
-NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics of Apple's Liquid Glass design system with the minimal, industrial clarity of NothingOS. It combines pure black canvas, glass morphism panels, dot-matrix typography, and Nothing Red accents into a cohesive documentation experience.
+NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics of Glass design system with the minimal, industrial clarity of NothingOS. It combines pure black canvas, glass morphism panels, dot-matrix typography, and Nothing Red accents into a cohesive documentation experience.
 
 ## Screenshot
 
@@ -56,7 +56,7 @@ NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics 
 
 ## Key Features
 
-- **Liquid Glass Morphism** — Translucent glass panels with `backdrop-filter` blur and configurable intensity (light / medium / heavy)
+- **Glass Morphism** — Translucent glass panels with `backdrop-filter` blur and configurable intensity (light / medium / heavy)
 - **NothingOS Canvas** — Pure black (#000000) background with monochrome palette and Nothing Red (#ff3030) accents
 - **Dot-Matrix Overlay** — Subtle dot pattern texture inspired by NothingOS
 - **Dark & Light Modes** — Toggle between slate (dark) and default (light) color schemes

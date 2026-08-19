@@ -1,8 +1,8 @@
 {
   "name": "mkdocs-neoabs",
   "version": "0.1.0",
-  "description": "NeoAbs - Apple Liquid Glass + NothingOS design language for MkDocs",
-  "keywords": ["mkdocs", "theme", "documentation", "liquid-glass", "nothingos", "neoabs"],
+  "description": "NeoAbs - Glass + NothingOS design language for MkDocs",
+  "keywords": ["mkdocs", "theme", "documentation", "glass", "nothingos", "neoabs"],
   "homepage": "https://github.com/rkriad585/mkdocs-neoabs",
   "license": "MIT",
   "private": true,

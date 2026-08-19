@@ -16,16 +16,14 @@ NeoAbs is an open-source MkDocs theme that combines glass morphism with a minima
 
 NeoAbs draws from two design languages:
 
-**Apple Liquid Glass** -- The translucency, blur, and layering system introduced in Apple's 2025 design refresh. NeoAbs adapts this for web documentation using `backdrop-filter` and semi-transparent backgrounds.
+**Glass** -- The translucency, blur, and layering system. NeoAbs adapts this for web documentation using `backdrop-filter` and semi-transparent backgrounds.
 
 **NothingOS** -- The dot matrix patterns, geometric typography, and minimal color palette from Nothing's hardware and software identity. NeoAbs borrows the restrained use of color and the grid-based background texture.
 
 ## Credits
 
 - [MkDocs](https://www.mkdocs.org/) -- the static site generator this theme is built for
-- [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) -- the reference implementation for MkDocs theming; NeoAbs adapts several of its patterns and conventions
 - [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [Space Mono](https://fonts.google.com/specimen/Space+Mono) -- the typefaces used throughout the theme
-- The Apple and Nothing design teams for their public design systems and documentation
 
 ## License
 

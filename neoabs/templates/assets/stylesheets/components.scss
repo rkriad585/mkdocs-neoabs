@@ -1,6 +1,6 @@
 ////
 /// NeoAbs Components
-/// Apple Liquid Glass + NothingOS Component Library
+/// Glass + NothingOS Component Library
 /// Pure black canvas, glass morphism, industrial minimalist
 ////
 
@@ -1722,6 +1722,10 @@ $neoabs-breakpoint-mobile: 768px;
 
 // Copy button
 .neoabs-code__copy {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 10;
 	display: inline-flex;
 	align-items: center;
 	gap: var(--neoabs-space-1);
