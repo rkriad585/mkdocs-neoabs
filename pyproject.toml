@@ -24,7 +24,7 @@ classifiers = [
   "Topic :: Software Development :: Documentation",
   "Topic :: Text Processing :: Markup :: HTML",
 ]
-dependencies = ["mkdocs>=1.5"]
+dependencies = ["mkdocs>=1.5", "pymdown-extensions>=10.0"]
 
 [project.urls]
 Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
