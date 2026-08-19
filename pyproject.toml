@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mkdocs-neoabs"
+version = "0.1.0"
+description = "NeoAbs - Apple Liquid Glass + NothingOS design language for MkDocs"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = ["mkdocs", "theme", "documentation", "liquid-glass", "nothingos", "neoabs"]
+authors = [
+  { name = "rkriad585", email = "rkriad585@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: MkDocs",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: JavaScript",
+  "Programming Language :: Python",
+  "Topic :: Documentation",
+  "Topic :: Software Development :: Documentation",
+  "Topic :: Text Processing :: Markup :: HTML",
+]
+dependencies = ["mkdocs>=1.5"]
+
+[project.urls]
+Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
+Documentation = "https://rkriad585.github.io/mkdocs-neoabs"
+Source = "https://github.com/rkriad585/mkdocs-neoabs"
+Issues = "https://github.com/rkriad585/mkdocs-neoabs/issues"
+
+[project.entry-points."mkdocs.themes"]
+neoabs = "neoabs.templates"
+
+[project.entry-points."mkdocs.plugins"]
+neoabs = "neoabs.plugins.neoabs_plugin:NeoAbsPlugin"
+
+[tool.hatch.build.targets.wheel]
+include = ["/neoabs"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/neoabs", "/package.json", "/requirements.txt"]

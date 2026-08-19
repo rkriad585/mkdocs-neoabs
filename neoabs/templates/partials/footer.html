@@ -1,0 +1,41 @@
+<footer class="neoabs-footer" data-md-component="footer">
+  <div class="neoabs-footer__inner">
+    {% if page.previous_page %}
+    <a href="{{ page.previous_page.url | url }}" class="neoabs-footer__link neoabs-footer__link--prev" title="{{ page.previous_page.title }}">
+      <span class="neoabs-footer__link-label">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+        Previous
+      </span>
+      <span class="neoabs-footer__link-title">{{ page.previous_page.title }}</span>
+    </a>
+    {% else %}
+    <div class="neoabs-footer__link neoabs-footer__link--placeholder"></div>
+    {% endif %}
+
+    {% if page.next_page %}
+    <a href="{{ page.next_page.url | url }}" class="neoabs-footer__link neoabs-footer__link--next" title="{{ page.next_page.title }}">
+      <span class="neoabs-footer__link-label">
+        Next
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+        </svg>
+      </span>
+      <span class="neoabs-footer__link-title">{{ page.next_page.title }}</span>
+    </a>
+    {% else %}
+    <div class="neoabs-footer__link neoabs-footer__link--placeholder"></div>
+    {% endif %}
+  </div>
+
+  <div class="neoabs-footer__bottom">
+    <div class="neoabs-footer__copyright">
+      {% if config.copyright %}
+      {{ config.copyright }}
+      {% else %}
+      &copy; {{ now().strftime("%Y") }} {{ config.site_name }}
+      {% endif %}
+    </div>
+  </div>
+</footer>

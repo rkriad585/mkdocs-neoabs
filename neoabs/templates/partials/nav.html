@@ -1,0 +1,36 @@
+{% macro render_nav_item(nav_item) %}
+{% set active = "neoabs-nav__link--active" if nav_item.active %}
+<li class="neoabs-nav__item {{ active }}">
+  <a href="{{ nav_item.url | url }}" class="neoabs-nav__link {{ active }}" title="{{ nav_item.title }}">
+    {{ nav_item.title }}
+  </a>
+</li>
+{% endmacro %}
+
+<nav class="neoabs-nav" data-md-component="nav" aria-label="Navigation">
+  <div class="neoabs-nav__scroll">
+    <div class="neoabs-nav__inner">
+      <ul class="neoabs-nav__list">
+        {% for nav_item in nav %}
+        {% if nav_item.children %}
+        <li class="neoabs-nav__item neoabs-nav__item--parent">
+          <button class="neoabs-nav__toggle neoabs-nav__toggle--open" aria-expanded="true" aria-controls="nav-{{ loop.index }}">
+            <span class="neoabs-nav__title">{{ nav_item.title }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+          <ul class="neoabs-nav__list neoabs-nav__list--nested" id="nav-{{ loop.index }}">
+            {% for nav_item in nav_item.children %}
+            {{ render_nav_item(nav_item) }}
+            {% endfor %}
+          </ul>
+        </li>
+        {% else %}
+        {{ render_nav_item(nav_item) }}
+        {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="{{ config.theme.language | default('en') }}"
+      class="no-js"
+      dir="{{ config.theme.direction | default('ltr') }}"
+      {% if config.theme.palette %}
+        {% set _palette = config.theme.palette %}
+        {% if not _palette is mapping %}
+          {% set _palette = _palette | first %}
+        {% endif %}
+        {% set _scheme = _palette.scheme | default("slate", true) %}
+      {% else %}
+        {% set _scheme = "slate" %}
+      {% endif %}
+      data-md-color-scheme="{{ _scheme }}">
+  <head>
+    {% block site_meta %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    {% if page.meta and page.meta.description %}
+    <meta name="description" content="{{ page.meta.description }}">
+    {% elif config.site_description %}
+    <meta name="description" content="{{ config.site_description }}">
+    {% endif %}
+    {% if page.canonical_url %}
+    <link rel="canonical" href="{{ page.canonical_url }}">
+    {% endif %}
+    {% if page.previous_page %}
+    <link rel="prev" href="{{ page.previous_page.url | url }}">
+    {% endif %}
+    {% if page.next_page %}
+    <link rel="next" href="{{ page.next_page.url | url }}">
+    {% endif %}
+    {% endblock %}
+
+    {% block htmltitle %}
+    <title>
+      {%- if page.meta and page.meta.title -%}
+        {{ page.meta.title }} - {{ config.site_name }}
+      {%- else -%}
+        {{ config.site_name }}
+      {%- endif -%}
+    </title>
+    {% endblock %}
+
+    {% block favicon %}
+    {% if config.theme.favicon %}
+    <link rel="icon" href="{{ config.theme.favicon | url }}">
+    {% endif %}
+    {% endblock %}
+
+    {% block styles %}
+    <link rel="stylesheet" href="{{ 'assets/neoabs.css' | url }}">
+    {% endblock %}
+
+    {% block fonts %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    {% endblock %}
+
+    {% for path in config.extra_css %}
+    <link rel="stylesheet" href="{{ path | url }}">
+    {% endfor %}
+
+    <script>
+      document.documentElement.dataset.mdComponent = "page"
+      document.documentElement.classList.remove("no-js")
+    </script>
+
+    {% block extrahead %}{% endblock %}
+
+    {% if config.theme.palette %}
+    {% include "partials/javascripts/palette.html" %}
+    {% endif %}
+  </head>
+
+  <body dir="{{ config.theme.direction | default('ltr') }}">
+
+    {% block state_toggles %}
+    <input class="neoabs-toggle neoabs-toggle--drawer" type="checkbox" id="neoabs-drawer" aria-label="Toggle navigation">
+    <input class="neoabs-toggle neoabs-toggle--search" type="checkbox" id="neoabs-search" aria-label="Toggle search">
+    {% endblock %}
+
+    <label class="neoabs-overlay neoabs-overlay--drawer" for="neoabs-drawer" aria-hidden="true" tabindex="-1"></label>
+
+    {% block skip_to_content %}
+    <a class="neoabs-skip" href="#neoabs-content" tabindex="0">
+      Skip to content
+    </a>
+    {% endblock %}
+
+    {% block header %}
+    {% include "partials/header.html" %}
+    {% endblock %}
+
+    <div class="neoabs-layout">
+      {% block nav %}
+      {% if nav %}
+      {% include "partials/nav.html" %}
+      {% endif %}
+      {% endblock %}
+
+      <main class="neoabs-main" id="neoabs-content">
+        <article class="neoabs-article">
+          {% block content %}
+          <div class="neoabs-content" data-md-component="content">
+            <div class="neoabs-typeset">
+              {% include "partials/content.html" %}
+            </div>
+          </div>
+          {% endblock %}
+        </article>
+      </main>
+
+      {% block toc %}
+      {% if toc %}
+      {% include "partials/toc.html" %}
+      {% endif %}
+      {% endblock %}
+    </div>
+
+    {% block footer %}
+    {% include "partials/footer.html" %}
+    {% endblock %}
+
+    {% block search %}
+    {% if "search" in config.plugins %}
+    {% include "partials/search.html" %}
+    {% endif %}
+    {% endblock %}
+
+    {% include "partials/progress.html" %}
+
+    {% block config %}
+    <script id="__config" type="application/json">
+      {
+        "base": "{{ config.site_url | default(config.docs_dir, true) | url }}",
+        "features": {{ config.theme.features | default([]) | tojson }},
+        "translations": {
+          "clipboard": {
+            "copy": "Copy to clipboard",
+            "copied": "Copied to clipboard"
+          },
+          "search": {
+            "placeholder": "Search",
+            "results": "Results",
+            "noResults": "No results found"
+          },
+          "toc": {
+            "backToTop": "Back to top"
+          }
+        },
+        "search": "{{ 'search/search_index.json' | url }}",
+        "version": null
+      }
+    </script>
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ 'assets/javascripts/neoabs.js' | url }}"></script>
+    {% endblock %}
+
+    {% for path in config.extra_javascript %}
+    <script src="{{ path | url }}"></script>
+    {% endfor %}
+  </body>
+</html>

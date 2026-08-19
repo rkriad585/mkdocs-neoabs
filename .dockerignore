@@ -1,0 +1,15 @@
+node_modules/
+site/
+.git/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.env
+.env.local
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,88 @@
+site_name: NeoAbs Documentation
+site_description: Apple Liquid Glass + NothingOS Design Language for MkDocs
+site_url: https://rkriad585.github.io/mkdocs-neoabs
+
+repo_url: https://github.com/rkriad585/mkdocs-neoabs
+repo_name: rkriad585/mkdocs-neoabs
+
+copyright: "&copy; 2025 rkriad585. Built with NeoAbs."
+
+theme:
+  name: neoabs
+  favicon: assets/images/favicon.svg
+  language: en
+  direction: ltr
+  palette:
+    - scheme: slate
+      primary: black
+      accent: red
+      toggle:
+        name: Switch to light mode
+    - scheme: default
+      primary: white
+      accent: red
+      toggle:
+        name: Switch to dark mode
+  font:
+    text: Space Grotesk
+    code: Space Mono
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  neoabs:
+    glass: medium
+    dot_matrix: true
+    animation: normal
+    border: thin
+
+plugins:
+  - search
+  - neoabs
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+    - Getting Started: getting-started.md
+  - Design System:
+    - Overview: design/overview.md
+    - Colors: design/colors.md
+    - Typography: design/typography.md
+    - Glass Effects: design/glass.md
+  - Components:
+    - Buttons: components/buttons.md
+    - Cards: components/cards.md
+    - Forms: components/forms.md
+  - Plugins:
+    - NeoAbs Plugin: plugins/neoabs.md
+  - Architecture: architecture.md
+  - Development: development.md
+  - Deployment: deployment.md
+  - Troubleshooting: troubleshooting.md
+  - FAQ: faq.md
+  - Screenshots: screenshots.md
+  - About: about.md
