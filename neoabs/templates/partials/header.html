@@ -2,11 +2,11 @@
   <div class="neoabs-header__inner">
     <div class="neoabs-header__left">
       {% if config.theme.logo %}
-      <a href="{{ config.docs_dir | url }}" class="neoabs-header__logo" title="{{ config.site_name }}">
+      <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__logo" title="{{ config.site_name }}">
         <img src="{{ config.theme.logo | url }}" alt="{{ config.site_name }}" width="28" height="28">
       </a>
       {% endif %}
-      <a href="{{ config.docs_dir | url }}" class="neoabs-header__title" title="{{ config.site_name }}">
+      <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__title" title="{{ config.site_name }}">
         <span class="neoabs-header__site-name">{{ config.site_name }}</span>
         {% if page.meta and page.meta.title %}
         <span class="neoabs-header__page-title">{{ page.meta.title }}</span>
