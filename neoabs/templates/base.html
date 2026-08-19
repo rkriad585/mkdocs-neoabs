@@ -133,6 +133,9 @@
     {% include "partials/progress.html" %}
 
     {% block config %}
+    <script>
+      var base_url = "{{ config.site_url | default(config.docs_dir, true) | url }}";
+    </script>
     <script id="__config" type="application/json">
       {
         "base": "{{ config.site_url | default(config.docs_dir, true) | url }}",

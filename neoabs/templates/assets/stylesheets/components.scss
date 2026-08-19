@@ -2343,6 +2343,7 @@ $neoabs-breakpoint-mobile: 768px;
 
 // --- Code blocks (MkDocs standard output) ---
 .highlight {
+	position: relative;
 	margin: var(--neoabs-space-6) 0;
 	border-radius: var(--neoabs-radius-lg);
 	overflow: hidden;
@@ -2400,6 +2401,7 @@ a[id^="__codelineno"] {
 
 // Code highlighting classes
 .codehilite {
+	position: relative;
 	background: rgba(0, 0, 0, 0.6) !important;
 	border: 1px solid var(--neoabs-glass-border);
 	border-radius: var(--neoabs-radius-lg);
