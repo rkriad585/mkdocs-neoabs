@@ -475,7 +475,5 @@ Copyright (c) 2025 rkriad585
 ## Acknowledgments
 
 - [MkDocs](https://www.mkdocs.org/) — the static site generator this theme is built for
-- [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) — the reference implementation for MkDocs theming
 - [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [Space Mono](https://fonts.google.com/specimen/Space+Mono) — the typefaces used throughout the theme
-- Apple Design Team — for the Liquid Glass design language
 - Nothing Technology — for the NothingOS design identity

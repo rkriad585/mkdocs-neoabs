@@ -8,10 +8,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt pyproject.toml package.json README.md ./
+COPY . .
 RUN pip install --no-cache-dir . && npm install
 
-COPY . .
 RUN npm run build && mkdocs build --clean
 
 
