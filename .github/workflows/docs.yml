@@ -41,7 +41,7 @@ jobs:
         run: pip install -e .
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build CSS
         run: npm run build
