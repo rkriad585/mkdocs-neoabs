@@ -22,6 +22,7 @@ NeoAbs draws from two design languages:
 
 ## Credits
 
+- **Author** — [rkriad585](https://github.com/rkriad585) created and maintains NeoAbs.
 - [MkDocs](https://www.mkdocs.org/) -- the static site generator this theme is built for
 - [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [Space Mono](https://fonts.google.com/specimen/Space+Mono) -- the typefaces used throughout the theme
 
@@ -32,7 +33,7 @@ NeoAbs is released under the [MIT License](https://opensource.org/licenses/MIT).
 ```
 MIT License
 
-Copyright (c) 2026 NeoAbs Contributors
+Copyright (c) 2026 rkriad585
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -41,7 +41,10 @@ theme:
     border: thin
 
 extra:
-  neoabs_logo_url: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
+  neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
+  neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
+  neoabs_favicon_dark: assets/images/favicon.svg
+  neoabs_favicon_light: assets/images/favicon-light.svg
 
 plugins:
   - search

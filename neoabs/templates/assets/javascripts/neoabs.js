@@ -1827,11 +1827,24 @@
       pop.style.top = top + "px"
     }
 
+    let closeTimer = null
+
+    const cancelClose = function () {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null }
+    }
+
     const hide = function () {
       pop.classList.remove("neoabs-repo-pop--show")
     }
 
+    // Delay hiding so the user can move from the icon onto the popover.
+    const scheduleClose = function () {
+      cancelClose()
+      closeTimer = window.setTimeout(hide, 3000)
+    }
+
     const loadAndShow = function () {
+      cancelClose()
       position()
       pop.classList.add("neoabs-repo-pop--show")
       if (cached) { renderBody(cached); position(); return }
@@ -1886,6 +1899,9 @@
           pushed_at: repo.pushed_at,
           language: repo.language,
           license: repo.license ? repo.license.spdx_id : null,
+          license_url: repo.license && repo.license.spdx_id !== "NOASSERTION"
+            ? repo.html_url + "/blob/" + (repo.default_branch || "main") + "/LICENSE"
+            : null,
           default_branch: repo.default_branch,
           html_url: repo.html_url,
           total_commits: totalCommits,
@@ -1921,7 +1937,13 @@
           { k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
           { k: "Open issues", v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
           { k: "Language", v: d.language || "—" },
-          { k: "License", v: d.license || "—" },
+          { k: "License", v: d.license
+              ? (d.license_url
+                  ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">' + repoPopoverEscape(d.license) + "</a>"
+                  : repoPopoverEscape(d.license))
+              : (d.license_url
+                  ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">None</a>'
+                  : "None") },
           { k: "Default branch", v: d.default_branch || "—" },
           { k: "Commits", v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
           { k: "Tags", v: d.latest_tag ? "latest " + repoPopoverEscape(d.latest_tag) : "—" },
@@ -1934,11 +1956,14 @@
         + "</div>"
     }
 
-    // Hover / focus to open; leave / blur to close.
+    // Hover / focus to open; leave / blur starts a 3s close timer so the user
+    // can move onto the popover. Hovering the popover itself cancels the timer.
     link.addEventListener("mouseenter", loadAndShow)
-    link.addEventListener("mouseleave", hide)
+    link.addEventListener("mouseleave", scheduleClose)
     link.addEventListener("focus", loadAndShow)
-    link.addEventListener("blur", hide)
+    link.addEventListener("blur", scheduleClose)
+    pop.addEventListener("mouseenter", cancelClose)
+    pop.addEventListener("mouseleave", scheduleClose)
   }
 
   // ---------------------------------------------------------------------------

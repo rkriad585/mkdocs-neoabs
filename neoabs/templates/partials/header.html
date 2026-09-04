@@ -13,13 +13,22 @@
 
     <div class="neoabs-header__center">
       {% set _brand = config.site_name | replace(" Documentation", "") | replace(" Docs", "") %}
-      {% set _logo_src = config.extra.neoabs_logo_url | default(config.theme.logo, true) %}
+      {% set _logo_dark = config.extra.neoabs_logo_dark | default(config.extra.neoabs_logo_url | default(config.theme.logo, true), true) %}
+      {% set _logo_light = config.extra.neoabs_logo_light | default(config.extra.neoabs_logo_url | default(config.theme.logo, true), true) %}
+      {% set _two_tone = (_logo_dark | string) != (_logo_light | string) and _logo_light %}
       <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__brand" title="{{ config.site_name }}">
-        {% if _logo_src %}
-        {% if _logo_src.startswith("http") %}
-        <img src="{{ _logo_src }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo">
+        {% if _logo_dark %}
+        {% if _logo_dark.startswith("http") %}
+        <img src="{{ _logo_dark }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
         {% else %}
-        <img src="{{ _logo_src | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo">
+        <img src="{{ _logo_dark | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
+        {% endif %}
+        {% endif %}
+        {% if _two_tone %}
+        {% if _logo_light.startswith("http") %}
+        <img src="{{ _logo_light }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
+        {% else %}
+        <img src="{{ _logo_light | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% endif %}
         {% endif %}
         <span class="neoabs-header__site-name">{{ _brand }}</span>
@@ -41,7 +50,7 @@
       {% if config.repo_url %}
       {% set _repo_clean = config.repo_url | replace("https://", "") | replace("http://", "") | replace("git@", "") | replace("ssh://", "") %}
       {% set _repo_host = _repo_clean.split("/")[0] if "/" in _repo_clean else _repo_clean %}
-      <a href="{{ config.repo_url }}" class="neoabs-header__repo" target="_blank" rel="noopener" title="{{ config.repo_name | default('Repository') }}">
+      <a href="{{ config.repo_url }}" class="neoabs-header__repo" target="_blank" rel="noopener">
         <span class="neoabs-header__repo-badge">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="neoabs-header__repo-icon">            {% if "github" in _repo_host %}
             <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>

@@ -49,8 +49,21 @@
     {% endblock %}
 
     {% block favicon %}
-    {% if config.theme.favicon %}
-    <link rel="icon" href="{{ config.theme.favicon | url }}">
+    {% set _favicon_dark = config.extra.neoabs_favicon_dark | default(config.theme.favicon, true) %}
+    {% set _favicon_light = config.extra.neoabs_favicon_light | default(config.theme.favicon, true) %}
+    {% if _favicon_dark %}
+    {% if _favicon_dark.startswith("http") %}
+    <link rel="icon" href="{{ _favicon_dark }}" data-md-color-scheme="slate">
+    {% else %}
+    <link rel="icon" href="{{ _favicon_dark | url }}" data-md-color-scheme="slate">
+    {% endif %}
+    {% endif %}
+    {% if _favicon_light and (_favicon_dark | string) != (_favicon_light | string) %}
+    {% if _favicon_light.startswith("http") %}
+    <link rel="icon" href="{{ _favicon_light }}" data-md-color-scheme="default">
+    {% else %}
+    <link rel="icon" href="{{ _favicon_light | url }}" data-md-color-scheme="default">
+    {% endif %}
     {% endif %}
     {% endblock %}
 

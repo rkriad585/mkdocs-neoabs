@@ -229,6 +229,24 @@ $neoabs-breakpoint-mobile: 768px;
 	flex-shrink: 0;
 }
 
+// Theme-aware project logo: the dark variant shows in dark mode (default),
+// the light variant in light mode. Single-logo sites are unaffected.
+.neoabs-header__brand-logo--dark {
+	display: block;
+}
+
+.neoabs-header__brand-logo--light {
+	display: none;
+}
+
+[data-md-color-scheme="default"] .neoabs-header__brand-logo--dark {
+	display: none;
+}
+
+[data-md-color-scheme="default"] .neoabs-header__brand-logo--light {
+	display: block;
+}
+
 // Hamburger icon bars (mobile only)
 .neoabs-header__hamburger {
 	display: none;

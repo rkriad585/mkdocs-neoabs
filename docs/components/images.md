@@ -10,10 +10,10 @@ NeoAbs provides styled image handling and a flexible way to embed SVG content, a
 
 Images get the glass treatment automatically: rounded corners, subtle border, and maximum width constraint.
 
-![NeoAbs favicon](../assets/images/logo.svg){ width="120" }
+![NeoAbs logo](https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg){ width="120" }
 
 ```markdown
-![NeoAbs favicon](../assets/images/logo.svg){ width="120" }
+![NeoAbs logo](https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg){ width="120" }
 ```
 
 ## Image classes via `attr_list`
@@ -38,13 +38,13 @@ Attach any class directly to an image with the `{.class}` suffix — no HTML nee
 Use a small HTML `<figure>` for images with captions:
 
 <figure class="neoabs-figure">
-  <img src="../assets/images/logo.svg" alt="NeoAbs logo" width="96">
+  <img src="https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg" alt="NeoAbs logo" width="96">
   <figcaption>Figure 1 — The NeoAbs logo</figcaption>
 </figure>
 
 ```html
 <figure class="neoabs-figure">
-  <img src="../assets/images/logo.svg" alt="NeoAbs logo" width="96">
+  <img src="https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg" alt="NeoAbs logo" width="96">
   <figcaption>Figure 1 — The NeoAbs logo</figcaption>
 </figure>
 ```
