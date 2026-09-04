@@ -4,6 +4,15 @@ All notable changes to mkdocs-neoabs will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.0.1-beta] - 2026-09-04
+
+### Changed
+
+- Version bumped to `0.0.1-beta` (pre-release)
+- Search now drives the official MkDocs `search` plugin worker (lunr) with a themed UI, keyboard navigation (↑/↓/↵), and proper status messages ("Start typing…", "No results found")
+- Light-mode fixes: restored `--neoabs-ink` page background so the default scheme applies to main content and TOC
+- Various accessibility, layout, and documentation fixes
+
 ## [0.1.0] - 2025
 
 ### Added

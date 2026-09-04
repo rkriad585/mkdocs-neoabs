@@ -11,7 +11,7 @@ This page describes the internal structure and design of mkdocs-neoabs.
 ```
 mkdocs-neoabs/
 ├── neoabs/                          # Python package
-│   ├── __init__.py                  # Version (0.1.0)
+│   ├── __init__.py                  # Version (0.0.1-beta)
 │   ├── plugins/
 │   │   └── neoabs_plugin.py         # MkDocs plugin
 │   ├── templates/

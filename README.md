@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.8+-blue?logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/mkdocs-1.5+-green?logo=markdown" alt="MkDocs">
-  <img src="https://img.shields.io/badge/version-0.1.0-orange" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.0.1--beta-orange" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-yellow" alt="License">
   <img src="https://img.shields.io/badge/made%20by-rkriad585-white" alt="Made by rkriad585">
 </p>
@@ -290,7 +290,7 @@ NeoAbs is a **MkDocs theme** — it provides HTML templates, CSS, and JavaScript
 ```
 mkdocs-neoabs/
 ├── neoabs/                          # Python package
-│   ├── __init__.py                  # Version (0.1.0)
+│   ├── __init__.py                  # Version (0.0.1-beta)
 │   ├── plugins/
 │   │   └── neoabs_plugin.py         # MkDocs plugin (theme defaults)
 │   ├── templates/

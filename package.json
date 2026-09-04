@@ -1,6 +1,6 @@
 {
   "name": "mkdocs-neoabs",
-  "version": "0.1.0",
+  "version": "0.0.1-beta",
   "description": "NeoAbs - Glass + NothingOS design language for MkDocs",
   "keywords": ["mkdocs", "theme", "documentation", "glass", "nothingos", "neoabs"],
   "homepage": "https://github.com/rkriad585/mkdocs-neoabs",
