@@ -1,27 +1,23 @@
 <header class="neoabs-header" data-md-component="header">
   <div class="neoabs-header__inner">
     <div class="neoabs-header__left">
-      {% if config.theme.logo %}
-      <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__logo" title="{{ config.site_name }}">
-        <img src="{{ config.theme.logo | url }}" alt="{{ config.site_name }}" width="28" height="28">
-      </a>
+      {% if page.title %}
+      <span class="neoabs-header__page-title">{{ page.title }}</span>
       {% endif %}
-      <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__title" title="{{ config.site_name }}">
-        <span class="neoabs-header__site-name">{{ config.site_name }}</span>
-        {% if page.meta and page.meta.title %}
-        <span class="neoabs-header__page-title">{{ page.meta.title }}</span>
-        {% elif page.title %}
-        <span class="neoabs-header__page-title">{{ page.title }}</span>
-        {% endif %}
-      </a>
-    </div>
-
-    <div class="neoabs-header__center">
       <button type="button" class="neoabs-header__hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="neoabs-drawer">
         <span></span>
         <span></span>
         <span></span>
       </button>
+    </div>
+
+    <div class="neoabs-header__center">
+      <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__brand" title="{{ config.site_name }}">
+        {% if config.theme.logo %}
+        <img src="{{ config.theme.logo | url }}" alt="{{ config.site_name }}" width="26" height="26" class="neoabs-header__brand-logo">
+        {% endif %}
+        <span class="neoabs-header__site-name">{{ config.site_name }}</span>
+      </a>
     </div>
 
     <div class="neoabs-header__right">
@@ -36,16 +32,26 @@
       {% endif %}
 
       {% if config.repo_url %}
+      {% set _repo_clean = config.repo_url | replace("https://", "") | replace("http://", "") | replace("git@", "") | replace("ssh://", "") %}
+      {% set _repo_host = _repo_clean.split("/")[0] if "/" in _repo_clean else _repo_clean %}
       <a href="{{ config.repo_url }}" class="neoabs-header__repo" target="_blank" rel="noopener" title="{{ config.repo_name | default('Repository') }}">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          {% if "github" in config.repo_url %}
-          <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
-          {% elif "gitlab" in config.repo_url %}
-          <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z"/>
-          {% else %}
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          {% endif %}
-        </svg>
+        <span class="neoabs-header__repo-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="neoabs-header__repo-icon">
+            {% if "github" in _repo_host %}
+            <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
+            {% elif "gitlab" in _repo_host %}
+            <path d="M12 2l2.09 6.35h6.86l-5.55 4.02 2.12 6.35L12 14.66 6.48 18.72l2.12-6.35-5.55-4.02h6.86L12 2z"/>
+            {% elif "bitbucket" in _repo_host %}
+            <path d="M2.92 3.2a.8.8 0 0 0-.78.94l3.1 16.03c.08.44.46.75.91.75h11.95c.45 0 .83-.31.91-.75l3.1-16.03a.8.8 0 0 0-.78-.94L2.92 3.2zm10.16 11.45H10.9L9.9 8.01h4.2l-1.02 6.64z"/>
+            {% elif "gitea" in _repo_host %}
+            <path d="M5.5 4a4.5 4.5 0 0 0 0 9h.6l.9-1H5.5a3.5 3.5 0 0 1 0-7h.6l.9-1H5.5zm7 0a4.5 4.5 0 0 1 0 9h-.6l-.9-1h1.5a3.5 3.5 0 0 0 0-7h-1.5l.9-1h.6zM5 5.5a1 1 0 1 0 0 2h9a1 1 0 1 0 0-2H5z"/>
+            {% elif "codeberg" in _repo_host %}
+            <path d="M11.1 2.18a1.4 1.4 0 0 1 1.8 0l7.14 6.1c.6.51.94 1.27.94 2.06v9.9c0 .98-.8 1.78-1.78 1.78h-4.15a2.73 2.73 0 1 1-1.46-2.18v-4.1a6.24 6.24 0 0 1-4.53 0v4.1a2.73 2.73 0 1 1-1.46 2.18H2.8a1.78 1.78 0 0 1-1.78-1.78v-9.9c0-.79.34-1.55.94-2.06l7.14-6.1z"/>
+            {% else %}
+            <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7.5a1.5 1.5 0 0 0-1.06.44L4.59 20.3A1 1 0 0 1 3 19.57V5zm3 0v3h12V5H6zm0 5v2h12v-2H6zm0 4v1h8v-1H6z"/>
+            {% endif %}
+          </svg>
+        </span>
       </a>
       {% endif %}
     </div>

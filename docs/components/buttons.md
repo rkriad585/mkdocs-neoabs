@@ -4,105 +4,82 @@ title: Buttons
 
 # Buttons
 
-NeoAbs provides button variants built on the design tokens. All buttons use Space Grotesk and inherit accent colors from the palette.
+NeoAbs provides button classes built on the design tokens. All buttons use
+Space Grotesk and inherit accent colors from the palette.
 
 !!! note
-    The base `.neoabs-button`, `.neoabs-button--icon`, and `.neoabs-button--primary` classes are implemented in the theme. The additional variants shown below (`--accent`, `--ghost`, `--pill`, `--sm`, `--lg`) are part of the design system specification. Add them to your custom CSS if needed.
+    The following classes are built into the theme — no custom CSS required.
 
-## Variants
+!!! tip
+    Clicking any `.neoabs-btn` shows a brief toast notification (e.g. "Clicked: Default") and a pressed-scale feedback effect. This is wired up automatically by `initUIExamples()` — no extra JavaScript needed.
 
-### Default
+## Default
 
-The standard button. Uses the accent color for its background.
+The standard filled button.
+
+<div class="neoabs-container" markdown>
+
+<button class="neoabs-btn">Default</button>
+
+</div>
 
 ```html
 <button class="neoabs-btn">Default</button>
 ```
 
-```css
-.neoabs-button {
-  font-family: var(--neoabs-font-display);
-  font-size: var(--neoabs-text-sm);
-  font-weight: 500;
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  background: var(--neoabs-accent);
-  color: var(--neoabs-canvas);
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
+## Accent (outline)
 
-.neoabs-button:hover {
-  background: var(--neoabs-accent-hover);
-}
-```
+A bordered variant with transparent background.
 
-### Accent (outline)
+<div class="neoabs-container" markdown>
 
-A bordered variant that uses the accent color for its border and text, with a transparent background.
+<button class="neoabs-btn neoabs-btn--accent">Accent</button>
+
+</div>
 
 ```html
 <button class="neoabs-btn neoabs-btn--accent">Accent</button>
 ```
 
-```css
-.neoabs-button--accent {
-  background: transparent;
-  color: var(--neoabs-accent);
-  border: 1px solid var(--neoabs-accent);
-}
+## Ghost
 
-.neoabs-button--accent:hover {
-  background: var(--neoabs-accent-faint);
-}
-```
+No background, no border. Muted text that highlights on hover.
 
-### Ghost
+<div class="neoabs-container" markdown>
 
-No background, no border. Pure text that inherits the accent color on hover.
+<button class="neoabs-btn neoabs-btn--ghost">Ghost</button>
+
+</div>
 
 ```html
 <button class="neoabs-btn neoabs-btn--ghost">Ghost</button>
 ```
 
-```css
-.neoabs-button--ghost {
-  background: transparent;
-  color: var(--neoabs-ink-muted);
-  border: none;
-}
+## Pill
 
-.neoabs-button--ghost:hover {
-  color: var(--neoabs-accent);
-}
-```
+Rounded, filled, and prominent — best for key calls to action.
 
-### Pill
+<div class="neoabs-container" markdown>
 
-A rounded, filled variant for prominent calls to action.
+<button class="neoabs-btn neoabs-btn--pill">Pill</button>
+
+</div>
 
 ```html
 <button class="neoabs-btn neoabs-btn--pill">Pill</button>
 ```
 
-```css
-.neoabs-button--pill {
-  border-radius: 9999px;
-  padding: 0.5rem 1.5rem;
-  background: var(--neoabs-accent);
-  color: var(--neoabs-canvas);
-  font-weight: 600;
-}
-```
-
 ## Sizes
 
-| Size    | Padding          | Font size         |
-|---------|------------------|--------------------|
-| Small   | `0.35rem 0.75rem`| `0.75rem`          |
-| Default | `0.5rem 1.25rem` | `0.875rem`         |
-| Large   | `0.65rem 1.75rem`| `1rem`             |
+Add `--sm` or `--lg` to any variant to adjust size.
+
+<div class="neoabs-container" markdown>
+
+<button class="neoabs-btn neoabs-btn--sm">Small</button>
+<button class="neoabs-btn">Default</button>
+<button class="neoabs-btn neoabs-btn--lg">Large</button>
+
+</div>
 
 ```html
 <button class="neoabs-btn neoabs-btn--sm">Small</button>
@@ -110,25 +87,36 @@ A rounded, filled variant for prominent calls to action.
 <button class="neoabs-btn neoabs-btn--lg">Large</button>
 ```
 
-## Disabled state
+## Disabled
 
-```css
-.neoabs-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
+Add the native `disabled` attribute to dim and deactivate any button.
+
+<div class="neoabs-container" markdown>
+
+<button class="neoabs-btn" disabled>Disabled</button>
+<button class="neoabs-btn neoabs-btn--accent" disabled>Disabled</button>
+<button class="neoabs-btn neoabs-btn--ghost" disabled>Disabled</button>
+
+</div>
+
+```html
+<button class="neoabs-btn" disabled>Disabled</button>
+<button class="neoabs-btn neoabs-btn--accent" disabled>Disabled</button>
+<button class="neoabs-btn neoabs-btn--ghost" disabled>Disabled</button>
 ```
 
-!!! note
-    Disabled buttons use opacity rather than color changes. This keeps the visual language consistent across light and dark modes.
+## Combining variants
 
-## Usage guidelines
+Modifiers can be mixed freely.
 
-- Use **default** for primary actions (submit, save, confirm)
-- Use **accent** for secondary actions (cancel, learn more)
-- Use **ghost** for tertiary actions (dismiss, close, skip)
-- Use **pill** sparingly for hero sections and key CTAs
+<div class="neoabs-container" markdown>
 
-!!! tip
-    Limit buttons to one primary action per view. Too many filled buttons compete for attention and reduce clarity.
+<button class="neoabs-btn neoabs-btn--accent neoabs-btn--pill">Accent Pill</button>
+<button class="neoabs-btn neoabs-btn--ghost neoabs-btn--lg">Large Ghost</button>
+
+</div>
+
+```html
+<button class="neoabs-btn neoabs-btn--accent neoabs-btn--pill">Accent Pill</button>
+<button class="neoabs-btn neoabs-btn--ghost neoabs-btn--lg">Large Ghost</button>
+```

@@ -45,6 +45,33 @@ $neoabs-breakpoint-mobile: 768px;
 	}
 }
 
+// --- Collapsed sidebar / TOC: reclaim the space they occupied ---
+.neoabs-nav-hidden .neoabs-nav {
+	display: none !important;
+}
+
+.neoabs-toc-hidden .neoabs-toc {
+	display: none !important;
+}
+
+.neoabs-nav-hidden .neoabs-main,
+.neoabs-nav-hidden .neoabs-footer,
+.neoabs-nav-hidden .neoabs-toc {
+	margin-left: 0;
+}
+
+.neoabs-toc-hidden .neoabs-main,
+.neoabs-toc-hidden .neoabs-footer {
+	margin-right: 0;
+}
+
+// Optional visual hint: center content in the reclaimed space
+.neoabs-nav-hidden .neoabs-content,
+.neoabs-toc-hidden .neoabs-content {
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .neoabs-article {
 	display: flex;
 	flex-direction: column;
@@ -118,22 +145,25 @@ $neoabs-breakpoint-mobile: 768px;
 
 // Header inner layout
 .neoabs-header__inner {
+	position: relative;
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: var(--neoabs-space-4);
 	padding: 0 var(--neoabs-space-6);
 	height: 100%;
 }
 
-// Left section (logo + title)
+// Left section (page title + hamburger)
 .neoabs-header__left {
 	display: flex;
 	align-items: center;
 	gap: var(--neoabs-space-3);
-	flex-shrink: 0;
+	flex: 0 0 auto;
+	min-width: 0;
 }
 
-// Logo area
+// Logo area (kept for backwards compatibility with the old structure)
 .neoabs-header__logo {
 	display: flex;
 	align-items: center;
@@ -162,21 +192,46 @@ $neoabs-breakpoint-mobile: 768px;
 	gap: 0;
 }
 
-// Center section (hamburger)
+// Center section — project logo + site name, truly centered
 .neoabs-header__center {
-	display: none;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-left: auto;
+	pointer-events: none;
+	z-index: 1;
+	max-width: 45%;
+}
 
-	@media (max-width: $neoabs-breakpoint-mobile) {
-		display: flex;
+// Brand link: logo + name centered in the navbar
+.neoabs-header__brand {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	text-decoration: none;
+	pointer-events: auto;
+	white-space: nowrap;
+	overflow: hidden;
+
+	&:hover .neoabs-header__site-name {
+		opacity: 0.8;
 	}
 }
 
-// Hamburger icon bars
+.neoabs-header__brand-logo {
+	width: 26px;
+	height: 26px;
+	object-fit: contain;
+	border-radius: 6px;
+	flex-shrink: 0;
+}
+
+// Hamburger icon bars (mobile only)
 .neoabs-header__hamburger {
-	display: flex;
+	display: none;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
@@ -190,6 +245,10 @@ $neoabs-breakpoint-mobile: 768px;
 	border-radius: var(--neoabs-radius-pill);
 	cursor: pointer;
 	transition: background var(--neoabs-transition-fast);
+
+	@media (max-width: $neoabs-breakpoint-mobile) {
+		display: flex;
+	}
 
 	&:hover {
 		background: var(--neoabs-ghost);
@@ -305,9 +364,39 @@ $neoabs-breakpoint-mobile: 768px;
 	}
 }
 
-// Repo link in header
+// Repo link in header — glass badge with a muted icon that brightens on hover
 .neoabs-header__repo {
 	text-decoration: none;
+	display: inline-flex;
+}
+
+.neoabs-header__repo-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	color: var(--neoabs-text-secondary);
+	background: transparent;
+	border: var(--neoabs-border-width, 1px) solid transparent;
+	border-radius: var(--neoabs-radius-pill);
+	transition: color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast);
+}
+
+.neoabs-header__repo-icon {
+	width: 18px;
+	height: 18px;
+	fill: currentColor;
+}
+
+.neoabs-header__repo:hover .neoabs-header__repo-badge,
+.neoabs-header__repo:focus-visible .neoabs-header__repo-badge {
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-ghost);
+	border-color: var(--neoabs-glass-border);
 }
 
 // ============================================================================
@@ -2299,29 +2388,180 @@ $neoabs-breakpoint-mobile: 768px;
 		border-color: var(--neoabs-glass-border-strong);
 	}
 
-	&.note {
-		&::before { background: var(--neoabs-accent); }
-		.admonition-title { color: var(--neoabs-accent); }
+	// --- Admonition type color map (Material-style family) ---
+	// Each entry sets the left accent bar and the title color.
+	@media (prefers-reduced-motion: reduce) {
+		transition: none;
 	}
 
-	&.tip, &.abstract, &.success {
+	// .note / .info / .example -> blue-ish accent
+	&.note,
+	&.info,
+	&.example {
+		&::before { background: #4488ff; }
+		.admonition-title { color: #4488ff; }
+	}
+
+	// Abstract / summary / tldr -> violet
+	&.abstract,
+	&.summary,
+	&.tldr {
+		&::before { background: #a78bfa; }
+		.admonition-title { color: #a78bfa; }
+	}
+
+	// Tip / hint / success / check / done / question / help / faq -> green
+	&.tip,
+	&.hint,
+	&.success,
+	&.check,
+	&.done,
+	&.question,
+	&.help,
+	&.faq {
 		&::before { background: #00cc6a; }
 		.admonition-title { color: #00cc6a; }
 	}
 
-	&.warning {
+	// Warning / caution / attention
+	&.warning,
+	&.caution,
+	&.attention {
 		&::before { background: #ffaa00; }
 		.admonition-title { color: #ffaa00; }
 	}
 
-	&.danger, &.failure {
-		&::before { background: #ff3030; }
-		.admonition-title { color: #ff3030; }
+	// Danger / error / failure / fail / missing / bug / important -> red accent
+	&.danger,
+	&.error,
+	&.failure,
+	&.fail,
+	&.missing,
+	&.bug,
+	&.important {
+		&::before { background: var(--neoabs-accent); }
+		.admonition-title { color: var(--neoabs-accent); }
 	}
 
-	&.info {
-		&::before { background: #4488ff; }
-		.admonition-title { color: #4488ff; }
+	// Quote -> warm gray, readable on both schemes
+	&.quote,
+	&.cite {
+		&::before { background: var(--neoabs-text-muted); }
+		.admonition-title { color: var(--neoabs-text-primary); }
+		font-style: italic;
+	}
+}
+
+// Type-colored icon (inline SVG data URI) before the title.
+// Icons use "currentColor" so they inherit the type color; rendered bold SVG
+// for crisp, readable glyphs on glass.
+.admonition > .admonition-title::before {
+	content: "";
+	display: inline-block;
+	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
+	margin-right: var(--neoabs-space-2);
+	background-color: currentColor;
+	-webkit-mask: var(--neoabs-icon);
+	mask: var(--neoabs-icon);
+	mask-repeat: no-repeat;
+	mask-position: center;
+	mask-size: contain;
+	-webkit-mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	-webkit-mask-size: contain;
+}
+
+.admonition.note > .admonition-title::before,
+.admonition.info > .admonition-title::before,
+.admonition.example > .admonition-title::before,
+.admonition.abstract > .admonition-title::before,
+.admonition.summary > .admonition-title::before,
+.admonition.tldr > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+}
+
+.admonition.tip > .admonition-title::before,
+.admonition.hint > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.42 1 1.11 1 1.92V17a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-.34c0-.81.4-1.5 1-1.92A7 7 0 0 0 12 2zm-1 19a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-1H9v1a1 1 0 0 0 1 1h1z'/%3E%3C/svg%3E");
+}
+
+.admonition.success > .admonition-title::before,
+.admonition.check > .admonition-title::before,
+.admonition.done > .admonition-title::before,
+.admonition.question > .admonition-title::before,
+.admonition.help > .admonition-title::before,
+.admonition.faq > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E");
+}
+
+.admonition.warning > .admonition-title::before,
+.admonition.caution > .admonition-title::before,
+.admonition.attention > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+}
+
+.admonition.danger > .admonition-title::before,
+.admonition.error > .admonition-title::before,
+.admonition.failure > .admonition-title::before,
+.admonition.fail > .admonition-title::before,
+.admonition.missing > .admonition-title::before,
+.admonition.bug > .admonition-title::before,
+.admonition.important > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z'/%3E%3C/svg%3E");
+}
+
+.admonition.quote > .admonition-title::before,
+.admonition.cite > .admonition-title::before {
+	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z'/%3E%3C/svg%3E");
+}
+
+// --- Inline admonitions (left/right float) ---
+.admonition.inline {
+	width: min(100%, 256px);
+	max-width: 360px;
+
+	&.end {
+		float: right;
+		margin-left: var(--neoabs-space-6);
+	}
+
+	/* no start selector in .admonition */
+	&.start {
+		float: left;
+		margin-right: var(--neoabs-space-6);
+	}
+}
+
+// --- Collapsible details admonitions ---
+details.admonition {
+	padding-top: 0;
+
+	> summary.admonition-title {
+		display: flex;
+		align-items: center;
+		gap: var(--neoabs-space-2);
+		margin: calc(var(--neoabs-space-5) * -1) calc(var(--neoabs-space-5) * -1) var(--neoabs-space-5);
+		margin-top: calc(var(--neoabs-space-5) * -1);
+		padding: var(--neoabs-space-4) var(--neoabs-space-5);
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--neoabs-text-primary);
+		cursor: pointer;
+		list-style: none;
+		transition: color var(--neoabs-transition-fast);
+	}
+
+	> summary.admonition-title::-webkit-details-marker {
+		display: none;
+	}
+
+	> summary.admonition-title:hover {
+		color: var(--neoabs-accent);
 	}
 }
 
@@ -2505,12 +2745,29 @@ h6:hover .headerlink {
 	&:hover {
 		color: var(--neoabs-text-secondary);
 	}
+
+	&:focus-visible {
+		outline: 2px solid var(--neoabs-accent);
+		outline-offset: -2px;
+		border-radius: var(--neoabs-radius-sm);
+	}
 }
 
-.tabbed-set > input:first-child:checked ~ .tabbed-labels > label:first-child,
-.tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > label:nth-child(2),
-.tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > label:nth-child(3),
-.tabbed-set > input:nth-child(7):checked ~ .tabbed-labels > label:nth-child(4) {
+// Active label accent.
+// With `alternate_style: true` pymdownx emits all radio inputs as direct
+// children first (child 1..N), then a single .tabbed-labels div, then one
+// .tabbed-content wrapper holding every .tabbed-block. So input child N maps
+// to label child N directly (general sibling `~` reaches the labels div).
+.tabbed-set > input:nth-child(1):checked ~ .tabbed-labels > label:nth-child(1),
+.tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > label:nth-child(2),
+.tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > label:nth-child(3),
+.tabbed-set > input:nth-child(4):checked ~ .tabbed-labels > label:nth-child(4),
+.tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > label:nth-child(5),
+.tabbed-set > input:nth-child(6):checked ~ .tabbed-labels > label:nth-child(6),
+.tabbed-set > input:nth-child(7):checked ~ .tabbed-labels > label:nth-child(7),
+.tabbed-set > input:nth-child(8):checked ~ .tabbed-labels > label:nth-child(8),
+.tabbed-set > input:nth-child(9):checked ~ .tabbed-labels > label:nth-child(9),
+.tabbed-set > input:nth-child(10):checked ~ .tabbed-labels > label:nth-child(10) {
 	color: var(--neoabs-text-primary);
 	border-bottom-color: var(--neoabs-accent);
 }
@@ -2523,11 +2780,20 @@ h6:hover .headerlink {
 	display: none;
 }
 
+// Active content panel. The `.tabbed-block`s are the only direct children of
+// the single `.tabbed-content` wrapper, so block N shows when input N is checked.
 .tabbed-set > input:nth-child(1):checked ~ .tabbed-content > :nth-child(1),
-.tabbed-set > input:nth-child(3):checked ~ .tabbed-content > :nth-child(2),
-.tabbed-set > input:nth-child(5):checked ~ .tabbed-content > :nth-child(3),
-.tabbed-set > input:nth-child(7):checked ~ .tabbed-content > :nth-child(4) {
+.tabbed-set > input:nth-child(2):checked ~ .tabbed-content > :nth-child(2),
+.tabbed-set > input:nth-child(3):checked ~ .tabbed-content > :nth-child(3),
+.tabbed-set > input:nth-child(4):checked ~ .tabbed-content > :nth-child(4),
+.tabbed-set > input:nth-child(5):checked ~ .tabbed-content > :nth-child(5),
+.tabbed-set > input:nth-child(6):checked ~ .tabbed-content > :nth-child(6),
+.tabbed-set > input:nth-child(7):checked ~ .tabbed-content > :nth-child(7),
+.tabbed-set > input:nth-child(8):checked ~ .tabbed-content > :nth-child(8),
+.tabbed-set > input:nth-child(9):checked ~ .tabbed-content > :nth-child(9),
+.tabbed-set > input:nth-child(10):checked ~ .tabbed-content > :nth-child(10) {
 	display: block;
+	animation: neoabs-fade-in var(--neoabs-transition-normal);
 }
 
 .tabbed-content > * {
@@ -2550,6 +2816,75 @@ h6:hover .headerlink {
 			border-radius: var(--neoabs-radius-lg) var(--neoabs-radius-lg) 0 0;
 		}
 	}
+}
+
+.neoabs-sidebar--hidden {
+	display: none !important;
+}
+
+// --- Mermaid diagrams ---
+.neoabs-diagram {
+	margin: var(--neoabs-space-6) 0;
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-lg);
+	overflow: hidden;
+	box-shadow: var(--neoabs-shadow-sm);
+	transition: border-color var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-glass-border-strong);
+	}
+
+	svg {
+		display: block;
+		margin: 0 auto;
+		max-width: 100%;
+		height: auto;
+		background: transparent !important;
+	}
+
+	.neoabs-diagram__frame {
+		padding: var(--neoabs-space-5);
+		overflow-x: auto;
+		text-align: center;
+	}
+
+	.neoabs-diagram__loading {
+		display: block;
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--neoabs-text-muted);
+	}
+
+	.neoabs-diagram__errmsg {
+		margin: 0 0 var(--neoabs-space-2);
+		font-family: var(--neoabs-font-mono);
+		font-size: 11px;
+		color: var(--neoabs-text-danger, var(--neoabs-accent));
+		text-align: left;
+	}
+
+	.neoabs-diagram__error {
+		margin: 0;
+		padding: var(--neoabs-space-4);
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		word-break: break-word;
+		text-align: left;
+		background: rgba(255, 48, 48, 0.08);
+		border: 1px solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-md);
+		color: var(--neoabs-text-secondary);
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-diagram {
+	background: rgba(0, 0, 0, 0.02);
 }
 
 // --- Details / Collapsible sections ---
@@ -2636,6 +2971,16 @@ tbody tr {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--neoabs-space-2);
+		transition: color var(--neoabs-transition-fast);
+	}
+
+	// Checked state (pymdownx.tasklist with custom_checkbox wraps the input in
+	// a .task-list-control label; the item text is a direct child of the <li>).
+	li.task-list-item:has(> label > input:checked) {
+		color: var(--neoabs-text-muted);
+		text-decoration: line-through;
+		text-decoration-color: var(--neoabs-text-muted);
+		text-decoration-thickness: 2px;
 	}
 
 	input[type="checkbox"] {
@@ -2652,10 +2997,15 @@ tbody tr {
 		transition: background var(--neoabs-transition-fast),
 		            border-color var(--neoabs-transition-fast);
 
+		&:hover {
+			border-color: var(--neoabs-accent);
+			box-shadow: 0 0 0 1px var(--neoabs-accent-dim);
+		}
+
 		&:checked {
 			background: var(--neoabs-accent);
 			border-color: var(--neoabs-accent);
-			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M6.5 11.5L3 8l1-1 2.5 2.5 5-5 1 1z'/%3E%3C/svg%3E");
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M3 3l10 10M13 3L3 13' stroke='white' stroke-width='2.4'/%3E%3C/svg%3E");
 			background-position: center;
 			background-repeat: no-repeat;
 			background-size: 12px;
@@ -3086,4 +3436,907 @@ tbody tr {
 // --- Nav collapsed state (toggle via JS class) ---
 .neoabs-nav__list--collapsed {
 	display: none;
+}
+
+// ============================================================================
+// NOTES & ANNOTATIONS
+// ============================================================================
+
+// Highlight applied over selected text
+.neoabs-note__hl {
+	border-radius: 2px;
+	padding: 0 1px;
+	cursor: pointer;
+	background: var(--neoabs-note-color, #ffe66b);
+	box-shadow: 0 0 0 2px var(--neoabs-note-color, #ffe66b);
+	transition: background var(--neoabs-transition-fast);
+
+	&:hover {
+		filter: brightness(1.05);
+	}
+}
+
+// Inline composer used to add a note from within the notes panel.
+.neoabs-note__composer {
+	margin-bottom: var(--neoabs-space-3);
+
+	.neoabs-note__composer-colors {
+		display: flex;
+		gap: var(--neoabs-space-1);
+		margin-bottom: var(--neoabs-space-2);
+
+		.neoabs-note__color {
+			width: 16px;
+			height: 16px;
+			border-radius: var(--neoabs-radius-pill);
+			border: 2px solid var(--neoabs-glass-border-strong);
+			cursor: pointer;
+			padding: 0;
+			transition: transform var(--neoabs-transition-fast);
+
+			&[aria-pressed="true"] {
+				border-color: var(--neoabs-text-primary);
+				transform: scale(1.15);
+			}
+		}
+	}
+
+	.neoabs-note__composer-input {
+		display: block;
+		width: 100%;
+		min-height: 64px;
+		resize: vertical;
+		font-family: var(--neoabs-font-body);
+		font-size: 13px;
+		color: var(--neoabs-text-primary);
+		background: var(--neoabs-glass-bg);
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-sm);
+		padding: var(--neoabs-space-2);
+		transition: border-color var(--neoabs-transition-fast);
+
+		&:focus {
+			outline: none;
+			border-color: var(--neoabs-accent);
+			box-shadow: 0 0 0 2px var(--neoabs-accent-dim);
+		}
+	}
+
+	.neoabs-note__composer-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--neoabs-space-2);
+		margin-top: var(--neoabs-space-2);
+
+		button {
+			padding: var(--neoabs-space-1) var(--neoabs-space-3);
+			font-family: var(--neoabs-font-mono);
+			font-size: 11px;
+			text-transform: uppercase;
+			border-radius: var(--neoabs-radius-sm);
+			cursor: pointer;
+			transition: border-color var(--neoabs-transition-fast);
+		}
+
+		.neoabs-note__cancel {
+			color: var(--neoabs-text-secondary);
+			background: var(--neoabs-glass-bg);
+			border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		}
+
+		.neoabs-note__save {
+			color: var(--neoabs-on-accent, #fff);
+			background: var(--neoabs-accent);
+			border: 1px solid var(--neoabs-accent);
+
+			&:hover {
+				filter: brightness(1.05);
+			}
+		}
+	}
+}
+
+// Main "Notes" trigger button (bottom-left so it avoids back-to-top)
+.neoabs-notes-btn {
+	position: fixed;
+	bottom: var(--neoabs-space-4);
+	left: var(--neoabs-space-4);
+	z-index: var(--neoabs-z-overlay);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-1);
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-glass-bg-strong);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-pill);
+	box-shadow: var(--neoabs-shadow-md);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	cursor: pointer;
+	transition: background var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-accent);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--neoabs-accent);
+		outline-offset: 2px;
+	}
+}
+
+// Slide-in panel listing notes for the current page
+.neoabs-notes-panel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: var(--neoabs-z-modal);
+	width: 320px;
+	max-width: calc(100vw - var(--neoabs-space-8));
+	display: flex;
+	flex-direction: column;
+	transform: translateX(100%);
+	transition: transform var(--neoabs-transition-normal);
+	background: var(--neoabs-glass-bg-strong);
+	backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+	border-left: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	box-shadow: var(--neoabs-shadow-lg);
+	overflow-y: auto;
+
+	&.neoabs-open {
+		transform: translateX(0);
+	}
+
+	.neoabs-notes-panel__head {
+		position: sticky;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--neoabs-space-3) var(--neoabs-space-4);
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--neoabs-text-primary);
+		background: var(--neoabs-glass-bg);
+
+		button {
+			background: none;
+			border: none;
+			color: var(--neoabs-text-muted);
+			cursor: pointer;
+			font-size: 16px;
+		}
+	}
+
+	.neoabs-notes-panel__tools {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--neoabs-space-2);
+		padding: var(--neoabs-space-2) var(--neoabs-space-4);
+
+		.neoabs-notes-panel__add {
+			padding: var(--neoabs-space-2) var(--neoabs-space-4);
+			font-family: var(--neoabs-font-mono);
+			font-size: 12px;
+			font-weight: 600;
+			text-transform: uppercase;
+			color: var(--neoabs-on-accent, #fff);
+			background: var(--neoabs-accent);
+			border: 1px solid var(--neoabs-accent);
+			border-radius: var(--neoabs-radius-pill);
+			cursor: pointer;
+			transition: background var(--neoabs-transition-fast);
+
+			&:hover {
+				filter: brightness(1.05);
+			}
+
+			&:focus-visible {
+				outline: 2px solid var(--neoabs-accent-dim);
+				outline-offset: 2px;
+			}
+		}
+
+		.neoabs-notes-panel__export {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--neoabs-space-1);
+			padding: var(--neoabs-space-2) var(--neoabs-space-3);
+			font-family: var(--neoabs-font-mono);
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.02em;
+			color: var(--neoabs-text-primary);
+			background: var(--neoabs-glass-bg-strong);
+			border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+			border-radius: var(--neoabs-radius-pill);
+			box-shadow: var(--neoabs-shadow-sm);
+			cursor: pointer;
+			transition: border-color var(--neoabs-transition-fast),
+			            color var(--neoabs-transition-fast),
+			            background var(--neoabs-transition-fast);
+
+			&:hover {
+				border-color: var(--neoabs-accent);
+				color: var(--neoabs-accent);
+			}
+
+			&:focus-visible {
+				outline: 2px solid var(--neoabs-accent-dim);
+				outline-offset: 2px;
+			}
+		}
+	}
+
+	.neoabs-notes-panel__list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--neoabs-space-3);
+		padding: var(--neoabs-space-4);
+	}
+
+	.neoabs-note__item {
+		position: relative;
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-md);
+		background: var(--neoabs-glass-bg);
+		padding: var(--neoabs-space-3);
+		overflow: hidden;
+
+		&::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			width: 3px;
+			background: var(--neoabs-note-color, #ffe66b);
+		}
+
+		.neoabs-note__quote {
+			font-family: var(--neoabs-font-mono);
+			font-size: 12px;
+			color: var(--neoabs-note-color, #ffe66b);
+			border-left: 1px solid transparent;
+			padding-left: var(--neoabs-space-2);
+			margin: 0 0 var(--neoabs-space-2);
+			word-break: break-word;
+		}
+
+		.neoabs-note__body {
+			font-size: 13px;
+			line-height: 1.5;
+			white-space: pre-wrap;
+			word-break: break-word;
+		}
+
+		.neoabs-note__meta {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--neoabs-space-2);
+			margin-top: var(--neoabs-space-2);
+
+			.neoabs-note__when {
+				font-family: var(--neoabs-font-mono);
+				font-size: 10px;
+				color: var(--neoabs-text-muted);
+			}
+
+			.neoabs-note__actions {
+				display: flex;
+				gap: var(--neoabs-space-1);
+
+				button {
+					padding: var(--neoabs-space-1) var(--neoabs-space-2);
+					font-family: var(--neoabs-font-mono);
+					font-size: 10px;
+					text-transform: uppercase;
+					background: none;
+					border: 1px solid var(--neoabs-glass-border);
+					border-radius: var(--neoabs-radius-sm);
+					cursor: pointer;
+					transition: border-color var(--neoabs-transition-fast);
+
+					&:hover {
+						border-color: var(--neoabs-accent);
+					}
+				}
+
+				.neoabs-note__delete {
+					color: var(--neoabs-text-danger, var(--neoabs-accent));
+				}
+			}
+		}
+	}
+
+	.neoabs-notes-panel__empty {
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		color: var(--neoabs-text-muted);
+		text-align: center;
+		padding: var(--neoabs-space-8);
+	}
+}
+
+@media (max-width: $neoabs-breakpoint-mobile) {
+	.neoabs-notes-panel {
+		top: auto;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		max-width: 100%;
+		max-height: 75vh;
+		border-left: none;
+		border-top: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-xl) var(--neoabs-radius-xl) 0 0;
+		transform: translateY(100%);
+		transition: transform var(--neoabs-transition-normal);
+
+		&.neoabs-open {
+			transform: translateY(0);
+		}
+
+		&::before {
+			content: "";
+			display: block;
+			width: 36px;
+			height: 4px;
+			margin: var(--neoabs-space-2) auto var(--neoabs-space-1);
+			background: var(--neoabs-glass-border-strong);
+			border-radius: 2px;
+		}
+
+		.neoabs-notes-panel__head {
+			position: static;
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.neoabs-notes-panel {
+		transition: none;
+	}
+}
+
+// ===========================================================================
+// UI Primitives — Buttons, Cards, Forms
+// Used inside .neoabs-typeset (content area) for live examples.
+// ===========================================================================
+
+// --- Buttons ---
+.neoabs-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--neoabs-space-1);
+	font-family: var(--neoabs-font-display);
+	font-size: 14px;
+	font-weight: 500;
+	padding: var(--neoabs-space-2) var(--neoabs-space-4);
+	border-radius: var(--neoabs-radius-sm);
+	border: 1px solid transparent;
+	color: var(--neoabs-on-accent, #fff);
+	background: var(--neoabs-accent);
+	cursor: pointer;
+	transition: background var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast),
+	            color var(--neoabs-transition-fast);
+
+	&:hover {
+		filter: brightness(1.06);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--neoabs-accent-dim);
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+}
+
+.neoabs-btn--accent {
+	background: transparent;
+	color: var(--neoabs-accent);
+	border-color: var(--neoabs-accent);
+
+	&:hover {
+		background: var(--neoabs-accent-dim);
+		filter: none;
+	}
+}
+
+.neoabs-btn--ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--neoabs-text-secondary);
+
+	&:hover {
+		color: var(--neoabs-accent);
+		filter: none;
+	}
+}
+
+.neoabs-btn--pill {
+	border-radius: var(--neoabs-radius-pill);
+	padding: var(--neoabs-space-2) var(--neoabs-space-5);
+	font-weight: 600;
+}
+
+.neoabs-btn--sm {
+	padding: var(--neoabs-space-1) var(--neoabs-space-2);
+	font-size: 12px;
+}
+
+.neoabs-btn--lg {
+	padding: var(--neoabs-space-3) var(--neoabs-space-6);
+	font-size: 16px;
+}
+
+// --- Cards ---
+.neoabs-card {
+	background: var(--neoabs-glass-bg);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-lg);
+	padding: var(--neoabs-space-5);
+	color: var(--neoabs-text-primary);
+	transition: border-color var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-glass-border);
+	}
+
+	h3, h4 {
+		margin: 0 0 var(--neoabs-space-2);
+	}
+	p {
+		margin: 0 0 var(--neoabs-space-2);
+		color: var(--neoabs-text-secondary);
+		font-size: 14px;
+		line-height: 1.5;
+	}
+}
+
+.neoabs-card--accent {
+	border-top: 2px solid var(--neoabs-accent);
+}
+
+.neoabs-card--light {
+	backdrop-filter: blur(6px) saturate(var(--neoabs-glass-saturation));
+	background: var(--neoabs-glass-bg);
+}
+
+.neoabs-card--medium {
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+}
+
+.neoabs-card--heavy {
+	backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+}
+
+.neoabs-card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: var(--neoabs-space-4);
+}
+
+// --- Forms ---
+.neoabs-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--neoabs-space-4);
+	max-width: 480px;
+}
+
+.neoabs-label {
+	display: block;
+	font-family: var(--neoabs-font-mono);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--neoabs-text-muted);
+	margin-bottom: var(--neoabs-space-1);
+}
+
+.neoabs-input,
+.neoabs-textarea,
+.neoabs-select {
+	font-family: var(--neoabs-font-body);
+	font-size: 14px;
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-sm);
+	color: var(--neoabs-text-primary);
+	width: 100%;
+	outline: none;
+	transition: border-color var(--neoabs-transition-fast);
+
+	&::placeholder {
+		color: var(--neoabs-text-muted);
+		opacity: 0.7;
+	}
+
+	&:focus {
+		border-color: var(--neoabs-accent);
+		box-shadow: 0 0 0 2px var(--neoabs-accent-dim);
+	}
+}
+
+.neoabs-textarea {
+	min-height: 100px;
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.neoabs-select {
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right var(--neoabs-space-2) center;
+	background-size: 18px;
+	padding-right: var(--neoabs-space-6);
+	cursor: pointer;
+}
+
+.neoabs-input--error,
+.neoabs-textarea--error {
+	border-color: var(--neoabs-text-danger, var(--neoabs-accent));
+}
+
+.neoabs-input--success,
+.neoabs-textarea--success {
+	border-color: #22c55e;
+}
+
+.neoabs-hint {
+	display: block;
+	font-family: var(--neoabs-font-mono);
+	font-size: 11px;
+	margin-top: var(--neoabs-space-1);
+}
+
+.neoabs-hint--error {
+	color: var(--neoabs-text-danger, var(--neoabs-accent));
+}
+
+.neoabs-hint--success {
+	color: #22c55e;
+}
+
+// --- Button pressed feedback (driven by initUIExamples JS) ---
+.neoabs-btn {
+	&:active {
+		transform: translateY(0);
+	}
+
+	&.neoabs-btn--pressed {
+		transform: scale(0.97);
+		opacity: 0.85;
+	}
+}
+
+// --- Field group helper ---
+.neoabs-field {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 0;
+
+	.neoabs-hint--error,
+	.neoabs-hint--success {
+		&[hidden] { display: none; }
+	}
+}
+
+// --- Form valid feedback ---
+.neoabs-form--valid {
+	.neoabs-form__submit {
+		border-color: #22c55e;
+		color: #22c55e;
+	}
+}
+
+// ============================================================================
+// Tree / Project-structure code blocks (```tree)
+// Renders the box-drawing characters as a clean file explorer card.
+// ============================================================================
+
+.highlight .language-tree,
+pre:not(.highlight) code.language-tree,
+code.language-tree {
+	display: block;
+}
+
+.highlight.language-tree,
+.highlight:has(.language-tree),
+pre:not(.highlight) code.language-tree {
+	font-family: var(--neoabs-font-mono);
+	font-size: 13px;
+	line-height: 1.65;
+	white-space: pre;
+	overflow-x: auto;
+}
+
+// Wrap tree blocks in a subtle "file explorer" card.
+pre.neoabs-tree,
+.highlight.language-tree,
+.highlight:has(.language-tree) {
+	position: relative;
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-lg);
+	margin: var(--neoabs-space-5) 0;
+	padding: var(--neoabs-space-4);
+}
+
+// Colored box-drawing connectors for scannability.
+.language-tree {
+	color: var(--neoabs-text-secondary);
+
+	.hljs-comment,
+	.hljs-meta {
+		color: var(--neoabs-text-muted);
+	}
+}
+
+// Dim comment suffixes such as "# Version (0.1.2)" in tree listings.
+.highlight.language-tree .hljs-comment,
+pre:not(.highlight) code.language-tree .neoabs-tree-comment {
+	color: var(--neoabs-text-muted);
+	font-style: italic;
+}
+
+// ============================================================================
+// Toast notifications
+// Fired by initUIExamples() on button clicks and form/input actions.
+// ============================================================================
+
+.neoabs-toast {
+	position: fixed;
+	left: 50%;
+	bottom: var(--neoabs-space-6);
+	z-index: var(--neoabs-z-modal);
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	max-width: min(88vw, 420px);
+	transform: translateX(-50%) translateY(140%);
+	opacity: 0;
+	padding: var(--neoabs-space-3) var(--neoabs-space-5);
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	letter-spacing: 0.02em;
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-glass-bg-strong);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-md);
+	box-shadow: var(--neoabs-shadow-lg);
+	pointer-events: none;
+	transition: transform var(--neoabs-transition-normal),
+	            opacity var(--neoabs-transition-normal);
+
+	svg {
+		flex: 0 0 auto;
+		width: 16px;
+		height: 16px;
+	}
+
+	&--show {
+		transform: translateX(-50%) translateY(0);
+		opacity: 1;
+	}
+
+	&--success svg { color: #22c55e; }
+	&--error svg { color: var(--neoabs-accent); }
+	&--info svg { color: #4488ff; }
+}
+
+.neoabs-toast__msg {
+	line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.neoabs-toast {
+		transition: none;
+	}
+}
+
+// ============================================================================
+// Math (KaTeX via pymdownx.arithmatex)
+// ============================================================================
+
+.neoabs-typeset .arithmatex,
+.neoabs-typeset .math {
+	font-family: var(--neoabs-font-mono);
+	color: var(--neoabs-text-primary);
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.neoabs-typeset .arithmatex {
+	display: inline-block;
+	max-width: 100%;
+}
+
+.neoabs-typeset .math {
+	display: block;
+	margin: var(--neoabs-space-6) 0;
+	padding: var(--neoabs-space-4);
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-md);
+	overflow-x: auto;
+	text-align: center;
+}
+
+.neoabs-typeset .katex {
+	font-size: 1.1em;
+}
+
+.neoabs-typeset .katex-display {
+	margin: 0;
+}
+
+// ============================================================================
+// Images & Figures
+// ============================================================================
+
+.neoabs-typeset img {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--neoabs-radius-lg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	background: var(--neoabs-glass-bg);
+}
+
+.neoabs-typeset img.neoabs-img-round {
+	border-radius: 999px;
+}
+
+.neoabs-typeset img.neoabs-img-ghost {
+	opacity: 0.7;
+	filter: grayscale(0.2);
+}
+
+// Figure wrapper with caption
+.neoabs-figure {
+	margin: var(--neoabs-space-6) 0;
+	text-align: center;
+
+	> img,
+	> .neoabs-svg {
+		display: inline-block;
+		max-width: 100%;
+	}
+
+	figcaption,
+	.neoabs-figure__caption {
+		margin-top: var(--neoabs-space-2);
+		font-family: var(--neoabs-font-mono);
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--neoabs-text-muted);
+	}
+}
+
+// Lightbox-style image card for a featured/banner image
+.neoabs-image {
+	display: block;
+	margin: var(--neoabs-space-6) auto;
+	max-width: 100%;
+
+	&--banner {
+		width: 100%;
+		max-height: 380px;
+		object-fit: cover;
+		margin-top: 0;
+	}
+
+	&--thumbnail {
+		max-width: 220px;
+		border-radius: var(--neoabs-radius-md);
+	}
+}
+
+// === Inline SVG / diagram component ===
+.neoabs-svg {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 100%;
+	margin: var(--neoabs-space-6) 0;
+	padding: var(--neoabs-space-5);
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-lg);
+	overflow: auto;
+
+	svg, img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+	}
+
+	&--bare {
+		background: none;
+		border: none;
+		padding: 0;
+	}
+}
+
+// Horizontal rule / divider component
+.neoabs-divider {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-3);
+	margin: var(--neoabs-space-8) 0;
+	color: var(--neoabs-text-muted);
+
+	&::before,
+	&::after {
+		content: "";
+		flex: 1;
+		height: 1px;
+		background: var(--neoabs-glass-border);
+	}
+
+	svg {
+		width: 16px;
+		height: 16px;
+	}
+}
+
+// Tag/pill used to mark things like data attributes
+.neoabs-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-1);
+	padding: var(--neoabs-space-1) var(--neoabs-space-2);
+	font-family: var(--neoabs-font-mono);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--neoabs-text-secondary);
+	background: var(--neoabs-glass-bg);
+	border: 1px solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-pill);
+
+	&--accent {
+		color: var(--neoabs-accent);
+		border-color: var(--neoabs-accent);
+	}
+
+	&--success {
+		color: #22c55e;
+		border-color: #22c55e;
+	}
+
+	&--warning {
+		color: #ffaa00;
+		border-color: #ffaa00;
+	}
+
+	&--error {
+		color: var(--neoabs-accent);
+		border-color: var(--neoabs-accent);
+	}
 }

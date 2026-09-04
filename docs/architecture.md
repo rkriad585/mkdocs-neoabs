@@ -8,10 +8,10 @@ This page describes the internal structure and design of mkdocs-neoabs.
 
 ## Project Structure
 
-```
+```tree
 mkdocs-neoabs/
 ├── neoabs/                          # Python package
-│   ├── __init__.py                  # Version (0.0.1-beta)
+│   ├── __init__.py                  # Version (0.1.2)
 │   ├── plugins/
 │   │   └── neoabs_plugin.py         # MkDocs plugin
 │   ├── templates/
@@ -77,6 +77,11 @@ The stylesheet is organized in layers:
 6. **Glass Components** — `.neoabs-glass`, `.neoabs-card`
 7. **Typography** — Display, labels, body, inline code
 8. **Components** (`components.scss`) — Layout, header, nav, content area, TOC, footer, search, tabs, admonitions, code blocks, tables, scroll utilities, mobile responsive, print styles, MkDocs compatibility
+   - **Tabs** — `pymdownx.tabbed` with `alternate_style`, keyboard nav (Arrow keys), localStorage persistence
+   - **Task Lists** — Custom checkboxes with localStorage persistence
+   - **Mermaid Diagrams** — `.neoabs-diagram` glass card, loading spinner, error states
+   - **Notes Panel** — `.neoabs-notes-panel`, inline composer, item list, mobile bottom-sheet
+   - **UI Primitives** — `.neoabs-btn`, `.neoabs-card`, `.neoabs-form`
 
 ### JavaScript
 
@@ -94,6 +99,14 @@ The stylesheet is organized in layers:
 10. **Keyboard shortcuts** — `/` for search, `?` for help, `Esc` to close
 11. **Help modal** — Displays available keyboard shortcuts
 12. **Nav toggle** — Expands/collapses navigation sections via CSS class
+13. **`initTabs`** — Keyboard navigation (Arrow keys), `aria-selected` toggling, localStorage tab persistence
+14. **`initTaskLists`** — Checkbox change → localStorage save, restore checked state on load
+ 15. **`initHighlighting`** — highlight.js CDN loader, `hljs.highlightAll()`, theme-aware light/dark swap
+ 16. **`initMermaid`** — Lazy CDN loader (`mermaid@10.9.8`), themed rendering, dark/light re-render on scheme change
+ 17. **`initNotes`** — Inline note composer, localStorage persistence (3-day TTL), export to MD/JSON
+ 18. **`initSidebarToggle`** — Sidebar collapse/expand via keyboard shortcut
+ 19. **`initUIExamples`** — Button press feedback and form submit validation for interactive component docs; also exposes `window.neoabsToast`
+ 20. **`initMath`** — Lazy KaTeX CDN loader (`katex@0.16.9`), renders `pymdownx.arithmatex` output, strips `\(\)`/`\[\]` delimiters
 
 ### Build Pipeline
 
@@ -107,7 +120,17 @@ neoabs.scss → sass.compile() → postcss(autoprefixer + cssnano) → neoabs.cs
 - `npm run dev` — Development (expanded, inline sourcemaps)
 - `npm run start` — Watch mode (rebuilds on SCSS changes via chokidar)
 
-## Design Token System
+### CDN Dependencies
+
+| Library | Version | Purpose | Loading Strategy |
+|---------|---------|---------|------------------|
+| **highlight.js** | 11.9.0 | Syntax highlighting for code blocks | Lazy — fetched only when `<code>` blocks are present |
+| **Mermaid.js** | 10.9.8 | Diagram rendering | Lazy — fetched only when `.neoabs-diagram` fences are present |
+| **KaTeX** | 0.16.9 | Math typesetting (`pymdownx.arithmatex`) | Lazy — fetched only when `.arithmatex`/`.math` is present |
+
+Both are deferred and conditionally injected by their respective `init*` functions — no requests on pages without the relevant content.
+
+### Design Token System
 
 All visual properties are defined as CSS custom properties:
 
@@ -123,11 +146,8 @@ All visual properties are defined as CSS custom properties:
   /* ... */
 }
 ```
-
 Override any token in a custom stylesheet to theme the entire site without touching component code.
-
 ## Data Flow
-
 ```mermaid
 graph TD
     A[Markdown Files] --> B[MkDocs]
@@ -142,10 +162,20 @@ graph TD
     E --> K[Search]
     E --> L[CSS]
     E --> M[JavaScript]
+    M --> M1[initTheme]
+    M --> M2[initTabs]
+    M --> M3[initTaskLists]
+    M --> M4[initMermaid]
+    M --> M5[initNotes]
+    M --> M6[initHighlighting]
+    M --> M7[initSidebarToggle]
+    CDNs[CDN: highlight.js / Mermaid] -.->|lazy load| M6
+    CDNs -.->|lazy load| M4
+    M5 --> Notes[Notes Panel]
+    M5 -.->|localStorage| NL[(notes store)]
+    M6 -.->|theme swap| HLJS[hljs theme]
     N[SCSS Files] --> O[build.js]
     O --> P[neoabs.css]
 ```
-
 ---
-
 [Back to README](index.md)

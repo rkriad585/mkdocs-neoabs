@@ -58,6 +58,15 @@
     <link rel="stylesheet" href="{{ 'assets/neoabs.css' | url }}">
     {% endblock %}
 
+    {% block hljs_styles %}
+    {% if config.extra and config.extra.neoabs_highlight %}
+    <link id="neoabs-hljs-theme-dark" rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link id="neoabs-hljs-theme-light" rel="stylesheet" disabled
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    {% endif %}
+    {% endblock %}
+
     {% block fonts %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +158,13 @@
       {
         "base": "{{ base_url }}",
         "features": {{ config.theme.features | default([]) | tojson }},
+        "notes": {
+          "enabled": {{ config.extra.neoabs_notes | tojson }},
+          "ttl_ms": {{ config.extra.neoabs_notes_ttl | default(259200000) | tojson }}
+        },
+        "math": {
+          "enabled": {{ config.extra.neoabs_math | default(true) | tojson }}
+        },
         "translations": {
           "clipboard": {
             "copy": "Copy to clipboard",

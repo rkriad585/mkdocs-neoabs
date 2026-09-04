@@ -4,10 +4,8 @@ title: Cards
 
 # Cards
 
-Cards are the primary content container in NeoAbs. Every card uses the glass system to sit above the canvas.
-
-!!! note
-    The base `.neoabs-card` class is implemented in the theme. The modifier classes shown below (`--light`, `--medium`, `--heavy`, `--accent`) are part of the design system specification. Add them to your custom CSS if needed.
+Cards are the primary content container in NeoAbs. Every card uses the glass
+system to sit above the canvas with blur, border, and padding baked in.
 
 ## Default card
 
@@ -18,34 +16,14 @@ Cards are the primary content container in NeoAbs. Every card uses the glass sys
 </div>
 ```
 
-```css
-.neoabs-card {
-  background: var(--neoabs-glass-medium);
-  backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid var(--neoabs-ghost-strong);
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-```
-
-## Hover effect
-
-Cards gain a subtle lift on hover through background and border changes:
-
-```css
-.neoabs-card:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-```
-
-!!! note
-    NeoAbs intentionally avoids `transform: translateY()` for hover effects. The glass background change provides enough feedback without causing layout shift.
+<div class="neoabs-card">
+  <h3>Card title</h3>
+  <p>Card body text goes here.</p>
+</div>
 
 ## Glass intensity
 
-Cards respect the global `glass` setting, but can be overridden:
+Cards respect the global glass setting but can be overridden per card.
 
 ```html
 <div class="neoabs-card neoabs-card--light">Light glass</div>
@@ -53,37 +31,37 @@ Cards respect the global `glass` setting, but can be overridden:
 <div class="neoabs-card neoabs-card--heavy">Heavy glass</div>
 ```
 
-| Class                      | Blur    | Use case                        |
-|----------------------------|---------|---------------------------------|
-| `neoabs-card--light`       | 6px     | Sidebars, large panels          |
-| `neoabs-card--medium`      | 12px    | Default content cards           |
-| `neoabs-card--heavy`       | 20px    | Modals, floating panels         |
+<div class="neoabs-card neoabs-card--light">
+  <strong>Light</strong> &mdash; 6 px blur, good for sidebars and large panels.
+</div>
 
-## Card with accent border
+<div class="neoabs-card neoabs-card--medium">
+  <strong>Medium</strong> &mdash; default blur, suitable for most content.
+</div>
 
-Add an accent-colored top border to draw attention:
+<div class="neoabs-card neoabs-card--heavy">
+  <strong>Heavy</strong> &mdash; 40 px blur, ideal for modals and floating panels.
+</div>
+
+## Accent border
+
+Add a 2 px solid accent top border to draw attention.
 
 ```html
-<div class="neoabs-card neoabs-card--accent">Highlighted card</div>
+<div class="neoabs-card neoabs-card--accent">
+  <h3>Highlighted card</h3>
+  <p>This card has an accent top border.</p>
+</div>
 ```
 
-```css
-.neoabs-card--accent {
-  border-top: 2px solid var(--neoabs-accent);
-}
-```
+<div class="neoabs-card neoabs-card--accent">
+  <h3>Highlighted card</h3>
+  <p>This card has an accent top border.</p>
+</div>
 
 ## Card grid
 
-Cards work in CSS Grid layouts:
-
-```css
-.neoabs-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-```
+The grid utility arranges cards in responsive columns with a 16 px gap.
 
 ```html
 <div class="neoabs-card-grid">
@@ -93,20 +71,28 @@ Cards work in CSS Grid layouts:
 </div>
 ```
 
-!!! tip
-    Use `auto-fill` with `minmax` instead of fixed column counts. This lets cards reflow naturally on smaller screens without media queries.
-
-## Code example cards
-
-For documentation, cards often contain code blocks. The glass background provides a clean container:
-
-```html
-<div class="neoabs-card">
-  <span class="label">Example</span>
-  <h4>Installing a package</h4>
-  <pre><code>pip install mkdocs-neoabs</code></pre>
+<div class="neoabs-card-grid">
+  <div class="neoabs-card">
+    <h4>First card</h4>
+    <p>Auto-fill with minmax(260px, 1fr) handles reflow without media queries.</p>
+  </div>
+  <div class="neoabs-card">
+    <h4>Second card</h4>
+    <p>Each card grows to fill available space inside its column.</p>
+  </div>
+  <div class="neoabs-card">
+    <h4>Third card</h4>
+    <p>The 16 px gap keeps everything breathable.</p>
+  </div>
 </div>
-```
 
-!!! warning
-    Avoid nesting heavy glass cards inside other glass cards. The layered blur can cause visual artifacts on some browsers.
+## Hover effect
+
+Cards gain a subtle background and border-color change on hover. No
+`transform: translateY()` is used, so there is no layout shift.
+
+## Notes
+
+- Cards have 20 px padding, a 12 px border radius, and 1 px border by default.
+- Avoid nesting heavy glass cards inside other glass cards; layered blur can
+  cause visual artifacts on some browsers.

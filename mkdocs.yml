@@ -9,6 +9,7 @@ copyright: "&copy; 2025 rkriad585. Built with NeoAbs."
 
 theme:
   name: neoabs
+  logo: assets/images/logo.svg
   favicon: assets/images/favicon.svg
   language: en
   direction: ltr
@@ -46,7 +47,11 @@ plugins:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -60,6 +65,8 @@ markdown_extensions:
   - tables
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.arithmatex:
+      generic: true
 
 
 nav:
@@ -74,9 +81,22 @@ nav:
     - Typography: design/typography.md
     - Glass Effects: design/glass.md
   - Components:
+    - Admonitions: components/admonitions.md
+    - Notes: components/notes.md
+    - Diagrams: components/diagrams.md
+    - Code Highlighting: components/code-highlighting.md
+    - Trees: components/trees.md
+    - Task Lists: components/task-lists.md
+    - Tabs: components/tabs.md
     - Buttons: components/buttons.md
     - Cards: components/cards.md
     - Forms: components/forms.md
+    - Tables: components/tables.md
+    - Math: components/math.md
+    - Images & SVG: components/images.md
+    - Toast: components/toast.md
+    - CSS Classes in Markdown: components/classes.md
+    - Keyboard Shortcuts: components/shortcuts.md
   - Plugins:
     - NeoAbs Plugin: plugins/neoabs.md
   - Architecture: architecture.md

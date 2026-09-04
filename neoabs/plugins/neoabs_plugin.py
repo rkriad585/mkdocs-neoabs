@@ -13,6 +13,8 @@ class NeoAbsPlugin(BasePlugin):
         "dot_matrix": True,
         "animation": "normal",
         "border": "thin",
+        "highlight": True,
+        "notes": True,
     }
 
     def on_config(self, config, **kwargs):
@@ -35,6 +37,9 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_dot_matrix"] = bool(neoabs["dot_matrix"])
         extra["neoabs_animation"] = neoabs["animation"]
         extra["neoabs_border"] = neoabs["border"]
+        extra["neoabs_highlight"] = bool(neoabs["highlight"])
+        extra["neoabs_notes"] = bool(neoabs["notes"])
+        extra["neoabs_notes_ttl"] = neoabs.get("notes_ttl")
         config["extra"] = extra
 
         # Search: the built-in MkDocs `search` plugin injects `search/main.js`

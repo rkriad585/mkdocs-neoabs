@@ -4,170 +4,149 @@ title: Forms
 
 # Forms
 
-Form elements in NeoAbs follow the glass aesthetic. Inputs, textareas, and selects use translucent backgrounds with subtle borders.
+NeoAbs form elements use translucent glass backgrounds with subtle borders.
+Labels are mono uppercase; inputs, textareas, and selects share a consistent
+look. Validation states add colored borders paired with hint text.
 
-!!! note
-    The `.neoabs-input` and `.neoabs-label` classes are implemented in the theme. The `.neoabs-textarea`, `.neoabs-select`, `.neoabs-hint`, and `.neoabs-form` classes shown below are part of the design system specification. Add them to your custom CSS if needed.
+!!! tip
+    Form controls are interactive out of the box via `initUIExamples()`: submitting
+    a form fires a success or error toast, and pressing <kbd>Enter</kbd> or changing
+    an input/select fires a toast confirming the action.
 
 ## Text input
 
+<div class="neoabs-form">
+  <div>
+    <label class="neoabs-label">Full name</label>
+    <input type="text" class="neoabs-input" placeholder="Jane Doe" />
+  </div>
+</div>
+
 ```html
-<input type="text" class="neoabs-input" placeholder="Enter text..." />
-```
-
-```css
-.neoabs-input {
-  font-family: var(--neoabs-font-display);
-  font-size: var(--neoabs-text-sm);
-  padding: 0.6rem 0.85rem;
-  background: var(--neoabs-glass-light);
-  border: 1px solid var(--neoabs-ghost-strong);
-  border-radius: 8px;
-  color: var(--neoabs-ink);
-  outline: none;
-  transition: border-color 0.2s ease;
-  width: 100%;
-}
-
-.neoabs-input::placeholder {
-  color: var(--neoabs-ink-muted);
-  opacity: 0.6;
-}
-
-.neoabs-input:focus {
-  border-color: var(--neoabs-accent);
-}
+<label class="neoabs-label">Full name</label>
+<input type="text" class="neoabs-input" placeholder="Jane Doe" />
 ```
 
 ## Textarea
 
+<div class="neoabs-form">
+  <div>
+    <label class="neoabs-label">Message</label>
+    <textarea class="neoabs-textarea" placeholder="Write something..."></textarea>
+  </div>
+</div>
+
 ```html
-<textarea class="neoabs-textarea" rows="4" placeholder="Write something..."></textarea>
-```
-
-```css
-.neoabs-textarea {
-  font-family: var(--neoabs-font-display);
-  font-size: var(--neoabs-text-sm);
-  padding: 0.75rem 0.85rem;
-  background: var(--neoabs-glass-light);
-  border: 1px solid var(--neoabs-ghost-strong);
-  border-radius: 8px;
-  color: var(--neoabs-ink);
-  resize: vertical;
-  min-height: 100px;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.neoabs-textarea:focus {
-  border-color: var(--neoabs-accent);
-}
+<label class="neoabs-label">Message</label>
+<textarea class="neoabs-textarea" placeholder="Write something..."></textarea>
 ```
 
 ## Select
 
+<div class="neoabs-form">
+  <div>
+    <label class="neoabs-label">Priority</label>
+    <select class="neoabs-select">
+      <option>Low</option>
+      <option>Medium</option>
+      <option>High</option>
+    </select>
+  </div>
+</div>
+
 ```html
+<label class="neoabs-label">Priority</label>
 <select class="neoabs-select">
-  <option>Option one</option>
-  <option>Option two</option>
-  <option>Option three</option>
+  <option>Low</option>
+  <option>Medium</option>
+  <option>High</option>
 </select>
-```
-
-```css
-.neoabs-select {
-  font-family: var(--neoabs-font-display);
-  font-size: var(--neoabs-text-sm);
-  padding: 0.6rem 2rem 0.6rem 0.85rem;
-  background: var(--neoabs-glass-light);
-  border: 1px solid var(--neoabs-ghost-strong);
-  border-radius: 8px;
-  color: var(--neoabs-ink);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg ...");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  outline: none;
-  cursor: pointer;
-}
-
-.neoabs-select:focus {
-  border-color: var(--neoabs-accent);
-}
-```
-
-!!! tip
-    Use `appearance: none` and a custom SVG arrow to keep the select consistent across browsers. Native select styling varies heavily.
-
-## Labels
-
-Pair inputs with labels using the mono uppercase style:
-
-```html
-<label class="neoabs-label">Email address</label>
-<input type="email" class="neoabs-input" />
-```
-
-```css
-.neoabs-label {
-  display: block;
-  font-family: var(--neoabs-font-mono);
-  font-size: var(--neoabs-text-xs);
-  text-transform: uppercase;
-  letter-spacing: var(--neoabs-tracking-widest);
-  color: var(--neoabs-ink-muted);
-  margin-bottom: 0.35rem;
-}
 ```
 
 ## Validation states
 
-```css
-.neoabs-input--error {
-  border-color: var(--neoabs-error);
-}
+Add `--error` or `--success` modifier classes to inputs and textareas.
+Always pair color with a hint so the meaning is clear without relying on color alone.
 
-.neoabs-input--success {
-  border-color: var(--neoabs-success);
-}
-```
+<div class="neoabs-form">
+  <div>
+    <label class="neoabs-label">Username</label>
+    <input type="text" class="neoabs-input neoabs-input--error" value="ab" />
+    <span class="neoabs-hint neoabs-hint--error">Minimum 3 characters</span>
+  </div>
+  <div>
+    <label class="neoabs-label">Email</label>
+    <input type="email" class="neoabs-input neoabs-input--success" value="jane@example.com" />
+    <span class="neoabs-hint neoabs-hint--success">Email looks good</span>
+  </div>
+</div>
 
 ```html
 <label class="neoabs-label">Username</label>
 <input type="text" class="neoabs-input neoabs-input--error" value="ab" />
 <span class="neoabs-hint neoabs-hint--error">Minimum 3 characters</span>
+
+<label class="neoabs-label">Email</label>
+<input type="email" class="neoabs-input neoabs-input--success" value="jane@example.com" />
+<span class="neoabs-hint neoabs-hint--success">Email looks good</span>
 ```
 
-!!! warning
-    Validation colors should always be paired with text hints. Color alone is not sufficient to communicate errors.
+## Full form
 
-## Form layout
+A complete form using vertical flex layout with consistent spacing. It is a real `<form>` — try submitting it empty to see validation in action.
 
-Use a vertical stack with consistent spacing:
-
-```css
-.neoabs-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  max-width: 480px;
-}
-```
+<form class="neoabs-form" novalidate>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-name">Name</label>
+    <input type="text" id="f-name" class="neoabs-input" placeholder="Jane Doe" required />
+    <span class="neoabs-hint neoabs-hint--error" hidden>Name is required</span>
+  </div>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-email">Email</label>
+    <input type="email" id="f-email" class="neoabs-input" placeholder="jane@example.com" required />
+    <span class="neoabs-hint neoabs-hint--error" hidden>Email is required</span>
+  </div>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-role">Role</label>
+    <select class="neoabs-select" id="f-role">
+      <option>Designer</option>
+      <option>Engineer</option>
+      <option>Manager</option>
+    </select>
+  </div>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-notes">Notes</label>
+    <textarea class="neoabs-textarea" id="f-notes" placeholder="Anything else..."></textarea>
+  </div>
+  <button class="neoabs-btn neoabs-btn--pill neoabs-form__submit" type="submit">Submit</button>
+</form>
 
 ```html
-<form class="neoabs-form">
-  <div>
-    <label class="neoabs-label">Name</label>
-    <input type="text" class="neoabs-input" />
+<form class="neoabs-form" novalidate>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-name">Name</label>
+    <input type="text" id="f-name" class="neoabs-input" placeholder="Jane Doe" required />
+    <span class="neoabs-hint neoabs-hint--error" hidden>Name is required</span>
   </div>
-  <div>
-    <label class="neoabs-label">Email</label>
-    <input type="email" class="neoabs-input" />
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-email">Email</label>
+    <input type="email" id="f-email" class="neoabs-input" placeholder="jane@example.com" required />
+    <span class="neoabs-hint neoabs-hint--error" hidden>Email is required</span>
   </div>
-  <button class="neoabs-btn" type="submit">Submit</button>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-role">Role</label>
+    <select class="neoabs-select" id="f-role">
+      <option>Designer</option>
+      <option>Engineer</option>
+      <option>Manager</option>
+    </select>
+  </div>
+  <div class="neoabs-field">
+    <label class="neoabs-label" for="f-notes">Notes</label>
+    <textarea class="neoabs-textarea" id="f-notes" placeholder="Anything else..."></textarea>
+  </div>
+  <button class="neoabs-btn neoabs-btn--pill neoabs-form__submit" type="submit">Submit</button>
 </form>
 ```
 
-!!! note
-    Forms inside glass cards inherit the card's background. The inputs sit on top with their own lighter glass layer, creating a readable stack.
+The `initUIExamples()` initializer handles the submit: it validates any `[required]` field, toggling the `--error` class and showing the paired error hint when empty. The submit button turns green (`.neoabs-form--valid`) when everything is filled in.
