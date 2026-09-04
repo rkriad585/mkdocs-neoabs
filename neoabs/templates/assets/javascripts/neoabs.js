@@ -527,7 +527,13 @@
     const tCopy = t.copy || "Copy to clipboard"
     const tCopied = t.copied || "Copied to clipboard"
 
-    const blocks = $$(".highlight pre, .codehilite pre, .neoabs-code pre")
+    // Match both Pygments markup forms:
+    //   newer: <div class="highlight"><pre>...    -> ".highlight pre"
+    //   older: <pre class="highlight">...         -> "pre.highlight"
+    const blocks = $$(
+      ".highlight pre, .codehilite pre, .neoabs-code pre, " +
+      "pre.highlight, pre.codehilite, pre.neoabs-code"
+    )
     blocks.forEach((pre) => {
       const wrapper = pre.closest(".highlight, .codehilite, .neoabs-code") || pre.parentNode
       if (!wrapper) return

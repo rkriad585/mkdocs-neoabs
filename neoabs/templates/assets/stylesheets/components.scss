@@ -2364,7 +2364,13 @@ $neoabs-breakpoint-mobile: 768px;
 	background: rgba(0, 0, 0, 0.03);
 }
 
-.highlight pre {
+// Match both Pygments markup forms:
+//   newer: <div class="highlight"><pre>...   -> ".highlight pre"
+//   older: <pre class="highlight">...        -> "pre.highlight"
+.highlight pre,
+pre.highlight,
+pre.codehilite,
+pre.neoabs-code {
 	margin: 0;
 	padding: var(--neoabs-space-4);
 	font-family: var(--neoabs-font-mono);
