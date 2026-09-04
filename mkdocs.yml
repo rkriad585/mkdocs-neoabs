@@ -40,6 +40,9 @@ theme:
     animation: normal
     border: thin
 
+extra:
+  neoabs_logo_url: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
+
 plugins:
   - search
   - neoabs

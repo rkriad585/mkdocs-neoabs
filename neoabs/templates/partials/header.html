@@ -12,11 +12,17 @@
     </div>
 
     <div class="neoabs-header__center">
+      {% set _brand = config.site_name | replace(" Documentation", "") | replace(" Docs", "") %}
+      {% set _logo_src = config.extra.neoabs_logo_url | default(config.theme.logo, true) %}
       <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__brand" title="{{ config.site_name }}">
-        {% if config.theme.logo %}
-        <img src="{{ config.theme.logo | url }}" alt="{{ config.site_name }}" width="26" height="26" class="neoabs-header__brand-logo">
+        {% if _logo_src %}
+        {% if _logo_src.startswith("http") %}
+        <img src="{{ _logo_src }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo">
+        {% else %}
+        <img src="{{ _logo_src | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo">
         {% endif %}
-        <span class="neoabs-header__site-name">{{ config.site_name }}</span>
+        {% endif %}
+        <span class="neoabs-header__site-name">{{ _brand }}</span>
       </a>
     </div>
 
