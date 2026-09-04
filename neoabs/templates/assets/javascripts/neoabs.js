@@ -19,12 +19,52 @@
     try { localStorage.setItem(STORAGE_PREFIX + key, value) } catch {}
   }
 
+  // ---------------------------------------------------------------------------
+  // Generic cache with TTL (stored in localStorage)
+  // ---------------------------------------------------------------------------
+
+  const CACHE_PREFIX = "neoabs-cache-"
+
+  function cacheGet(key, maxAgeMs) {
+    try {
+      var raw = localStorage.getItem(CACHE_PREFIX + key)
+      if (!raw) return null
+      var entry = JSON.parse(raw)
+      if (Date.now() - entry.ts > maxAgeMs) {
+        localStorage.removeItem(CACHE_PREFIX + key)
+        return null
+      }
+      return entry.data
+    } catch { return null }
+  }
+
+  function cacheSet(key, data) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ ts: Date.now(), data: data }))
+    } catch {}
+  }
+
+  function cacheRemove(key) {
+    try { localStorage.removeItem(CACHE_PREFIX + key) } catch {}
+  }
+
+  function cacheClear() {
+    try {
+      var keys = []
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i)
+        if (k && k.indexOf(CACHE_PREFIX) === 0) keys.push(k)
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k) })
+    } catch {}
+  }
+
   function onReady(fn) {
     if (document.readyState !== "loading") fn()
     else document.addEventListener("DOMContentLoaded", fn)
   }
 
-  // Lazy-load an external script exactly once; onload/onerror are optional.
+  // Lazy-load an external script exactly once; deduplicates concurrent requests.
   function ensureScript(src, onload, onerror) {
     if (document.querySelector('script[src="' + src + '"]')) {
       if (onload) onload()
@@ -37,7 +77,7 @@
     }
     window._neoabsScriptsLoaded = window._neoabsScriptsLoaded || []
     window._neoabsScriptsLoaded.push(src)
-    const s = document.createElement("script")
+    var s = document.createElement("script")
     s.src = src
     s.async = true
     s.defer = true
@@ -123,7 +163,23 @@
     })
     updatePaletteIconVisibility()
     syncHighlightTheme(scheme)
+    syncFavicon(scheme)
     if (typeof _mermaidGenericInit === "function") _mermaidGenericInit()
+  }
+
+  // Swap the active favicon to match the current color scheme.
+  function syncFavicon(scheme) {
+    var link = document.getElementById("neoabs-favicon")
+    if (!link) return
+    var dark = link.getAttribute("data-md-favicon-dark")
+    var light = link.getAttribute("data-md-favicon-light")
+    // If no per-scheme favicons configured, nothing to do.
+    if (!dark) return
+    var isLight = scheme === "default" || scheme === "light"
+    var target = isLight && light ? light : dark
+    if (target && link.getAttribute("href") !== target) {
+      link.setAttribute("href", target)
+    }
   }
 
   // Toggle the active highlight.js theme stylesheet to match the scheme.
@@ -436,7 +492,6 @@
     const tocLinks = $$(".neoabs-toc__link")
     const headings = $$(".neoabs-content h2, .neoabs-content h3, .neoabs-content h4")
     if (!tocLinks.length || !headings.length) return
-
     const linkMap = {}
     tocLinks.forEach((link) => {
       const href = link.getAttribute("href")
@@ -463,8 +518,11 @@
         activeLink = null
       }
     }
+    window._neoabsTocDeactivate = deactivateAll
 
+    // Re-create the observer each time so it tracks the current page's headings.
     if ("IntersectionObserver" in window) {
+      if (window._neoabsTocObserver) window._neoabsTocObserver.disconnect()
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -473,20 +531,21 @@
         },
         { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
       )
+      window._neoabsTocObserver = observer
       headings.forEach((h) => { if (h.id) observer.observe(h) })
 
-      let ticking = false
-      window.addEventListener("scroll", () => {
-        if (ticking) return
-        ticking = true
-        requestAnimationFrame(() => {
-          const lastHeading = headings[headings.length - 1]
-          if (lastHeading && lastHeading.getBoundingClientRect().bottom < 0) {
-            deactivateAll()
-          }
-          ticking = false
-        })
-      }, { passive: true })
+      // Wire the per-scroll check only once.
+      if (!window._neoabsTocScrollBound) {
+        window._neoabsTocScrollBound = true
+        window.addEventListener("scroll", () => {
+          if (window._neoabsTocTicking) return
+          window._neoabsTocTicking = true
+          requestAnimationFrame(() => {
+            if (window._neoabsTocDeactivate) window._neoabsTocDeactivate()
+            window._neoabsTocTicking = false
+          })
+        }, { passive: true })
+      }
     }
   }
 
@@ -1774,8 +1833,9 @@
     const slug = repoSlugFromUrl(config.repo_url || "")
     if (!slug || slug.host !== "github") return
 
-    let cached = null
     let loading = false
+    const cacheKey = "repo-" + slug.owner + "/" + slug.name
+    const cached = cacheGet(cacheKey, 3600000)  // 1 hour TTL
 
     // Popover root (created once, reused)
     let pop = document.createElement("div")
@@ -1886,8 +1946,7 @@
         const totalCommits = commits.total != null ? commits.total : null
         const latestTag = tags && tags[0] ? tags[0].name : null
 
-        cached = true
-        renderBody({
+        const repoData = {
           full_name: repo.full_name,
           description: repo.description,
           stargazers_count: repo.stargazers_count,
@@ -1909,7 +1968,9 @@
           commit_sha: commitSha,
           commit_date: commitDate,
           commit_msg: commitMsg
-        })
+        }
+        cacheSet(cacheKey, repoData)
+        renderBody(repoData)
         position()
       }).catch(function () {
         loading = false
@@ -1967,6 +2028,232 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 15. SPA-style client-side navigation
+  // ---------------------------------------------------------------------------
+
+  // Persist the config so per-page initializers can re-run after a swap.
+  let _navConfig = null
+
+  function initSPANavigation(config) {
+    _navConfig = config
+    const base = (config && config.base) || ""
+
+    const joinUrl = (b, p) => {
+      if (!p) return b
+      if (p.charAt(0) === "/") return p
+      if (b.length && b.charAt(b.length - 1) === "/") return b + p
+      return b + "/" + p
+    }
+
+    const samePageHash = (url) => {
+      const here = new URL(window.location.href)
+      return url.origin === here.origin &&
+             url.pathname.replace(/\/$/, "") === here.pathname.replace(/\/$/, "") &&
+             url.hash
+    }
+
+    function isNavigable(link) {
+      if (!link || link.hasAttribute("download")) return false
+      if (link.target && link.target !== "_self") return false
+      if (link.hostname && link.hostname !== window.location.hostname) return false
+      if (link.protocol && !/^https?:$/.test(link.protocol)) return false
+      const href = link.getAttribute("href")
+      if (!href || href.charAt(0) === "#") return false
+      if (href.indexOf("mailto:") === 0 || href.indexOf("tel:") === 0) return false
+      return true
+    }
+
+    function extract(html) {
+      const doc = new DOMParser().parseFromString(html, "text/html")
+      const pick = (sel) => {
+        const el = doc.querySelector(sel)
+        return el ? el.outerHTML : ""
+      }
+      return {
+        title: doc.title || "",
+        content: pick(".neoabs-article") || pick(".neoabs-content") || "",
+        toc: pick(".neoabs-toc") || "",
+        nav: pick(".neoabs-nav") || "",
+        footer: pick(".neoabs-footer") || "",
+        pageTitle: (doc.querySelector(".neoabs-header__page-title") || {}).innerHTML || "",
+        bodyClass: doc.body ? doc.body.className : ""
+      }
+    }
+
+    function applyPage(data) {
+      const article = $(".neoabs-article")
+      if (article && data.content) article.innerHTML = data.content
+      if (data.toc) {
+        const toc = $(".neoabs-toc")
+        if (toc) toc.outerHTML = data.toc
+        else {
+          const aside = document.createElement("div")
+          aside.innerHTML = data.toc
+          document.querySelector(".neoabs-layout").appendChild(aside.firstChild)
+        }
+      } else {
+        const toc = $(".neoabs-toc")
+        if (toc) toc.parentNode.removeChild(toc)
+      }
+      if (data.nav) {
+        const nav = $(".neoabs-nav")
+        if (nav) nav.outerHTML = data.nav
+      }
+      if (data.footer) {
+        const footer = $(".neoabs-footer")
+        if (footer) footer.outerHTML = data.footer
+      }
+      if (data.title) document.title = data.title
+      const pageTitle = $(".neoabs-header__page-title")
+      if (pageTitle && data.pageTitle) pageTitle.innerHTML = data.pageTitle
+    }
+
+    function reinitPageScoped() {
+      const inits = [
+        initTocTracking, initHighlighting, initMermaid,
+        () => initCopyButtons(_navConfig), initTabs, initTaskLists,
+        initUIExamples, () => initMath(_navConfig)
+      ]
+      inits.forEach(function (fn) {
+        try { fn() } catch (e) {}
+      })
+    }
+
+    // --- Scroll-position memory ----------------------------------------------
+    // Remember where the user left off on each page and restore it when they
+    // return (via browser back, SPA nav, or a fresh page load).
+
+    const SCROLL_CACHE_KEY = "neoabs-scroll-pos"
+
+    function pageKeyFromUrl(u) {
+      try {
+        const url = new URL(u, window.location.href)
+        return url.href.split("#")[0].replace(/\/$/, "")
+      } catch { return "" }
+    }
+
+    function readScrollPositions() {
+      try {
+        const raw = localStorage.getItem(SCROLL_CACHE_KEY)
+        return raw ? JSON.parse(raw) : {}
+      } catch { return {} }
+    }
+
+    function saveScrollPositions(map) {
+      try { localStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(map)) } catch {}
+    }
+
+    function saveCurrentScroll() {
+      const key = pageKeyFromUrl(window.location.href)
+      if (!key) return
+      const map = readScrollPositions()
+      map[key] = { y: window.scrollY || 0, x: window.scrollX || 0, at: Date.now() }
+      saveScrollPositions(map)
+    }
+
+    function restoreScroll(key) {
+      const map = readScrollPositions()
+      const pos = map[key]
+      if (pos && typeof pos.y === "number") {
+        window.scrollTo({ top: pos.y, left: pos.x || 0, behavior: "auto" })
+        updateScrollProgress()
+      } else {
+        window.scrollTo({ top: 0, behavior: "auto" })
+        updateScrollProgress()
+      }
+    }
+
+    // Throttled save while scrolling.
+    let _scrollSaveTimer = null
+    window.addEventListener("scroll", () => {
+      if (_scrollSaveTimer) return
+      _scrollSaveTimer = true
+      requestAnimationFrame(() => {
+        saveCurrentScroll()
+        _scrollSaveTimer = false
+      })
+    }, { passive: true })
+
+    // Save on beforeunload (full page navigation / tab close).
+    window.addEventListener("beforeunload", saveCurrentScroll)
+
+    // Expose an initial-restore hook used by the boot sequence.
+    window._neoabsRestoreScroll = function () {
+      restoreScroll(pageKeyFromUrl(window.location.href))
+    }
+
+    function navigateTo(url, push) {
+      if (!url) return
+      const target = new URL(url, window.location.href)
+      if (samePageHash(target)) {
+        const el = document.getElementById(decodeURIComponent(target.hash.slice(1)))
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+        if (push) history.pushState(null, "", target.pathname + target.hash)
+        else history.replaceState(null, "", target.pathname + target.hash)
+        return
+      }
+
+      // Save the current page's scroll position before leaving it.
+      saveCurrentScroll()
+      const targetKey = pageKeyFromUrl(target.href)
+
+      if (push) history.pushState(null, "", url)
+      else history.replaceState(null, "", url)
+
+      // Fetch the page body for client-side rendering
+      fetch(target.pathname + target.search, { headers: { "X-NeoAbs-SPA": "1" } })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status)
+          return r.text()
+        })
+        .then(function (html) {
+          applyPage(extract(html))
+          restoreScroll(targetKey)
+          reinitPageScoped()
+          closeNavOverlays()
+        })
+        .catch(function () {
+          // On failure, fall back to a normal full-page navigation.
+          window.location.href = url
+        })
+    }
+
+    // Update progress bar immediately after swapping content.
+    function updateScrollProgress() {
+      const progressBar = $(".neoabs-progress__bar")
+      if (!progressBar) return
+      const y = window.scrollY
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight
+      const pct = docHeight > 0 ? Math.min((y / docHeight) * 100, 100) : 0
+      progressBar.style.width = pct + "%"
+    }
+
+    // Close any open mobile drawer / overlays after navigation.
+    function closeNavOverlays() {
+      const drawer = document.getElementById("neoabs-drawer")
+      if (drawer && drawer.checked) drawer.checked = false
+      const nav = $(".neoabs-nav")
+      if (nav) nav.classList.remove("neoabs-nav--open")
+      document.body.style.overflow = ""
+    }
+
+    // Intercept internal link clicks.
+    document.addEventListener("click", (e) => {
+      if (e.defaultPrevented) return
+      if (e.button !== 0 && e.metaKey && e.ctrlKey) return
+      const link = e.target.closest("a")
+      if (!link || !isNavigable(link)) return
+      e.preventDefault()
+      navigateTo(link.href, true)
+    })
+
+    // Back / forward.
+    window.addEventListener("popstate", () => {
+      navigateTo(window.location.href, false)
+    })
+  }
+
+  // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
 
@@ -1981,10 +2268,22 @@
       () => initCopyButtons(config), initTabs, initTaskLists,
       () => initNotes(config), initAnchorLinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
-      () => initMath(config), () => initRepoPopover(config)]
+      () => initMath(config), () => initRepoPopover(config),
+      () => initSPANavigation(config)]
     init.forEach(function (fn) {
       try { fn() } catch (e) { /* keep booting */ }
     })
+
+    // Restore the remembered scroll position for the initial page.
+    // Runs after layout; `scrollRestorePage()` is exposed by initSPANavigation.
+    if (typeof window._neoabsRestoreScroll === "function") {
+      const doRestore = () => window._neoabsRestoreScroll()
+      if (document.readyState === "complete") doRestore()
+      else window.addEventListener("load", function onLoad() {
+        window.removeEventListener("load", onLoad)
+        doRestore()
+      })
+    }
   })
 })()
 
