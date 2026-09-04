@@ -339,20 +339,21 @@ $neoabs-breakpoint-mobile: 768px;
 	}
 }
 
-// Search button in header
+// Search button in header (square, expands to reveal label on hover)
 .neoabs-header__search {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
+	min-width: 36px;
 	height: 36px;
-	padding: 0;
+	padding: 0 8px;
 	color: var(--neoabs-text-primary);
 	background: transparent;
 	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
-	border-radius: var(--neoabs-radius-pill);
+	border-radius: var(--neoabs-radius-md);
 	cursor: pointer;
-	transition: background var(--neoabs-transition-fast);
+	transition: background var(--neoabs-transition-fast),
+	            padding var(--neoabs-transition-fast);
 
 	&:hover {
 		background: var(--neoabs-ghost);
@@ -374,22 +375,61 @@ $neoabs-breakpoint-mobile: 768px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
+	min-width: 36px;
 	height: 36px;
-	padding: 0;
+	padding: 0 8px;
 	color: var(--neoabs-text-secondary);
 	background: transparent;
 	border: var(--neoabs-border-width, 1px) solid transparent;
-	border-radius: var(--neoabs-radius-pill);
+	border-radius: var(--neoabs-radius-md);
 	transition: color var(--neoabs-transition-fast),
 	            background var(--neoabs-transition-fast),
 	            border-color var(--neoabs-transition-fast);
 }
 
 .neoabs-header__repo-icon {
-	width: 18px;
-	height: 18px;
+	width: 20px;
+	height: 20px;
 	fill: currentColor;
+}
+
+// Unify all header control icon glyphs (palette, search, repo) to 20px
+.neoabs-header__search svg,
+.neoabs-header__repo svg,
+.neoabs-palette__icon svg {
+	width: 20px;
+	height: 20px;
+}
+
+// Shared hover label shown inside square header controls
+.neoabs-header__btn-label {
+	display: inline-block;
+	max-width: 0;
+	width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	opacity: 0;
+	margin-left: 0;
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: inherit;
+	transition: max-width var(--neoabs-transition-fast),
+	            opacity var(--neoabs-transition-fast),
+	            margin-left var(--neoabs-transition-fast);
+}
+
+.neoabs-header__search:hover .neoabs-header__btn-label,
+.neoabs-header__search:focus-visible .neoabs-header__btn-label,
+.neoabs-header__repo:hover .neoabs-header__btn-label,
+.neoabs-header__repo:focus-visible .neoabs-header__btn-label,
+.neoabs-palette__option:hover .neoabs-header__btn-label,
+.neoabs-palette__option:focus .neoabs-header__btn-label {
+	max-width: 140px;
+	width: auto;
+	opacity: 1;
+	margin-left: var(--neoabs-space-2);
 }
 
 .neoabs-header__repo:hover .neoabs-header__repo-badge,
@@ -3099,13 +3139,13 @@ tbody tr {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
+	min-width: 36px;
 	height: 36px;
-	padding: 0;
+	padding: 0 8px;
 	color: var(--neoabs-text-muted);
 	background: transparent;
 	border: 1px solid transparent;
-	border-radius: var(--neoabs-radius-pill);
+	border-radius: var(--neoabs-radius-md);
 	cursor: pointer;
 	transition: color var(--neoabs-transition-fast),
 	            background var(--neoabs-transition-fast),
@@ -4338,5 +4378,149 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 	&--error {
 		color: var(--neoabs-accent);
 		border-color: var(--neoabs-accent);
+	}
+}
+
+// ============================================================================
+// Repo info popover
+// Shown on hover/focus of the header repo icon. Fetches live GitHub data.
+// ============================================================================
+
+.neoabs-repo-pop {
+	position: fixed;
+	z-index: var(--neoabs-z-popover, 1200);
+	width: 300px;
+	max-width: calc(100vw - var(--neoabs-space-6));
+	visibility: hidden;
+	opacity: 0;
+	transform: translateY(-6px);
+	pointer-events: none;
+	background: var(--neoabs-glass-bg-strong, rgba(18, 18, 22, 0.92));
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-lg);
+	box-shadow: var(--neoabs-shadow-lg, 0 16px 48px rgba(0, 0, 0, 0.5));
+	transition: opacity var(--neoabs-transition-fast),
+	            transform var(--neoabs-transition-fast),
+	            visibility var(--neoabs-transition-fast);
+
+	&--show {
+		visibility: visible;
+		opacity: 1;
+		transform: translateY(0);
+		pointer-events: auto;
+	}
+}
+
+.neoabs-repo-pop__head {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-3);
+	padding: var(--neoabs-space-4) var(--neoabs-space-5);
+	border-bottom: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+}
+
+.neoabs-repo-pop__avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	flex-shrink: 0;
+	font-family: var(--neoabs-font-display);
+	font-size: 16px;
+	font-weight: 700;
+	color: #fff;
+	background: var(--neoabs-accent);
+	border-radius: var(--neoabs-radius-md);
+}
+
+.neoabs-repo-pop__title {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.neoabs-repo-pop__name {
+	font-family: var(--neoabs-font-mono);
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--neoabs-text-primary);
+	text-decoration: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	&:hover {
+		color: var(--neoabs-accent);
+	}
+}
+
+.neoabs-repo-pop__desc {
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--neoabs-text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.neoabs-repo-pop__body {
+	padding: var(--neoabs-space-2) var(--neoabs-space-5) var(--neoabs-space-4);
+}
+
+.neoabs-repo-pop__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--neoabs-space-3);
+	padding: var(--neoabs-space-1) 0;
+	border-bottom: 1px solid var(--neoabs-glass-border);
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+.neoabs-repo-pop__k {
+	flex-shrink: 0;
+	color: var(--neoabs-text-muted);
+	text-transform: uppercase;
+	font-size: 10px;
+	letter-spacing: 0.06em;
+}
+
+.neoabs-repo-pop__v {
+	text-align: right;
+	color: var(--neoabs-text-primary);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 55%;
+
+	a {
+		color: var(--neoabs-accent);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-repo-pop {
+	background: rgba(255, 255, 255, 0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.neoabs-repo-pop {
+		transition: none;
 	}
 }

@@ -31,9 +31,10 @@
 
       {% if "search" in config.plugins %}
       <button type="button" class="neoabs-header__search" aria-label="Toggle search" aria-controls="neoabs-search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
         </svg>
+        <span class="neoabs-header__btn-label">Search</span>
       </button>
       {% endif %}
 
@@ -42,8 +43,7 @@
       {% set _repo_host = _repo_clean.split("/")[0] if "/" in _repo_clean else _repo_clean %}
       <a href="{{ config.repo_url }}" class="neoabs-header__repo" target="_blank" rel="noopener" title="{{ config.repo_name | default('Repository') }}">
         <span class="neoabs-header__repo-badge">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" class="neoabs-header__repo-icon">
-            {% if "github" in _repo_host %}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="neoabs-header__repo-icon">            {% if "github" in _repo_host %}
             <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
             {% elif "gitlab" in _repo_host %}
             <path d="M12 2l2.09 6.35h6.86l-5.55 4.02 2.12 6.35L12 14.66 6.48 18.72l2.12-6.35-5.55-4.02h6.86L12 2z"/>
@@ -57,6 +57,7 @@
             <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7.5a1.5 1.5 0 0 0-1.06.44L4.59 20.3A1 1 0 0 1 3 19.57V5zm3 0v3h12V5H6zm0 5v2h12v-2H6zm0 4v1h8v-1H6z"/>
             {% endif %}
           </svg>
+          <span class="neoabs-header__btn-label">{{ _repo_host | capitalize }}</span>
         </span>
       </a>
       {% endif %}

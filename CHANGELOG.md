@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Inline interactivity for `.neoabs-btn` (pressed feedback) and `.neoabs-form` (submit validation with `--error`/`--success` states) via `initUIExamples`
 - TOC toggle — `Ctrl/Cmd+Shift+T` hides/shows the "On this page" sidebar, persisted per user
 - Git platform logos in the header: GitHub, GitLab, Bitbucket, Gitea, Codeberg auto-detected from `repo_url`
+- Header controls (theme, search, repo) are now square and reveal a hover label; all icon glyphs standardized to 20px
+- GitHub repo popover on icon hover/focus — live fetch of author, stars, watchers, forks, open issues, language, license, default branch, total commits, latest tag, latest commit (sha/message/date), created/updated/pushed dates
 - Header now centers the project logo + site name and wraps the repo icon in a glass badge with theme-matched coloring
 - Trees component — ```` ```tree ```` project-structure code blocks rendered as a glass file-explorer card with dimmed comments (new `docs/components/trees.md`)
 - Styles for ```` ```tree ```` project-structure code blocks

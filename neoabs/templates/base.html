@@ -165,6 +165,7 @@
         "math": {
           "enabled": {{ config.extra.neoabs_math | default(true) | tojson }}
         },
+        "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {
             "copy": "Copy to clipboard",

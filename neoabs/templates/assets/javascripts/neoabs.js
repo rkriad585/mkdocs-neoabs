@@ -1721,6 +1721,227 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 14. Repo (GitHub) popover — fetch live repo info on hover
+  // ---------------------------------------------------------------------------
+
+  const REPO_API_BASE = "https://api.github.com/repos/"
+
+  function repoSlugFromUrl(url) {
+    if (!url) return null
+    const m = String(url)
+      .replace(/\.git$/, "")
+      .replace(/^git@/, "")
+      .replace("https://", "")
+      .replace("http://", "")
+      .replace("ssh://", "")
+      .split("/")
+    if (m.length < 2) return null
+    const host = m[0]
+    if (!/(github|gitlab|bitbucket|gitea)/.test(host)) return null
+    return {
+      host: host.split(".")[0],
+      owner: m[1],
+      name: (m[2] || "").replace(/\.git$/, "")
+    }
+  }
+
+  function fmtCount(n) {
+    if (isNaN(n)) return "0"
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M"
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k"
+    return String(n)
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "—"
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return "—"
+    return d.toLocaleDateString(undefined, {
+      year: "numeric", month: "short", day: "numeric"
+    })
+  }
+
+  function repoPopoverEscape(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  }
+
+  function initRepoPopover(config) {
+    if (config.repo === false || config.repo_url === "") return
+    const link = document.querySelector(".neoabs-header__repo")
+    if (!link) return
+    const slug = repoSlugFromUrl(config.repo_url || "")
+    if (!slug || slug.host !== "github") return
+
+    let cached = null
+    let loading = false
+
+    // Popover root (created once, reused)
+    let pop = document.createElement("div")
+    pop.className = "neoabs-repo-pop"
+    pop.setAttribute("role", "tooltip")
+    document.body.appendChild(pop)
+
+    const buildRows = function (rows) {
+      const out = rows.filter(function (r) { return r.v })
+        .map(function (r) {
+          return '<div class="neoabs-repo-pop__row">' +
+            '<span class="neoabs-repo-pop__k">' + repoPopoverEscape(r.k) + "</span>" +
+            '<span class="neoabs-repo-pop__v">' + r.v + "</span></div>"
+        }).join("")
+      return out
+    }
+
+    const renderError = function (msg) {
+      pop.innerHTML =
+        '<div class="neoabs-repo-pop__head">'
+        + '<span class="neoabs-repo-pop__name">' + repoPopoverEscape(slug.owner + "/" + slug.name) + "</span></div>"
+        + '<div class="neoabs-repo-pop__body">'
+        + '<div class="neoabs-repo-pop__row"><span class="neoabs-repo-pop__k">Status</span>'
+        + '<span class="neoabs-repo-pop__v">' + repoPopoverEscape(msg || "No public data") + "</span></div></div>"
+    }
+
+    const show = function (x, y) {
+      const pad = 6
+      const rect = pop.getBoundingClientRect()
+      let left = x - rect.width / 2
+      left = Math.max(pad, Math.min(left, window.innerWidth - rect.width - pad))
+      let top = y + 10
+      pop.style.left = left + "px"
+      pop.style.top = top + "px"
+      pop.classList.add("neoabs-repo-pop--show")
+    }
+
+    const position = function () {
+      const r = link.getBoundingClientRect()
+      const rect = pop.getBoundingClientRect()
+      const pad = 6
+      let left = r.left + r.width / 2 - rect.width / 2
+      left = Math.max(pad, Math.min(left, window.innerWidth - rect.width - pad))
+      let top = r.bottom + 10
+      if (top + rect.height > window.innerHeight - pad) {
+        top = r.top - rect.height - 10
+      }
+      pop.style.left = left + "px"
+      pop.style.top = top + "px"
+    }
+
+    const hide = function () {
+      pop.classList.remove("neoabs-repo-pop--show")
+    }
+
+    const loadAndShow = function () {
+      position()
+      pop.classList.add("neoabs-repo-pop--show")
+      if (cached) { renderBody(cached); position(); return }
+      if (loading) return
+      loading = true
+
+      const api = REPO_API_BASE + slug.owner + "/" + slug.name
+      Promise.all([
+        fetch(api).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status)
+          return r.json()
+        }),
+        fetch(api + "/tags?per_page=1").then(function (r) {
+          return r.ok ? r.json() : []
+        }).catch(function () { return [] }),
+        fetch(api + "/commits?per_page=1").then(function (r) {
+          const last = r.headers.get("Link")
+          let total = null
+          if (last) {
+            const m = last.match(/per_page=(\d+)&page=(\d+)>;\s*rel="last"/)
+            if (m) total = parseInt(m[1], 10) * parseInt(m[2], 10)
+          }
+          return r.ok ? r.json().then(function (list) {
+            return { total: total, latest: list[0] || null }
+          }) : { total: null, latest: null }
+        }).catch(function () { return { total: null, latest: null } })
+      ]).then(function (results) {
+        const repo = results[0]
+        const tags = results[1]
+        const commits = results[2]
+
+        const latestCommit = commits.latest
+        const commitSha = latestCommit ? latestCommit.sha.slice(0, 7) : null
+        const commitDate = latestCommit && latestCommit.commit
+          ? fmtDate(latestCommit.commit.author && latestCommit.commit.author.date)
+          : "—"
+        const commitMsg = latestCommit && latestCommit.commit
+          ? (latestCommit.commit.message || "").split("\n")[0] : null
+        const totalCommits = commits.total != null ? commits.total : null
+        const latestTag = tags && tags[0] ? tags[0].name : null
+
+        cached = true
+        renderBody({
+          full_name: repo.full_name,
+          description: repo.description,
+          stargazers_count: repo.stargazers_count,
+          watchers_count: repo.subscribers_count || repo.watchers_count,
+          forks_count: repo.forks_count,
+          open_issues_count: repo.open_issues_count,
+          created_at: repo.created_at,
+          updated_at: repo.updated_at,
+          pushed_at: repo.pushed_at,
+          language: repo.language,
+          license: repo.license ? repo.license.spdx_id : null,
+          default_branch: repo.default_branch,
+          html_url: repo.html_url,
+          total_commits: totalCommits,
+          latest_tag: latestTag,
+          commit_sha: commitSha,
+          commit_date: commitDate,
+          commit_msg: commitMsg
+        })
+        position()
+      }).catch(function () {
+        loading = false
+        renderError("Unable to load repo data")
+        position()
+      })
+    }
+
+    const owner = slug.owner
+    const renderBody = function (d) {
+      const ownerBlock = d.full_name ? d.full_name.split("/")[0] : owner
+      pop.innerHTML =
+        '<div class="neoabs-repo-pop__head">'
+        + '<span class="neoabs-repo-pop__avatar">' + repoPopoverEscape((ownerBlock[0] || "R").toUpperCase()) + "</span>"
+        + '<span class="neoabs-repo-pop__title">'
+        + '<a class="neoabs-repo-pop__name" href="' + repoPopoverEscape(d.html_url || "#") + '" target="_blank" rel="noopener">'
+        + repoPopoverEscape(d.full_name || owner + "/" + slug.name) + "</a>"
+        + (d.description ? '<span class="neoabs-repo-pop__desc">' + repoPopoverEscape(d.description) + "</span>" : "")
+        + "</span></div>"
+        + '<div class="neoabs-repo-pop__body">'
+        + buildRows([
+          { k: "Author", v: '<a href="' + repoPopoverEscape("https://github.com/" + ownerBlock) + '" target="_blank" rel="noopener">' + repoPopoverEscape(ownerBlock) + "</a>" },
+          { k: "Stars", v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
+          { k: "Watchers", v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
+          { k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
+          { k: "Open issues", v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
+          { k: "Language", v: d.language || "—" },
+          { k: "License", v: d.license || "—" },
+          { k: "Default branch", v: d.default_branch || "—" },
+          { k: "Commits", v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
+          { k: "Tags", v: d.latest_tag ? "latest " + repoPopoverEscape(d.latest_tag) : "—" },
+          { k: "Latest commit", v: (d.commit_sha ? d.commit_sha : "—") + (d.commit_date ? " · " + d.commit_date : "") },
+          { k: "Last commit msg", v: d.commit_msg ? repoPopoverEscape(d.commit_msg) : "—" },
+          { k: "Created", v: fmtDate(d.created_at) },
+          { k: "Last updated", v: fmtDate(d.updated_at) },
+          { k: "Last pushed", v: fmtDate(d.pushed_at) }
+        ])
+        + "</div>"
+    }
+
+    // Hover / focus to open; leave / blur to close.
+    link.addEventListener("mouseenter", loadAndShow)
+    link.addEventListener("mouseleave", hide)
+    link.addEventListener("focus", loadAndShow)
+    link.addEventListener("blur", hide)
+  }
+
+  // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
 
@@ -1735,7 +1956,7 @@
       () => initCopyButtons(config), initTabs, initTaskLists,
       () => initNotes(config), initAnchorLinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
-      () => initMath(config)]
+      () => initMath(config), () => initRepoPopover(config)]
     init.forEach(function (fn) {
       try { fn() } catch (e) { /* keep booting */ }
     })
