@@ -40,6 +40,7 @@ neoabs = "neoabs.plugins.neoabs_plugin:NeoAbsPlugin"
 
 [tool.hatch.build.targets.wheel]
 include = ["/neoabs"]
+exclude = ["neoabs/templates/assets/stylesheets/*.scss"]
 
 [tool.hatch.build.targets.sdist]
 include = ["/neoabs", "/package.json", "/requirements.txt"]

@@ -2,7 +2,7 @@
 <script>
 (function() {
   try {
-    var scheme = JSON.parse(localStorage.getItem("neoabs-color-scheme"));
+    var scheme = localStorage.getItem("neoabs-color-scheme");
     if (scheme) {
       document.documentElement.setAttribute("data-md-color-scheme", scheme);
     } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {

@@ -165,28 +165,110 @@
     const checkbox = document.getElementById("neoabs-search")
     const searchEl = $(".neoabs-search")
     const input = $(".neoabs-search__input")
-    const resultsInner = $(".neoabs-search__results-inner")
-    const noResults = $(".neoabs-search__no-results")
+    const statusEl = $(".neoabs-search__status")
+    const listEl = $(".neoabs-search__list")
     const closeBtn = $(".neoabs-search__close")
-    if (!checkbox || !searchEl || !input) return
+    if (!checkbox || !searchEl || !input || !statusEl || !listEl) return
 
-    let activeResultIndex = -1
-    let searchIndex = null
-    let searchIndexLoaded = false
+    let searchTrigger = null
+    let minSearchLength = 2
+    let searchReady = false
+    let searchWorker = null
+    let activeIndex = -1
+    let currentResults = []
+    let searchToken = 0
+    let pendingQuery = 0
 
-    const t = (config && config.translations) || {}
-    const tSearch = t.search || {}
-    const tPlaceholder = tSearch.placeholder || "Search"
-    const tNoResults = tSearch.noResults || "No results found"
+    const base = (config && config.base) || "."
 
-    input.setAttribute("placeholder", tPlaceholder)
+    const joinUrl = (b, p) => {
+      if (!p) return b
+      if (p.charAt(0) === "/") return p
+      if (b.length && b.charAt(b.length - 1) === "/") return b + p
+      return b + "/" + p
+    }
+
+    const showStatus = (msg) => {
+      statusEl.style.display = ""
+      const p = statusEl.querySelector("p")
+      if (p) p.textContent = msg
+      listEl.innerHTML = ""
+      listEl.style.display = "none"
+      activeIndex = -1
+      currentResults = []
+      input.setAttribute("aria-activedescendant", "")
+    }
+
+    const showResults = () => {
+      statusEl.style.display = "none"
+      listEl.style.display = ""
+    }
+
+    function buildResults(results) {
+      const list = []
+      for (let i = 0; i < results.length; i++) {
+        const doc = results[i]
+        const href = joinUrl(base, doc.location || "")
+        const el = document.createElement("a")
+        el.className = "neoabs-search__result"
+        el.href = href
+        el.setAttribute("role", "option")
+        el.id = "neoabs-search-result-" + i
+
+        const title = document.createElement("div")
+        title.className = "neoabs-search__result-title"
+        title.textContent = doc.title || "Untitled"
+
+        const context = document.createElement("div")
+        context.className = "neoabs-search__result-context"
+        context.textContent = (doc.text || "").slice(0, 180)
+
+        el.appendChild(title)
+        el.appendChild(context)
+        list.push(el)
+      }
+      return list
+    }
+
+    function renderResults(results) {
+      currentResults = results
+      listEl.innerHTML = ""
+      if (!results.length) {
+        showStatus("No results found")
+        return
+      }
+      const items = buildResults(results)
+      items.forEach((item, i) => {
+        item.addEventListener("click", () => {
+          if (searchTrigger && typeof searchTrigger.focus === "function") searchTrigger.focus()
+        })
+        item.addEventListener("mousemove", () => setActive(i))
+        listEl.appendChild(item)
+      })
+      showResults()
+    }
+
+    function setActive(index) {
+      const items = $$(".neoabs-search__result", listEl)
+      if (!items.length) return
+      if (index < 0) index = items.length - 1
+      if (index >= items.length) index = 0
+      items.forEach((el) => el.classList.remove("neoabs-search__result--active"))
+      items[index].classList.add("neoabs-search__result--active")
+      activeIndex = index
+      input.setAttribute("aria-activedescendant", items[index].id)
+    }
 
     function openSearch() {
+      searchTrigger = document.activeElement
       checkbox.checked = true
       searchEl.classList.add("neoabs-search--active")
       searchEl.setAttribute("aria-hidden", "false")
       document.body.style.overflow = "hidden"
-      requestAnimationFrame(() => input.focus())
+      requestAnimationFrame(() => {
+        input.focus()
+        input.select()
+      })
     }
 
     function closeSearch() {
@@ -194,121 +276,51 @@
       searchEl.classList.remove("neoabs-search--active")
       searchEl.setAttribute("aria-hidden", "true")
       document.body.style.overflow = ""
-      clearTimeout(searchDebounce)
+      searchToken++
       input.value = ""
-      activeResultIndex = -1
-      clearResultHighlight()
-      if (resultsInner) resultsInner.innerHTML = ""
-      if (noResults) {
-        noResults.style.display = ""
-        const p = noResults.querySelector("p")
-        if (p) p.textContent = "Start typing to search..."
+      showStatus("Start typing to search...")
+      if (searchTrigger && typeof searchTrigger.focus === "function") {
+        searchTrigger.focus()
       }
+      searchTrigger = null
     }
 
-    function clearResultHighlight() {
-      $$(".neoabs-search__result--active", searchEl).forEach((el) => {
-        el.classList.remove("neoabs-search__result--active")
-      })
-    }
-
-    function highlightResult(index) {
-      const items = $$(".neoabs-search__result", searchEl)
-      if (!items.length) return
-      clearResultHighlight()
-      if (index < 0) index = items.length - 1
-      if (index >= items.length) index = 0
-      activeResultIndex = index
-      items[activeResultIndex].classList.add("neoabs-search__result--active")
-      items[activeResultIndex].scrollIntoView({ block: "nearest" })
-    }
-
-    function loadSearchIndex() {
-      if (searchIndexLoaded) return Promise.resolve(searchIndex)
-      const indexPath = (config && config.search) || "search/search_index.json"
-      return fetch(indexPath)
-        .then((resp) => {
-          if (!resp.ok) throw new Error("Search index not found")
-          return resp.json()
-        })
-        .then((data) => { searchIndex = data; searchIndexLoaded = true; return data })
-        .catch(() => { searchIndexLoaded = true; searchIndex = null; return null })
-    }
-
-    function performSearch(query) {
-      if (!query || query.length < 2) {
-        if (resultsInner) resultsInner.innerHTML = ""
-        if (noResults) {
-          noResults.style.display = ""
-          const p = noResults.querySelector("p")
-          if (p) p.textContent = "Start typing to search..."
-        }
+    function runSearch(query) {
+      const token = ++searchToken
+      if (!query || query.trim().length < minSearchLength) {
+        showStatus("Start typing to search...")
         return
       }
-
-      loadSearchIndex().then((index) => {
-        if (!index || !index.docs) {
-          if (resultsInner) resultsInner.innerHTML = ""
-          if (noResults) {
-            noResults.style.display = ""
-            const p = noResults.querySelector("p")
-            if (p) p.textContent = tNoResults
-          }
-          return
-        }
-
-        const q = query.toLowerCase()
-        const results = []
-        index.docs.forEach((doc) => {
-          const title = (doc.title || "").toLowerCase()
-          const text = (doc.text || "").toLowerCase()
-          if (title.includes(q) || text.includes(q)) results.push(doc)
-        })
-
-        if (results.length === 0) {
-          if (resultsInner) resultsInner.innerHTML = ""
-          if (noResults) {
-            noResults.style.display = ""
-            const p = noResults.querySelector("p")
-            if (p) p.textContent = tNoResults
-          }
-          return
-        }
-
-        if (noResults) noResults.style.display = "none"
-        activeResultIndex = -1
-
-        if (resultsInner) {
-          resultsInner.innerHTML = results
-            .slice(0, 10)
-            .map((doc) => {
-              let context = doc.text || ""
-              const idx = context.toLowerCase().indexOf(q)
-              if (idx >= 0) {
-                const start = Math.max(0, idx - 40)
-                const end = Math.min(context.length, idx + query.length + 60)
-                context = (start > 0 ? "..." : "") +
-                  escapeHtml(context.slice(start, idx)) +
-                  "<mark>" + escapeHtml(context.slice(idx, idx + query.length)) + "</mark>" +
-                  escapeHtml(context.slice(idx + query.length, end)) +
-                  (end < context.length ? "..." : "")
-              } else {
-                context = escapeHtml(context.slice(0, 100) + (context.length > 100 ? "..." : ""))
-              }
-
-              var href = doc.location ? new URL(doc.location, config && config.base || window.location.origin + "/").href : "#"
-
-              return (
-                '<a class="neoabs-search__result" href="' + href + '">' +
-                '<div class="neoabs-search__result-title">' + escapeHtml(doc.title || "Untitled") + "</div>" +
-                '<div class="neoabs-search__result-context">' + context + "</div>" +
-                "</a>"
-              )
-            })
-            .join("")
-        }
-      })
+      if (!searchReady || !searchWorker) {
+        showStatus("Loading search...")
+        return
+      }
+      pendingQuery = token
+      listEl.innerHTML = ""
+      listEl.style.display = ""
+      statusEl.style.display = "none"
+      activeIndex = -1
+      currentResults = []
+      searchWorker.postMessage({ query: query.trim() })
     }
+
+    searchWorker = new Worker(joinUrl(base, "search/worker.js"))
+    searchWorker.onmessage = (e) => {
+      const data = e.data
+      if (!data) return
+      if (data.config) {
+        if (typeof data.config.min_search_length === "number") {
+          minSearchLength = Math.max(1, data.config.min_search_length - 1)
+        }
+      } else if (data.allowSearch) {
+        searchReady = true
+      } else if (data.results) {
+        if (pendingQuery === 0) return
+        pendingQuery = 0
+        renderResults(data.results)
+      }
+    }
+    searchWorker.postMessage({ init: true })
 
     // Checkbox change — guard against double-fire from label toggle
     let lastToggleTime = 0
@@ -333,34 +345,53 @@
       }
     })
 
-    let searchDebounce = null
+    // Debounced query on input
+    let debounce = null
     input.addEventListener("input", () => {
-      clearTimeout(searchDebounce)
-      searchDebounce = setTimeout(() => {
-        performSearch(input.value.trim())
-      }, 200)
+      clearTimeout(debounce)
+      debounce = setTimeout(() => runSearch(input.value), 150)
     })
 
-    // Arrow key + Enter navigation in search results
+    // Keyboard navigation
     input.addEventListener("keydown", (e) => {
       if (e.key === "ArrowDown") {
         e.preventDefault()
-        highlightResult(activeResultIndex + 1)
+        setActive(activeIndex + 1)
       } else if (e.key === "ArrowUp") {
         e.preventDefault()
-        highlightResult(activeResultIndex - 1)
+        setActive(activeIndex - 1)
       } else if (e.key === "Enter") {
-        e.preventDefault()
-        const items = $$(".neoabs-search__result", searchEl)
-        if (activeResultIndex >= 0 && activeResultIndex < items.length) {
-          // The result item IS the <a> element — click it directly
-          items[activeResultIndex].click()
+        const items = $$(".neoabs-search__result", listEl)
+        if (activeIndex >= 0 && activeIndex < items.length) {
+          e.preventDefault()
+          items[activeIndex].click()
         }
       }
     })
 
     searchEl._neoabsOpen = openSearch
     searchEl._neoabsClose = closeSearch
+
+    // Trap tab focus within the search dialog while it is open (focus never
+    // escapes into the page behind the modal).
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab" || !checkbox.checked || !searchEl.classList.contains("neoabs-search--active")) return
+      const focusables = $$(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+        'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        searchEl
+      ).filter((el) => el.offsetParent !== null)
+      if (!focusables.length) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    })
   }
 
   // ---------------------------------------------------------------------------
@@ -389,7 +420,7 @@
       tocLinks.forEach((l) => l.classList.remove("neoabs-toc__link--active"))
       linkMap[id].classList.add("neoabs-toc__link--active")
       activeLink = linkMap[id]
-      activeLink.scrollIntoView({ block: "nearest", behavior: "smooth" })
+      activeLink.scrollIntoView({ block: "nearest", behavior: "auto" })
     }
 
     function deactivateAll() {
@@ -566,6 +597,15 @@
       target.scrollIntoView({ behavior: "smooth", block: "start" })
       history.pushState(null, "", href)
     })
+
+    // Restore the previous in-page scroll/highlight when the user navigates
+    // back with the browser's Back button.
+    window.addEventListener("popstate", () => {
+      const hash = window.location.hash
+      if (!hash) return
+      const target = document.getElementById(decodeURIComponent(hash.slice(1)))
+      if (target) target.scrollIntoView({ behavior: "auto", block: "start" })
+    })
   }
 
   // ---------------------------------------------------------------------------
@@ -707,6 +747,33 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 12b. Header Controls (keyboard-activatable drawer/search buttons)
+  // ---------------------------------------------------------------------------
+
+  function initHeaderControls() {
+    const drawerCheckbox = document.getElementById("neoabs-drawer")
+    const hamburger = $(".neoabs-header__hamburger")
+    if (drawerCheckbox && hamburger) {
+      const sync = () =>
+        hamburger.setAttribute("aria-expanded", String(drawerCheckbox.checked))
+      hamburger.addEventListener("click", () => {
+        if (drawerCheckbox._neoabsToggle) drawerCheckbox._neoabsToggle()
+        sync()
+      })
+      drawerCheckbox.addEventListener("change", sync)
+      sync()
+    }
+
+    const searchBtn = $(".neoabs-header__search")
+    if (searchBtn) {
+      searchBtn.addEventListener("click", () => {
+        const searchEl = $(".neoabs-search")
+        if (searchEl && searchEl._neoabsOpen) searchEl._neoabsOpen()
+      })
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
 
@@ -724,5 +791,6 @@
     initAnchorLinks()
     initKeyboardNav()
     initNavToggle()
+    initHeaderControls()
   })
 })()

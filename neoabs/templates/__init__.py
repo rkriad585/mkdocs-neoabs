@@ -17,29 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-
-import warnings
-
-
-# MkDocs 2.0 compatibility warning
-def is_mkdocs():
-    try:
-        import mkdocs
-
-        return True
-    except ImportError:
-        return False
-
-
-if is_mkdocs():
-    try:
-        from mkdocs import version_tuple
-
-        if version_tuple >= (2, 0):
-            warnings.warn(
-                "mkdocs-neoabs: MkDocs 2.0 introduced breaking changes. "
-                "Please refer to the migration guide.",
-                stacklevel=2,
-            )
-    except (ImportError, AttributeError):
-        pass

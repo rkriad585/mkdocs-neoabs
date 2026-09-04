@@ -1,7 +1,5 @@
-# MkDocs theme configuration
-theme:
-  name: neoabs
-  static_templates:
-    - 404.html
-  favicon: assets/images/favicon.svg
-  language: en
+# MkDocs theme configuration (flat mapping, as MkDocs expects)
+static_templates:
+  - 404.html
+favicon: assets/images/favicon.svg
+language: en

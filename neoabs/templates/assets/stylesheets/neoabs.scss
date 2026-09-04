@@ -15,20 +15,22 @@
   
   // Pure black canvas - NothingOS signature
   --neoabs-ink: #000000;
-  --neoabs-canvas: #ffffff;
   --neoabs-ghost: rgba(255, 255, 255, 0.06);
   --neoabs-ghost-strong: rgba(255, 255, 255, 0.12);
   
   // Text hierarchy - monochrome first
   --neoabs-text-primary: #ffffff;
   --neoabs-text-secondary: rgba(255, 255, 255, 0.7);
-  --neoabs-text-muted: #555555;
+  --neoabs-text-muted: #888888;
   --neoabs-text-accent: #ff3030;
   
   // Accent - Nothing Red (used sparingly)
   --neoabs-accent: #ff3030;
   --neoabs-accent-dim: rgba(255, 48, 48, 0.15);
   --neoabs-accent-glow: rgba(255, 48, 48, 0.3);
+  // Stronger accent for solid fills/buttons (passes WCAG AA with white text)
+  --neoabs-accent-strong: #c62828;
+  --neoabs-accent-strong-hover: #b71c1c;
   
   // Glass system - Glass
   --neoabs-glass-bg: rgba(255, 255, 255, 0.08);
@@ -90,6 +92,9 @@
   --neoabs-dot-size: 2px;
   --neoabs-dot-gap: 6px;
   --neoabs-dot-opacity: 0.03;
+
+  // Border system (configurable via neoabs.border)
+  --neoabs-border-width: 1px;
 }
 
 // ============================================================================
@@ -98,13 +103,12 @@
 
 [data-md-color-scheme="default"] {
   --neoabs-ink: #ffffff;
-  --neoabs-canvas: #000000;
   --neoabs-ghost: rgba(0, 0, 0, 0.04);
   --neoabs-ghost-strong: rgba(0, 0, 0, 0.08);
   
   --neoabs-text-primary: #000000;
   --neoabs-text-secondary: rgba(0, 0, 0, 0.7);
-  --neoabs-text-muted: #aaaaaa;
+  --neoabs-text-muted: #767676;
   
   --neoabs-glass-bg: rgba(0, 0, 0, 0.05);
   --neoabs-glass-bg-strong: rgba(0, 0, 0, 0.1);
@@ -189,12 +193,43 @@ body {
   line-height: 1.6;
 }
 
+// Anchor targets clear the fixed header when scrolled into view (native
+// hash navigation and JS-driven anchor/scrolling both benefit).
+[id] {
+  scroll-margin-top: calc(56px + var(--neoabs-space-3));
+}
+
 // Disable transitions for reduced motion
 @media (prefers-reduced-motion) {
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+// ============================================================================
+// THEME OPTION: ANIMATION
+// neoabs.animation = none disables all motion (unless user prefers reduced motion)
+// ============================================================================
+
+[data-md-neoabs-animation="none"] *,
+[data-md-neoabs-animation="none"] *::before,
+[data-md-neoabs-animation="none"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+// ============================================================================
+// THEME OPTION: BORDER
+// neoabs.border overrides the base border width used across components
+// ============================================================================
+
+[data-md-neoabs-border="thick"] {
+  --neoabs-border-width: 2px;
+}
+
+[data-md-neoabs-border="none"] {
+  --neoabs-border-width: 0px;
 }
 
 // ============================================================================
@@ -224,7 +259,7 @@ body {
   background: var(--neoabs-glass-bg);
   backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
   -webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
-  border: 1px solid var(--neoabs-glass-border);
+  border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
   border-radius: var(--neoabs-radius-md);
   box-shadow: var(--neoabs-shadow-glass);
 }
@@ -240,7 +275,7 @@ body {
   background: var(--neoabs-glass-bg);
   backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
   -webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
-  border: 1px solid var(--neoabs-glass-border);
+  border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
   border-radius: var(--neoabs-radius-lg);
   box-shadow: var(--neoabs-shadow-glass);
   transition: all var(--neoabs-transition-normal);
@@ -304,7 +339,7 @@ body {
   font-size: 14px;
   color: var(--neoabs-text-primary);
   background: var(--neoabs-glass-bg);
-  border: 1px solid var(--neoabs-glass-border);
+  border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
   border-radius: var(--neoabs-radius-md);
   outline: none;
   transition: all var(--neoabs-transition-fast);

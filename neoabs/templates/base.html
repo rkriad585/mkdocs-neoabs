@@ -11,7 +11,10 @@
       {% else %}
         {% set _scheme = "slate" %}
       {% endif %}
-      data-md-color-scheme="{{ _scheme }}">
+      data-md-color-scheme="{{ _scheme }}"
+      data-md-neoabs-glass="{{ config.extra.neoabs_glass if config.extra and config.extra.neoabs_glass else 'medium' }}"
+      data-md-neoabs-animation="{{ config.extra.neoabs_animation if config.extra and config.extra.neoabs_animation else 'normal' }}"
+      data-md-neoabs-border="{{ config.extra.neoabs_border if config.extra and config.extra.neoabs_border else 'thin' }}">
   <head>
     {% block site_meta %}
     <meta charset="utf-8">
@@ -37,6 +40,8 @@
     <title>
       {%- if page.meta and page.meta.title -%}
         {{ page.meta.title }} - {{ config.site_name }}
+      {%- elif page and page.title -%}
+        {{ page.title }} - {{ config.site_name }}
       {%- else -%}
         {{ config.site_name }}
       {%- endif -%}
@@ -77,6 +82,10 @@
 
   <body dir="{{ config.theme.direction | default('ltr') }}">
 
+    {% if config.extra.neoabs_dot_matrix %}
+    <div class="neoabs-dot-matrix" aria-hidden="true"></div>
+    {% endif %}
+
     {% block state_toggles %}
     <input class="neoabs-toggle neoabs-toggle--drawer" type="checkbox" id="neoabs-drawer" aria-label="Toggle navigation">
     <input class="neoabs-toggle neoabs-toggle--search" type="checkbox" id="neoabs-search" aria-label="Toggle search">
@@ -101,7 +110,7 @@
       {% endif %}
       {% endblock %}
 
-      <main class="neoabs-main" id="neoabs-content">
+      <main class="neoabs-main" id="neoabs-content" tabindex="-1">
         <article class="neoabs-article">
           {% block content %}
           <div class="neoabs-content" data-md-component="content">
@@ -114,7 +123,7 @@
       </main>
 
       {% block toc %}
-      {% if toc %}
+      {% if page and page.toc %}
       {% include "partials/toc.html" %}
       {% endif %}
       {% endblock %}
@@ -134,11 +143,11 @@
 
     {% block config %}
     <script>
-      var base_url = "{{ config.site_url | default(config.docs_dir, true) | url }}";
+      var base_url = "{{ base_url }}";
     </script>
     <script id="__config" type="application/json">
       {
-        "base": "{{ config.site_url | default(config.docs_dir, true) | url }}",
+        "base": "{{ base_url }}",
         "features": {{ config.theme.features | default([]) | tojson }},
         "translations": {
           "clipboard": {
@@ -148,7 +157,9 @@
           "search": {
             "placeholder": "Search",
             "results": "Results",
-            "noResults": "No results found"
+            "noResults": "No results found",
+            "startTyping": "Start typing to search...",
+            "loadError": "Search index could not be loaded."
           },
           "toc": {
             "backToTop": "Back to top"

@@ -34,7 +34,8 @@
       {% if config.copyright %}
       {{ config.copyright }}
       {% else %}
-      &copy; {{ now().strftime("%Y") }} {{ config.site_name }}
+      {% set _year = config.extra.neoabs_copyright_year if config.extra and config.extra.neoabs_copyright_year else "" %}
+      &copy; {{ _year }} {{ config.site_name }}
       {% endif %}
     </div>
   </div>

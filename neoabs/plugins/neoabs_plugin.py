@@ -1,37 +1,48 @@
 """NeoAbs theme plugin for MkDocs."""
 
+from datetime import datetime
+
 from mkdocs.plugins import BasePlugin
 
 
 class NeoAbsPlugin(BasePlugin):
     """Plugin that enhances the NeoAbs theme with additional context."""
 
+    _neoabs_defaults = {
+        "glass": "medium",
+        "dot_matrix": True,
+        "animation": "normal",
+        "border": "thin",
+    }
+
     def on_config(self, config, **kwargs):
-        theme = config.get("theme", {})
+        theme = config.get("theme") or {}
 
-        defaults = {
-            "language": "en",
-            "direction": "ltr",
-            "features": [],
-            "palette": [],
-            "font": {"text": "Space Grotesk", "code": "Space Mono"},
-            "neoabs": {
-                "glass": "medium",
-                "dot_matrix": True,
-                "animation": "normal",
-                "border": "thin",
-            },
-        }
+        neoabs = theme.get("neoabs") if "neoabs" in theme else {}
+        if not isinstance(neoabs, dict):
+            neoabs = {}
+        for key, value in self._neoabs_defaults.items():
+            neoabs.setdefault(key, value)
+        theme["neoabs"] = neoabs
 
-        for key, value in defaults.items():
-            if key not in theme:
-                theme[key] = value
+        # B2: inject current year for the footer copyright far from relying on a
+        # Jinja `now` global that MkDocs does not provide.
+        # C1-C3: surface the neoabs theme options to templates so they can be
+        # applied to the rendered output (glass, dot matrix, animation, border).
+        extra = config.get("extra") or {}
+        extra["neoabs_copyright_year"] = datetime.now().year
+        extra["neoabs_glass"] = neoabs["glass"]
+        extra["neoabs_dot_matrix"] = bool(neoabs["dot_matrix"])
+        extra["neoabs_animation"] = neoabs["animation"]
+        extra["neoabs_border"] = neoabs["border"]
+        config["extra"] = extra
 
-        if "neoabs" in theme and isinstance(theme["neoabs"], dict):
-            neoabs = theme["neoabs"]
-            for key, value in defaults["neoabs"].items():
-                if key not in neoabs:
-                    neoabs[key] = value
+        # Search: the built-in MkDocs `search` plugin injects `search/main.js`
+        # into `config.extra_javascript`. We drive its worker (`search/worker.js`
+        # + lunr index) directly from our own themed UI instead, so drop the stock
+        # main.js to avoid a second, incompatible search controller.
+        if "search" in config.get("plugins", []):
+            extra_js = config.get("extra_javascript") or []
+            config["extra_javascript"] = [p for p in extra_js if p != "search/main.js"]
 
-        config["theme"] = theme
         return config

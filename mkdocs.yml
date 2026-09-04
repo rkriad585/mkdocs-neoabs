@@ -67,7 +67,7 @@ nav:
   - Getting Started:
     - Installation: getting-started/installation.md
     - Configuration: getting-started/configuration.md
-    - Getting Started: getting-started.md
+    - Quick Start: getting-started.md
   - Design System:
     - Overview: design/overview.md
     - Colors: design/colors.md

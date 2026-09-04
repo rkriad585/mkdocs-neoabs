@@ -11,11 +11,11 @@ Glass morphism is the defining visual layer in NeoAbs. Every panel, card, and na
 A glass surface combines three properties:
 
 ```css
-.glass {
-  background: var(--neoabs-glass-medium);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  border: 1px solid var(--neoabs-ghost-strong);
+.neoabs-glass {
+  background: var(--neoabs-glass-bg);
+  backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+  -webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+  border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
 }
 ```
 
@@ -25,25 +25,25 @@ A glass surface combines three properties:
 
 ## Intensity levels
 
-NeoAbs provides three built-in intensity levels. Set globally with the `glass` theme option, or override per component.
+NeoAbs provides three built-in intensity levels. Set globally with the `neoabs.glass` theme option, or override per component.
 
 ### Light
 
 ```css
-.glass-light {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(6px) saturate(1.2);
+.neoabs-glass--light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px) saturate(1.0);
 }
 ```
 
 Minimal frosted effect. The background is barely visible. Use this for large surfaces where blur would be distracting -- footers, sidebars, full-width panels.
 
-### Medium
+### Medium (default)
 
 ```css
-.glass-medium {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(12px) saturate(1.4);
+.neoabs-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(1.2);
 }
 ```
 
@@ -52,9 +52,9 @@ The default. Balanced blur and transparency. Cards, navigation bars, and content
 ### Heavy
 
 ```css
-.glass-heavy {
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(20px) saturate(1.6);
+.neoabs-glass--heavy {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(30px) saturate(1.4);
 }
 ```
 
@@ -67,18 +67,18 @@ Strong frosted effect with pronounced separation. Use for modals, floating panel
 
 | Level   | Blur    | Saturation | Background opacity | Render cost |
 |---------|---------|------------|--------------------|-------------|
-| Light   | 6px     | 1.2        | 4%                 | Low         |
-| Medium  | 12px    | 1.4        | 7%                 | Medium      |
-| Heavy   | 20px    | 1.6        | 10%                | High        |
+| Light   | 10px    | 1.0        | 5%                 | Low         |
+| Medium  | 20px    | 1.2        | 8%                 | Medium      |
+| Heavy   | 30px    | 1.4        | 12%                | High        |
 
 ## Hover state
 
 Glass surfaces gain a slight brightness boost on hover:
 
 ```css
-.glass:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.15);
+.neoabs-card:hover {
+  background: var(--neoabs-glass-bg-strong);
+  border-color: var(--neoabs-glass-border-strong);
 }
 ```
 
@@ -100,7 +100,7 @@ Glass panels are most effective when content scrolls behind them. The navigation
 ## Accessibility
 
 - `backdrop-filter` does not affect screen readers
-- Contrast ratios are maintained by pairing glass backgrounds with the `--neoabs-ink` token
+- Contrast ratios are maintained by pairing glass backgrounds with the `--neoabs-text-*` tokens
 - Reduce-motion preferences are respected: animations tied to glass transitions are disabled when `prefers-reduced-motion: reduce` is active
 
 !!! note

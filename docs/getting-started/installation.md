@@ -8,7 +8,7 @@ Get NeoAbs up and running in a few steps.
 
 ## Requirements
 
-- **Python** 3.9 or higher
+- **Python** 3.8 or higher
 - **MkDocs** 1.5 or higher
 - A modern browser with support for `backdrop-filter`
 

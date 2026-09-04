@@ -14,12 +14,12 @@
 </li>
 {% endmacro %}
 
-<aside class="neoabs-toc" data-md-component="toc" aria-label="Table of contents">
+<aside class="neoabs-toc" data-md-component="toc" aria-labelledby="neoabs-toc-title">
   <div class="neoabs-toc__scroll">
     <div class="neoabs-toc__inner">
-      <p class="neoabs-toc__title">On this page</p>
+      <h2 class="neoabs-toc__title" id="neoabs-toc-title">On this page</h2>
       <ul class="neoabs-toc__list">
-        {% for toc_item in toc %}
+        {% for toc_item in page.toc %}
         {{ render_toc_item(toc_item) }}
         {% endfor %}
       </ul>
