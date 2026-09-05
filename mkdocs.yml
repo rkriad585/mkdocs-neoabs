@@ -217,6 +217,30 @@ theme:
     #         - label: "Pricing"
     #           url: "/pricing/"
     #           new_tab: false
+    # --- Phase 5: Sidebar & navigation customization (optional) -----------------
+    # Customize the navigation sidebar. Every option defaults to the theme's
+    # current look; uncomment only the keys you want to change. `position` and
+    # `width` are applied via an inline CSS custom variable on <body>; `glass`
+    # and `blur` via data attributes on <nav>; the remaining keys via data
+    # attributes and inline CSS custom properties on the nav.
+    # sidebar:
+    #   position: "left"               # left | right (right swaps sidebar & TOC) (default left)
+    #   width: "280px"                 # Sidebar width (default 280px)
+    #   collapsible: true              # Ctrl/Cmd+Shift+B toggle (default true)
+    #   default_collapsed: false       # Start with the sidebar collapsed (default false)
+    #   glass: true                    # Frosted-glass background (default true)
+    #   blur: true                     # Glass backdrop blur (default true)
+    #   nav:
+    #     show_toggle_buttons: true    # Collapsible section headings (default true)
+    #     show_active_border: true     # Accent border on the active item (default true)
+    #     active_border_color: ""      # Custom border color (defaults to accent)
+    #     indent_nested: true          # Indent nested levels (default true)
+    #     indent_size: "16px"          # Indent step per nested level (default 16px)
+    #     max_depth: 4                 # Max depth rendered (optional; absent = unlimited)
+    #     show_icons: false            # Reserved for future use (default false)
+    #   sections:
+    #     show: true                   # Show section heading rows (default true)
+    #     style: "uppercase"           # uppercase | bold | default (default uppercase)
 
 extra:
   neoabs_version: 9
