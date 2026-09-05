@@ -385,6 +385,8 @@
       requestAnimationFrame(() => {
         input.focus()
         input.select()
+        // Auto-run the restored query so results show immediately.
+        if (input.value) runSearch(input.value)
       })
     }
 
@@ -2356,6 +2358,8 @@
       if (drawer && drawer.checked) drawer.checked = false
       const nav = $(".neoabs-nav")
       if (nav) nav.classList.remove("neoabs-nav--open")
+      const search = $(".neoabs-search")
+      if (search && typeof search._neoabsClose === "function") search._neoabsClose()
       document.body.style.overflow = ""
     }
 
