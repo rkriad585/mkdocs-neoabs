@@ -182,6 +182,41 @@ theme:
     #     #   style: "primary"         # primary | glass | outline
     #     #   icon: "star"
     #     #   new_tab: true
+    # --- Phase 4: Footer customization (optional) ------------------------------
+    # Customize the footer bar. Every option defaults to the theme's current
+    # look; uncomment only the keys you want to change. `position` is applied
+    # via an inline CSS custom property (`fixed` docks the footer to the
+    # viewport bottom); `glass` and `border_top` via data attributes on
+    # <footer>; `layout` via a data attribute too.
+    # footer:
+    #   position: "relative"          # relative | fixed (default relative)
+    #   glass: true                   # Frosted-glass background (default true)
+    #   border_top: true              # Separator border on top (default true)
+    #   layout: "default"             # default | minimal | extended (default default)
+    #   prev_next:
+    #     show: true                  # Show prev/next page navigation (default true)
+    #     show_arrow: true            # Show < > arrow icons (default true)
+    #     show_title: true            # Show page titles (default true)
+    #   copyright:
+    #     show: true                  # Show the copyright line (default true)
+    #     text: ""                    # Custom text (overrides config.copyright)
+    #     show_year: true             # Auto-insert current year (default true)
+    #   social:                       # Social icon row (empty by default)
+    #     - icon: "github"            #   github | twitter | discord | custom
+    #       url: "https://github.com/user"
+    #       label: "GitHub"
+    #     - icon: "custom"            #   Custom SVG:
+    #       svg: "<svg>...</svg>"     #     raw <svg> markup (inline)
+    #       url: "https://example.com"
+    #       label: "Example"
+    #   columns:                      # Footer columns (rendered in "extended" layout)
+    #     - title: "Product"          #   Column heading
+    #       links:
+    #         - label: "Features"
+    #           url: "/features/"
+    #         - label: "Pricing"
+    #           url: "/pricing/"
+    #           new_tab: false
 
 extra:
   neoabs_version: 9
