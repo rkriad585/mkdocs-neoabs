@@ -2046,7 +2046,7 @@
     }
 
     const samePageHash = (url) => {
-      const here = new URL(window.location.href)
+      const here = new URL(location.href)
       return url.origin === here.origin &&
              url.pathname.replace(/\/$/, "") === here.pathname.replace(/\/$/, "") &&
              url.hash
@@ -2127,7 +2127,7 @@
 
     function pageKeyFromUrl(u) {
       try {
-        const url = new URL(u, window.location.href)
+        const url = new URL(u, location.href)
         return url.href.split("#")[0].replace(/\/$/, "")
       } catch { return "" }
     }
@@ -2144,7 +2144,7 @@
     }
 
     function saveCurrentScroll() {
-      const key = pageKeyFromUrl(window.location.href)
+      const key = pageKeyFromUrl(location.href)
       if (!key) return
       const map = readScrollPositions()
       map[key] = { y: window.scrollY || 0, x: window.scrollX || 0, at: Date.now() }
@@ -2179,12 +2179,12 @@
 
     // Expose an initial-restore hook used by the boot sequence.
     window._neoabsRestoreScroll = function () {
-      restoreScroll(pageKeyFromUrl(window.location.href))
+      restoreScroll(pageKeyFromUrl(location.href))
     }
 
     function navigateTo(url, push) {
       if (!url) return
-      const target = new URL(url, window.location.href)
+      const target = new URL(url, location.href)
       if (samePageHash(target)) {
         const el = document.getElementById(decodeURIComponent(target.hash.slice(1)))
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -2214,7 +2214,7 @@
         })
         .catch(function () {
           // On failure, fall back to a normal full-page navigation.
-          window.location.href = url
+          location.href = url
         })
     }
 
@@ -2249,7 +2249,7 @@
 
     // Back / forward.
     window.addEventListener("popstate", () => {
-      navigateTo(window.location.href, false)
+      navigateTo(location.href, false)
     })
   }
 
@@ -2277,7 +2277,9 @@
     // Restore the remembered scroll position for the initial page.
     // Runs after layout; `scrollRestorePage()` is exposed by initSPANavigation.
     if (typeof window._neoabsRestoreScroll === "function") {
-      const doRestore = () => window._neoabsRestoreScroll()
+      const doRestore = () => {
+        try { window._neoabsRestoreScroll() } catch (e) { /* keep booting */ }
+      }
       if (document.readyState === "complete") doRestore()
       else window.addEventListener("load", function onLoad() {
         window.removeEventListener("load", onLoad)

@@ -94,6 +94,19 @@
     <link rel="stylesheet" href="{{ path | url }}">
     {% endfor %}
 
+    {% block neoabs_tokens %}
+    {% set _tokens = config.extra.neoabs_tokens if config.extra and config.extra.neoabs_tokens else [] %}
+    {% if _tokens %}
+    <style id="neoabs-tokens">
+      :root {
+      {% for t in _tokens %}
+        {{ t.var }}: {{ t.value }} !important;
+      {% endfor %}
+      }
+    </style>
+    {% endif %}
+    {% endblock %}
+
     <script>
       document.documentElement.dataset.mdComponent = "page"
       document.documentElement.classList.remove("no-js")

@@ -75,7 +75,7 @@
   
   // Transitions - Apple fluid motion
   --neoabs-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --neoabs-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --neoabs-transition-normal: var(--neoabs-transition-duration) var(--neoabs-transition-easing);
   --neoabs-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
   --neoabs-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
   
@@ -95,6 +95,29 @@
 
   // Border system (configurable via neoabs.border)
   --neoabs-border-width: 1px;
+
+  // Typography tokens (overridable via theme.neoabs.typography)
+  --neoabs-font-size-base: 16px;
+  --neoabs-font-size-sm: 14px;
+  --neoabs-font-size-lg: 18px;
+  --neoabs-line-height: 1.7;
+  --neoabs-heading-weight: 700;
+  --neoabs-heading-letter-spacing: -0.02em;
+
+  // Layout tokens (overridable via theme.neoabs.spacing)
+  --neoabs-sidebar-width: 280px;
+  --neoabs-toc-width: 240px;
+  --neoabs-header-height: 56px;
+  --neoabs-content-max-width: 900px;
+  --neoabs-content-padding: 40px 32px;
+  --neoabs-section-gap: 40px;
+
+  // Overlay backdrop (overridable via theme.neoabs.colors.overlay)
+  --neoabs-overlay-color: rgba(0, 0, 0, 0.5);
+
+  // Transition easing/duration (overridable via theme.neoabs.transitions)
+  --neoabs-transition-duration: 250ms;
+  --neoabs-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 // ============================================================================
@@ -196,7 +219,7 @@ body {
 // Anchor targets clear the fixed header when scrolled into view (native
 // hash navigation and JS-driven anchor/scrolling both benefit).
 [id] {
-  scroll-margin-top: calc(56px + var(--neoabs-space-3));
+  scroll-margin-top: calc(var(--neoabs-header-height) + var(--neoabs-space-3));
 }
 
 // Disable transitions for reduced motion
@@ -313,7 +336,7 @@ body {
 // Body text
 .neoabs-body {
   font-family: var(--neoabs-font-body);
-  font-size: 16px;
+  font-size: var(--neoabs-font-size-base);
   line-height: 1.6;
   color: var(--neoabs-text-primary);
 }

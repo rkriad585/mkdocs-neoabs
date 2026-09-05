@@ -39,6 +39,48 @@ theme:
     dot_matrix: true
     animation: normal
     border: thin
+    # --- Phase 1: Design token overrides (optional) -------------------------
+    # Uncomment any value to override the theme's default design token. Values
+    # map to CSS custom properties and win against the compiled stylesheet.
+    # colors:
+    #   primary: "#ff3030"            # --neoabs-accent
+    #   primary_light: "#ff6b6b"      # --neoabs-accent-glow
+    #   primary_dark: "#c62828"       # --neoabs-accent-strong
+    #   background: "#000000"         # --neoabs-ink
+    #   surface: "rgba(255,255,255,0.08)"   # --neoabs-glass-bg
+    #   surface_light: "rgba(255,255,255,0.15)" # --neoabs-glass-bg-strong
+    #   text: "#ffffff"               # --neoabs-text-primary
+    #   text_secondary: "#aaaaaa"     # --neoabs-text-secondary
+    #   border: "rgba(255,255,255,0.18)"    # --neoabs-glass-border
+    #   overlay: "rgba(0,0,0,0.5)"    # --neoabs-overlay-color
+    # typography:
+    #   font_family: "Space Grotesk, sans-serif"
+    #   font_family_display: "Space Grotesk, sans-serif"
+    #   font_family_mono: "Space Mono, monospace"
+    #   font_size_base: "16px"
+    #   font_size_sm: "14px"
+    #   font_size_lg: "18px"
+    #   line_height: "1.7"
+    #   heading_weight: "700"
+    #   heading_letter_spacing: "-0.02em"
+    # spacing:
+    #   sidebar_width: "280px"
+    #   toc_width: "240px"
+    #   header_height: "56px"
+    #   content_max_width: "900px"
+    #   content_padding: "40px 32px"
+    #   section_gap: "40px"
+    # border_radius:
+    #   small: "4px"
+    #   medium: "8px"
+    #   large: "12px"
+    # transitions:
+    #   duration: "250ms"
+    #   easing: "cubic-bezier(0.4, 0, 0.2, 1)"
+    # shadows:
+    #   small: "0 1px 2px rgba(0,0,0,0.3)"
+    #   medium: "0 4px 12px rgba(0,0,0,0.4)"
+    #   large: "0 8px 32px rgba(0,0,0,0.5)"
 
 extra:
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
