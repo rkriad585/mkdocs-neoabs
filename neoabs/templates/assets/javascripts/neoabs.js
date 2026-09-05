@@ -1946,6 +1946,10 @@
     pop.setAttribute("role", "tooltip")
     document.body.appendChild(pop)
 
+    if (window.console && console.info) {
+      console.info("[neoabs] repo popover ready:", slug.owner + "/" + slug.name)
+    }
+
     const buildRows = function (rows) {
       const out = rows.filter(function (r) { return r.v })
         .map(function (r) {
@@ -2010,6 +2014,10 @@
       cancelClose()
       position()
       pop.classList.add("neoabs-repo-pop--show")
+      if (window.console && console.info && !pop._neoabsLoggedOpen) {
+        pop._neoabsLoggedOpen = true
+        console.info("[neoabs] repo popover opened (hover/pointer/click)")
+      }
       if (cached) { renderBody(cached); position(); return }
       if (loading) return
       loading = true
@@ -2179,6 +2187,7 @@
     // Clicking / Enter also opens it — some visitors click the icon rather
     // than hover (trackpad, touch) and the link still navigates to GitHub.
     link.addEventListener("mouseenter", loadAndShow)
+    link.addEventListener("pointerenter", loadAndShow)
     link.addEventListener("mouseleave", scheduleClose)
     link.addEventListener("focus", loadAndShow)
     link.addEventListener("blur", scheduleClose)
@@ -2291,6 +2300,9 @@
     function pageKeyFromUrl(u) {
       try {
         const url = new URL(u, location.href)
+        // Never persist or resume non-http(s) origins (e.g. a page that was
+        // once opened from file://) — an http page cannot navigate to them.
+        if (url.protocol !== "http:" && url.protocol !== "https:") return ""
         return url.href.split("#")[0].replace(/\/$/, "")
       } catch { return "" }
     }
@@ -2364,7 +2376,7 @@
       const hereKey = pageKeyFromUrl(location.href)
       const rootKey = siteRootKey()
       const s = sessionGet()
-      if (s.lastPage && hereKey === rootKey && s.lastPage !== rootKey) {
+      if (s.lastPage && /^https?:/i.test(s.lastPage) && hereKey === rootKey && s.lastPage !== rootKey) {
         // Use directory-style URLs (trailing slash) so the fetch hits the page
         // directly instead of being 302-redirected by the server.
         let resumeUrl = s.lastPage
