@@ -376,6 +376,9 @@
       items[index].classList.add("neoabs-search__result--active")
       activeIndex = index
       input.setAttribute("aria-activedescendant", items[index].id)
+      if (typeof items[index].scrollIntoView === "function") {
+        items[index].scrollIntoView({ block: "nearest", behavior: "auto" })
+      }
     }
 
     function openSearch() {
@@ -2173,10 +2176,16 @@
 
     // Hover / focus to open; leave / blur starts a 3s close timer so the user
     // can move onto the popover. Hovering the popover itself cancels the timer.
+    // Clicking / Enter also opens it — some visitors click the icon rather
+    // than hover (trackpad, touch) and the link still navigates to GitHub.
     link.addEventListener("mouseenter", loadAndShow)
     link.addEventListener("mouseleave", scheduleClose)
     link.addEventListener("focus", loadAndShow)
     link.addEventListener("blur", scheduleClose)
+    link.addEventListener("click", loadAndShow)
+    link.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") loadAndShow()
+    })
     pop.addEventListener("mouseenter", cancelClose)
     pop.addEventListener("mouseleave", scheduleClose)
   }
