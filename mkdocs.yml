@@ -145,6 +145,43 @@ theme:
     #     show: true                 # Enable toast notification system
     #   keyboard_help:
     #     show: true                 # Enable the "?" keyboard-shortcuts help
+    # --- Phase 3: Header & navbar customization (optional) ---------------------
+    # Customize the header bar. Every option defaults to the theme's current
+    # look; uncomment only the keys you want to change. `position`, `height`
+    # and `z_index` are applied via inline CSS custom properties; `glass`,
+    # `blur` and `border_bottom` are applied via data attributes on <header>.
+    # header:
+    #   position: "sticky"            # sticky | fixed | static (default sticky)
+    #   glass: true                   # Frosted-glass background (default true)
+    #   blur: true                    # Glass backdrop blur (default true)
+    #   border_bottom: true           # Separator border under the header (default true)
+    #   height: "56px"                # Header height (default 56px)
+    #   z_index: 300                  # Header stacking order (default 300)
+    #   brand:
+    #     show: true                  # Show the logo + site name (default true)
+    #     logo_height: 26             # Logo height in px (default 26)
+    #     show_site_name: true        # Show the site name text (default true)
+    #     site_name_suffix: ""        # Text appended to the site name (default "")
+    #   left:
+    #     show_page_title: true       # Current page title on the left (default true)
+    #     show_hamburger: true        # Mobile drawer toggle (default true)
+    #   right:
+    #     - palette_toggle            # Dark/light theme toggle
+    #     - search                    # Search button
+    #     - repo_link                 # Repository link with popover
+    #     # Ordered list of items on the right. Items may be plain strings
+    #     # (palette_toggle, search, repo_link) or custom entries:
+    #     # - type: link               # Plain text link
+    #     #   label: "Changelog"
+    #     #   url: "https://example.com/changelog"
+    #     #   icon: "external"         # github | gitlab | external | code | star | custom path
+    #     #   new_tab: false
+    #     # - type: button             # Styled button
+    #     #   label: "Star on GitHub"
+    #     #   url: "https://github.com/rkriad585/mkdocs-neoabs"
+    #     #   style: "primary"         # primary | glass | outline
+    #     #   icon: "star"
+    #     #   new_tab: true
 
 extra:
   neoabs_version: 9
