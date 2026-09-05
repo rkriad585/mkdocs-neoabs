@@ -6,6 +6,8 @@
 ;(function () {
   "use strict"
 
+  var NEOABS_VERSION = "2"
+
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
 
@@ -2321,6 +2323,27 @@
         return
       }
 
+      // Safety net: only SPA-render pages that live under this site's base
+      // path. A stale/cached link resolving outside the mount (a doubled
+      // relative path, a base-less href, etc.) must hard-navigate instead of
+      // client-side fetching — otherwise it 404s and re-navigates in a loop.
+      const siteRoot = (function () {
+        try {
+          return new URL(base, location.href).pathname.replace(/\/$/, "") || "/"
+        } catch {
+          return "/"
+        }
+      })()
+      const targetPath = target.pathname.replace(/\/$/, "") || "/"
+      if (
+        siteRoot !== "/" &&
+        targetPath !== siteRoot &&
+        targetPath.indexOf(siteRoot + "/") !== 0
+      ) {
+        location.href = url
+        return
+      }
+
       // Save the current page's scroll position before leaving it.
       saveCurrentScroll()
       const targetKey = pageKeyFromUrl(target.href)
@@ -2401,6 +2424,10 @@
 
   onReady(function () {
     const config = readConfig()
+
+    if (window.console && console.info) {
+      console.info("[neoabs] theme load (assets v" + NEOABS_VERSION + ")")
+    }
 
     // Each initializer is isolated so a failure in an optional feature (e.g. an
     // older browser or missing optional dependency) cannot take down the theme.

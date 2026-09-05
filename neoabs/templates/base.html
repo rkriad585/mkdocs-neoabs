@@ -16,6 +16,7 @@
       data-md-neoabs-animation="{{ config.extra.neoabs_animation if config.extra and config.extra.neoabs_animation else 'normal' }}"
       data-md-neoabs-border="{{ config.extra.neoabs_border if config.extra and config.extra.neoabs_border else 'thin' }}">
   <head>
+    {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -72,7 +73,7 @@
     {% endblock %}
 
     {% block styles %}
-    <link rel="stylesheet" href="{{ 'assets/neoabs.css' | url }}">
+    <link rel="stylesheet" href="{{ 'assets/neoabs.css' | url }}?v={{ _asset_version }}">
     {% endblock %}
 
     {% block hljs_styles %}
@@ -219,7 +220,7 @@
     {% endblock %}
 
     {% block scripts %}
-    <script src="{{ 'assets/javascripts/neoabs.js' | url }}"></script>
+    <script src="{{ 'assets/javascripts/neoabs.js' | url }}?v={{ _asset_version }}"></script>
     {% endblock %}
 
     {% for path in config.extra_javascript %}

@@ -6,8 +6,8 @@
 ;(function () {
   "use strict"
 
-  var CACHE_STATIC = "neoabs-static-v1"
-  var CACHE_CDN = "neoabs-cdn-v1"
+  var CACHE_STATIC = "neoabs-static-v2"
+  var CACHE_CDN = "neoabs-cdn-v2"
 
   self.addEventListener("install", function (e) {
     e.waitUntil(self.skipWaiting())
