@@ -59,6 +59,29 @@
     } catch {}
   }
 
+  // ---------------------------------------------------------------------------
+  // Session memory — remembers where the visitor left off:
+  //   { lastPage, lastAt, navCollapsed: [], search }
+  // Stored as a single JSON blob under STORAGE_PREFIX + "session".
+  // ---------------------------------------------------------------------------
+
+  const SESSION_KEY = "session"
+
+  function sessionGet() {
+    try {
+      var raw = localStorage.getItem(STORAGE_PREFIX + SESSION_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch { return {} }
+  }
+
+  function sessionMutate(mutator) {
+    try {
+      var s = sessionGet()
+      mutator(s)
+      localStorage.setItem(STORAGE_PREFIX + SESSION_KEY, JSON.stringify(s))
+    } catch {}
+  }
+
   function onReady(fn) {
     if (document.readyState !== "loading") fn()
     else document.addEventListener("DOMContentLoaded", fn)
@@ -260,6 +283,10 @@
     const closeBtn = $(".neoabs-search__close")
     if (!checkbox || !searchEl || !input || !statusEl || !listEl) return
 
+    // Restore the last query the visitor typed, so they pick up where they left off.
+    const remembered = sessionGet().search
+    if (remembered) input.value = remembered
+
     let searchTrigger = null
     let minSearchLength = 2
     let searchReady = false
@@ -438,6 +465,7 @@
     // Debounced query on input
     let debounce = null
     input.addEventListener("input", () => {
+      sessionMutate((s) => { s.search = input.value })
       clearTimeout(debounce)
       debounce = setTimeout(() => runSearch(input.value), 150)
     })
@@ -1106,7 +1134,32 @@
             target.classList.toggle("neoabs-nav__list--collapsed", expanded)
           }
         }
+      syncNavMemory()
       })
+    })
+  }
+
+  // Persist which nav sections the visitor has collapsed.
+  function syncNavMemory() {
+    const collapsed = $$(".neoabs-nav__toggle")
+      .filter((btn) => btn.getAttribute("aria-expanded") !== "true")
+      .map((btn) => btn.getAttribute("aria-controls"))
+      .filter(Boolean)
+    sessionMutate((s) => { s.navCollapsed = collapsed })
+  }
+
+  // Apply the remembered collapse state to the current nav tree.
+  function applyNavMemory() {
+    const s = sessionGet()
+    const collapsed = s.navCollapsed || []
+    $$(".neoabs-nav__toggle").forEach((btn) => {
+      const id = btn.getAttribute("aria-controls")
+      if (!id) return
+      const isCollapsed = collapsed.indexOf(id) !== -1
+      btn.setAttribute("aria-expanded", String(!isCollapsed))
+      btn.classList.toggle("neoabs-nav__toggle--open", !isCollapsed)
+      const target = document.getElementById(id)
+      if (target) target.classList.toggle("neoabs-nav__list--collapsed", isCollapsed)
     })
   }
 
@@ -1784,6 +1837,7 @@
   // ---------------------------------------------------------------------------
 
   const REPO_API_BASE = "https://api.github.com/repos/"
+  const USER_API_BASE = "https://api.github.com/users/"
 
   function repoSlugFromUrl(url) {
     if (!url) return null
@@ -1930,11 +1984,15 @@
           return r.ok ? r.json().then(function (list) {
             return { total: total, latest: list[0] || null }
           }) : { total: null, latest: null }
-        }).catch(function () { return { total: null, latest: null } })
+        }).catch(function () { return { total: null, latest: null } }),
+        fetch(USER_API_BASE + slug.owner).then(function (r) {
+          return r.ok ? r.json() : null
+        }).catch(function () { return null })
       ]).then(function (results) {
         const repo = results[0]
         const tags = results[1]
         const commits = results[2]
+        const ownerProfile = results[3] || {}
 
         const latestCommit = commits.latest
         const commitSha = latestCommit ? latestCommit.sha.slice(0, 7) : null
@@ -1945,6 +2003,18 @@
           ? (latestCommit.commit.message || "").split("\n")[0] : null
         const totalCommits = commits.total != null ? commits.total : null
         const latestTag = tags && tags[0] ? tags[0].name : null
+
+        const ownerFromRepo = repo.owner || {}
+        const ownerData = {
+          login: slug.owner,
+          name: ownerProfile.name || ownerFromRepo.name || null,
+          bio: ownerProfile.bio || null,
+          avatar_url: ownerProfile.avatar_url || ownerFromRepo.avatar_url || null,
+          followers: ownerProfile.followers != null ? ownerProfile.followers : null,
+          public_repos: ownerProfile.public_repos != null ? ownerProfile.public_repos : null,
+          location: ownerProfile.location || null,
+          html_url: ownerProfile.html_url || ownerFromRepo.html_url || null
+        }
 
         const repoData = {
           full_name: repo.full_name,
@@ -1967,7 +2037,8 @@
           latest_tag: latestTag,
           commit_sha: commitSha,
           commit_date: commitDate,
-          commit_msg: commitMsg
+          commit_msg: commitMsg,
+          owner: ownerData
         }
         cacheSet(cacheKey, repoData)
         renderBody(repoData)
@@ -1981,18 +2052,39 @@
 
     const owner = slug.owner
     const renderBody = function (d) {
-      const ownerBlock = d.full_name ? d.full_name.split("/")[0] : owner
+      const ownerData = d.owner || {}
+      const ownerLogin = ownerData.login || owner
+      const ownerName = ownerData.name || null
+      const ownerBlock = d.full_name ? d.full_name.split("/")[0] : ownerLogin
+
+      let avatarHtml
+      if (ownerData.avatar_url) {
+        avatarHtml = '<img class="neoabs-repo-pop__avatar" src="' + repoPopoverEscape(ownerData.avatar_url)
+          + '" alt="' + repoPopoverEscape(ownerName || ownerLogin) + '" loading="lazy" onerror="this.style.display=\'none\'">'
+      } else {
+        avatarHtml = '<span class="neoabs-repo-pop__avatar">' + repoPopoverEscape((ownerBlock[0] || "R").toUpperCase()) + "</span>"
+      }
+
+      const authorLink = '<a href="' + repoPopoverEscape(ownerData.html_url || "https://github.com/" + ownerLogin)
+        + '" target="_blank" rel="noopener">'
+        + repoPopoverEscape(ownerName ? ownerName + ' <span class="neoabs-repo-pop__k">@' + ownerLogin + "</span>" : "@" + ownerLogin)
+        + "</a>"
+
       pop.innerHTML =
         '<div class="neoabs-repo-pop__head">'
-        + '<span class="neoabs-repo-pop__avatar">' + repoPopoverEscape((ownerBlock[0] || "R").toUpperCase()) + "</span>"
+        + avatarHtml
         + '<span class="neoabs-repo-pop__title">'
         + '<a class="neoabs-repo-pop__name" href="' + repoPopoverEscape(d.html_url || "#") + '" target="_blank" rel="noopener">'
-        + repoPopoverEscape(d.full_name || owner + "/" + slug.name) + "</a>"
+        + repoPopoverEscape(d.full_name || ownerLogin + "/" + slug.name) + "</a>"
         + (d.description ? '<span class="neoabs-repo-pop__desc">' + repoPopoverEscape(d.description) + "</span>" : "")
         + "</span></div>"
         + '<div class="neoabs-repo-pop__body">'
+        + (ownerData.bio ? '<div class="neoabs-repo-pop__bio">' + repoPopoverEscape(ownerData.bio) + "</div>" : "")
         + buildRows([
-          { k: "Author", v: '<a href="' + repoPopoverEscape("https://github.com/" + ownerBlock) + '" target="_blank" rel="noopener">' + repoPopoverEscape(ownerBlock) + "</a>" },
+          { k: "Author", v: authorLink },
+          { k: "Followers", v: ownerData.followers != null ? fmtCount(ownerData.followers) + " (" + ownerData.followers + ")" : null },
+          { k: "Public repos", v: ownerData.public_repos != null ? fmtCount(ownerData.public_repos) : null },
+          { k: "Location", v: ownerData.location ? repoPopoverEscape(ownerData.location) : null },
           { k: "Stars", v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
           { k: "Watchers", v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
           { k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
@@ -2112,7 +2204,7 @@
       const inits = [
         initTocTracking, initHighlighting, initMermaid,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
-        initUIExamples, () => initMath(_navConfig)
+        initUIExamples, () => initMath(_navConfig), initNavToggle
       ]
       inits.forEach(function (fn) {
         try { fn() } catch (e) {}
@@ -2177,9 +2269,37 @@
     // Save on beforeunload (full page navigation / tab close).
     window.addEventListener("beforeunload", saveCurrentScroll)
 
-    // Expose an initial-restore hook used by the boot sequence.
+    // Remember the current page as the visitor's most recent stop.
+    function recordCurrentVisit() {
+      const key = pageKeyFromUrl(location.href)
+      if (!key) return
+      sessionMutate((s) => {
+        s.lastPage = key
+        s.lastAt = Date.now()
+      })
+    }
+
+    // The site's root route, resolved from config.base.
+    function siteRootKey() {
+      try {
+        return pageKeyFromUrl(new URL(base, location.href).href)
+      } catch { return "" }
+    }
+
+    // Expose an initial-restore hook used by the boot sequence:
+    //  - head back to the last-visited page when the site is opened at the root
+    //  - restore the nav collapse/search state and the page's scroll position
     window._neoabsRestoreScroll = function () {
-      restoreScroll(pageKeyFromUrl(location.href))
+      const hereKey = pageKeyFromUrl(location.href)
+      const rootKey = siteRootKey()
+      const s = sessionGet()
+      if (s.lastPage && hereKey === rootKey && s.lastPage !== rootKey) {
+        navigateTo(s.lastPage, false)
+        return
+      }
+      applyNavMemory()
+      restoreScroll(hereKey)
+      recordCurrentVisit()
     }
 
     function navigateTo(url, push) {
@@ -2208,8 +2328,10 @@
         })
         .then(function (html) {
           applyPage(extract(html))
-          restoreScroll(targetKey)
           reinitPageScoped()
+          applyNavMemory()
+          restoreScroll(targetKey)
+          recordCurrentVisit()
           closeNavOverlays()
         })
         .catch(function () {

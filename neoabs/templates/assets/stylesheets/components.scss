@@ -4450,6 +4450,19 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 	border-radius: var(--neoabs-radius-md);
 }
 
+img.neoabs-repo-pop__avatar {
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.neoabs-repo-pop__bio {
+	margin-bottom: var(--neoabs-space-2);
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	line-height: 1.55;
+	color: var(--neoabs-text-secondary);
+}
+
 .neoabs-repo-pop__title {
 	display: flex;
 	flex-direction: column;
