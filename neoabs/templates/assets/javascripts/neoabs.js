@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "5"
+  var NEOABS_VERSION = "6"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -1940,11 +1940,18 @@
     const cacheKey = "repo-" + slug.owner + "/" + slug.name
     const cached = cacheGet(cacheKey, 3600000)  // 1 hour TTL
 
-    // Popover root (created once, reused)
-    let pop = document.createElement("div")
-    pop.className = "neoabs-repo-pop"
+    // Popover root lives in the header markup next to the icon (revealed by
+    // CSS hover) — JS only upgrades its content.
+    const wrap = link.parentElement
+    let pop = wrap ? wrap.querySelector(".neoabs-repo-pop") : null
+    if (!pop) {
+      pop = document.createElement("div")
+      pop.className = "neoabs-repo-pop"
+      pop.setAttribute("role", "tooltip")
+      if (wrap) wrap.appendChild(pop)
+      else document.body.appendChild(pop)
+    }
     pop.setAttribute("role", "tooltip")
-    document.body.appendChild(pop)
 
     if (window.console && console.info) {
       console.info("[neoabs] repo popover ready:", slug.owner + "/" + slug.name)
@@ -1969,31 +1976,6 @@
         + '<span class="neoabs-repo-pop__v">' + repoPopoverEscape(msg || "No public data") + "</span></div></div>"
     }
 
-    const show = function (x, y) {
-      const pad = 6
-      const rect = pop.getBoundingClientRect()
-      let left = x - rect.width / 2
-      left = Math.max(pad, Math.min(left, window.innerWidth - rect.width - pad))
-      let top = y + 10
-      pop.style.left = left + "px"
-      pop.style.top = top + "px"
-      pop.classList.add("neoabs-repo-pop--show")
-    }
-
-    const position = function () {
-      const r = link.getBoundingClientRect()
-      const rect = pop.getBoundingClientRect()
-      const pad = 6
-      let left = r.left + r.width / 2 - rect.width / 2
-      left = Math.max(pad, Math.min(left, window.innerWidth - rect.width - pad))
-      let top = r.bottom + 10
-      if (top + rect.height > window.innerHeight - pad) {
-        top = r.top - rect.height - 10
-      }
-      pop.style.left = left + "px"
-      pop.style.top = top + "px"
-    }
-
     let closeTimer = null
 
     const cancelClose = function () {
@@ -2012,13 +1994,12 @@
 
     const loadAndShow = function () {
       cancelClose()
-      position()
       pop.classList.add("neoabs-repo-pop--show")
       if (window.console && console.info && !pop._neoabsLoggedOpen) {
         pop._neoabsLoggedOpen = true
         console.info("[neoabs] repo popover opened (hover/pointer/click)")
       }
-      if (cached) { renderBody(cached); position(); return }
+      if (cached) { renderBody(cached); return }
       if (loading) return
       loading = true
 
@@ -2032,7 +2013,6 @@
         + '<div class="neoabs-repo-pop__body"><div class="neoabs-repo-pop__row">'
         + '<span class="neoabs-repo-pop__k">Status</span><span class="neoabs-repo-pop__v">Loading…</span>'
         + "</div></div>"
-      position()
 
       const api = REPO_API_BASE + slug.owner + "/" + slug.name
       Promise.all([
@@ -2111,11 +2091,9 @@
         }
         cacheSet(cacheKey, repoData)
         renderBody(repoData)
-        position()
       }).catch(function () {
         loading = false
         renderError("Unable to load repo data")
-        position()
       })
     }
 

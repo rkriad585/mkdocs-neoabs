@@ -4400,9 +4400,19 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 // Shown on hover/focus of the header repo icon. Fetches live GitHub data.
 // ============================================================================
 
-.neoabs-repo-pop {
-	position: fixed;
+// The repo popover lives INSIDE the header next to the GitHub icon and is
+// revealed by pure CSS on hover/focus of the icon wrapper — it cannot fail to
+// appear even if no JS event fires. JS only upgrades its content.
+.neoabs-header__repo-wrap {
+	position: relative;
+	display: inline-flex;
 	z-index: var(--neoabs-z-popover, 1200);
+}
+
+.neoabs-repo-pop {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
 	width: 300px;
 	max-width: calc(100vw - var(--neoabs-space-6));
 	visibility: hidden;
@@ -4422,6 +4432,10 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 	            transform var(--neoabs-transition-fast),
 	            visibility var(--neoabs-transition-fast);
 
+	// CSS-only reveal: hovering (or keyboard-focusing) the icon shows the card
+	// with no JavaScript involved.
+	.neoabs-header__repo-wrap:hover &,
+	.neoabs-header__repo-wrap:focus-within &,
 	&--show {
 		visibility: visible;
 		opacity: 1;
