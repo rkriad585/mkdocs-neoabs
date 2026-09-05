@@ -1,7 +1,7 @@
 <header class="neoabs-header" data-md-component="header">
   <div class="neoabs-header__inner">
     <div class="neoabs-header__left">
-      {% if page.title %}
+      {% if page.title and (_comp.header.show_page_title | default(true)) %}
       <span class="neoabs-header__page-title">{{ page.title }}</span>
       {% endif %}
       <button type="button" class="neoabs-header__hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="neoabs-drawer">
@@ -17,28 +17,30 @@
       {% set _logo_light = config.extra.neoabs_logo_light | default(config.extra.neoabs_logo_url | default(config.theme.logo, true), true) %}
       {% set _two_tone = (_logo_dark | string) != (_logo_light | string) and _logo_light %}
       <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__brand" title="{{ config.site_name }}">
-        {% if _logo_dark %}
+        {% if _logo_dark and (_comp.header.show_logo | default(true)) %}
         {% if _logo_dark.startswith("http") %}
         <img src="{{ _logo_dark }}" alt="" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
         {% else %}
         <img src="{{ _logo_dark | url }}" alt="" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
         {% endif %}
         {% endif %}
-        {% if _two_tone %}
+        {% if _two_tone and (_comp.header.show_logo | default(true)) %}
         {% if _logo_light.startswith("http") %}
         <img src="{{ _logo_light }}" alt="" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% else %}
         <img src="{{ _logo_light | url }}" alt="" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% endif %}
         {% endif %}
-        <span class="neoabs-header__site-name">{{ _brand }}</span>
+        <span class="neoabs-header__site-name">{{ _brand if (_comp.header.show_site_name | default(true)) else '' }}</span>
       </a>
     </div>
 
     <div class="neoabs-header__right">
+      {% if _comp.header.show_palette_toggle | default(true) %}
       {% include "partials/palette.html" %}
+      {% endif %}
 
-      {% if "search" in config.plugins %}
+      {% if "search" in config.plugins and (_comp.header.show_search | default(true)) %}
       <button type="button" class="neoabs-header__search" aria-label="Toggle search" aria-controls="neoabs-search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -47,7 +49,7 @@
       </button>
       {% endif %}
 
-      {% if config.repo_url %}
+      {% if config.repo_url and (_comp.header.show_repo_link | default(true)) %}
       {% set _repo_clean = config.repo_url | replace("https://", "") | replace("http://", "") | replace("git@", "") | replace("ssh://", "") | replace(".git", "") %}
       {% set _repo_host = _repo_clean.split("/")[0] if "/" in _repo_clean else _repo_clean %}
       {% set _repo_parts = _repo_clean.split("/") %}

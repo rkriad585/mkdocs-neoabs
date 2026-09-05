@@ -3970,10 +3970,14 @@ tbody tr {
 	border-radius: var(--neoabs-radius-lg);
 	padding: var(--neoabs-space-5);
 	color: var(--neoabs-text-primary);
+	box-shadow: var(--neoabs-shadow-glass);
 	transition: border-color var(--neoabs-transition-fast);
 
 	&:hover {
+		background: var(--neoabs-glass-bg-strong);
 		border-color: var(--neoabs-glass-border);
+		box-shadow: var(--neoabs-shadow-lg);
+		transform: translateY(-2px);
 	}
 
 	h3, h4 {
@@ -4022,6 +4026,7 @@ tbody tr {
 	display: block;
 	font-family: var(--neoabs-font-mono);
 	font-size: 11px;
+	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 	color: var(--neoabs-text-muted);
@@ -4363,6 +4368,9 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 	align-items: center;
 	gap: var(--neoabs-space-3);
 	margin: var(--neoabs-space-8) 0;
+	height: 1px;
+	background: var(--neoabs-glass-border);
+	border: none;
 	color: var(--neoabs-text-muted);
 
 	&::before,
@@ -4377,6 +4385,11 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 		width: 16px;
 		height: 16px;
 	}
+}
+
+// Thin (ghost) divider variant
+.neoabs-divider--thin {
+	background: var(--neoabs-ghost);
 }
 
 // Tag/pill used to mark things like data attributes

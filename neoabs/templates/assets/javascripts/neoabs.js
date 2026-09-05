@@ -126,6 +126,26 @@
     try { return JSON.parse(el.textContent) } catch { return {} }
   }
 
+  // Phase 2 component toggles. `_config` is populated on boot from `#__config`.
+  let _config = {}
+
+  // `componentShow(name, key)` -> whether a theme component is enabled. Absent
+  // keys default to ON, so a site that never sets `theme.neoabs.components`
+  // keeps every feature enabled.
+  function componentShow(name, key) {
+    const comp = _config.components ? _config.components[name] : null
+    if (!comp) return true
+    if (key !== undefined) return comp[key] !== false
+    return comp.show !== false
+  }
+
+  // Optional CDN override per component (`theme.neoabs.components.<name>.cdn_url`).
+  function cdnUrlFor(name) {
+    const comp = _config.components ? _config.components[name] : null
+    if (comp && comp.cdn_url) return comp.cdn_url
+    return ""
+  }
+
   // ---------------------------------------------------------------------------
   // 1. Theme Initialization
   // ---------------------------------------------------------------------------
@@ -277,6 +297,7 @@
   // ---------------------------------------------------------------------------
 
   function initSearch(config) {
+    if (!componentShow("search", "show")) return
     const checkbox = document.getElementById("neoabs-search")
     const searchEl = $(".neoabs-search")
     const input = $(".neoabs-search__input")
@@ -533,6 +554,7 @@
   let _tocScrollBound = false
 
   function initTocTracking() {
+    if (!componentShow("toc", "show")) return
     const tocLinks = $$(".neoabs-toc__link")
     const headings = $$(".neoabs-content h2, .neoabs-content h3, .neoabs-content h4")
     if (!tocLinks.length || !headings.length) return
@@ -644,6 +666,7 @@
   // ---------------------------------------------------------------------------
 
   function initBackToTop() {
+    if (!componentShow("content", "show_back_to_top")) return
     let btn = $(".neoabs-back-to-top")
     if (!btn) {
       btn = document.createElement("button")
@@ -752,6 +775,7 @@
   // that MkDocs/pymdownx emit at the top of each <pre>. Runs before copy buttons
   // so the pre/wrapper relationship stays stable.
   function initHighlighting() {
+    if (!componentShow("highlighting", "show")) return
     if (!document.querySelector(".highlight pre, .codehilite pre, pre.highlight"))
       return
 
@@ -759,7 +783,8 @@
       document.documentElement.getAttribute("data-md-color-scheme") || "slate"
     )
 
-    const src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    const src = cdnUrlFor("highlighting") ||
+      "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
     ensureScript(src, function () {
       if (!window.hljs) return
       try {
@@ -812,6 +837,7 @@
   let _mermaidGenericInit = null
 
   function initMermaid() {
+    if (!componentShow("mermaid", "show")) return
     const sources = $$(".mermaid")
     if (!sources.length) return
 
@@ -918,7 +944,8 @@
       mermaidUpgrade(el)
     })
 
-    const src = "https://cdn.jsdelivr.net/npm/mermaid@10.9.8/dist/mermaid.min.js"
+    const src = cdnUrlFor("mermaid") ||
+      "https://cdn.jsdelivr.net/npm/mermaid@10.9.8/dist/mermaid.min.js"
     ensureScript(src, function () { if (_mermaidGenericInit) _mermaidGenericInit() })
   }
 
@@ -927,6 +954,7 @@
   // ---------------------------------------------------------------------------
 
   function initCopyButtons(config) {
+    if (!componentShow("code", "show_copy_button")) return
     const t = (config && config.translations && config.translations.clipboard) || {}
     const tCopy = t.copy || "Copy to clipboard"
     const tCopied = t.copied || "Copied to clipboard"
@@ -1066,7 +1094,9 @@
       if (searchOpen || drawerOpen) return
 
       // / — Open search (preventDefault blocks Firefox quick find)
-      if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const searchKey = (_config.components && _config.components.search &&
+        _config.components.search.shortcut_key) || "/"
+      if (e.key === searchKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault()
         e.stopPropagation()
         if (searchEl && searchEl._neoabsOpen) searchEl._neoabsOpen()
@@ -1074,7 +1104,8 @@
       }
 
       // ? — Show keyboard shortcuts help
-      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (componentShow("keyboard_help", "show") &&
+          e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault()
         e.stopPropagation()
         toggleKeyboardHelp()
@@ -1670,6 +1701,7 @@
   }
 
   function initNotes(config) {
+    if (!componentShow("notes", "show")) return
     if (!notesEnabled(config)) return
     const ttl = notesTtlMs(config)
 
@@ -1700,6 +1732,7 @@
   // ---- Global toast helper (exposed as neoabsToast) -----------------------
   let _toastTimer = null
   function neoabsToast(message, type) {
+    if (!componentShow("toast", "show")) return
     let el = $(".neoabs-toast")
     if (!el) {
       el = document.createElement("div")
@@ -1814,6 +1847,7 @@
   }
 
   function initMath(config) {
+    if (!componentShow("math", "show")) return
     if (!mathEnabled(config)) return
     const scope = document.querySelector(".arithmatex, .math, .neoabs-math")
     if (!scope) return
@@ -1849,7 +1883,7 @@
       })
     }
 
-    ensureScript(MATH_CDN_JS, renderMath, function () {
+    ensureScript(cdnUrlFor("math") || MATH_CDN_JS, renderMath, function () {
       // Optional retry after a short delay if CDN was slow.
       window.setTimeout(renderMath, 1200)
     })
@@ -1930,6 +1964,7 @@
   window._neoabsAvatarFallback = avatarFallback
 
   function initRepoPopover(config) {
+    if (!componentShow("repo_popover", "show")) return
     if (config.repo === false || config.repo_url === "") return
     const link = document.querySelector(".neoabs-header__repo")
     if (!link) return
@@ -2494,6 +2529,7 @@
 
   onReady(function () {
     const config = readConfig()
+    _config = config
 
     if (window.console && console.info) {
       console.info("[neoabs] theme load (assets v" + NEOABS_VERSION + ")")

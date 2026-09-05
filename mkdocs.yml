@@ -81,6 +81,70 @@ theme:
     #   small: "0 1px 2px rgba(0,0,0,0.3)"
     #   medium: "0 4px 12px rgba(0,0,0,0.4)"
     #   large: "0 8px 32px rgba(0,0,0,0.5)"
+    # --- Phase 2: Component visibility toggles (optional) --------------------
+    # Show/hide any individual component or UI section from here. Every toggle
+    # defaults to ON; uncomment only the keys you want to change. `show: false`
+    # hides the piece (via config only, nothing is removed from the theme).
+    # components:
+    #   header:
+    #     show: true                 # Show/hide the entire header
+    #     show_logo: true            # Show the site logo
+    #     show_site_name: true       # Show the site name text
+    #     show_search: true          # Show the search button
+    #     show_repo_link: true       # Show the repository link
+    #     show_palette_toggle: true  # Show the dark/light toggle
+    #     show_page_title: true      # Show the current page title (left side)
+    #   sidebar:
+    #     show: true                 # Show/hide the left navigation sidebar
+    #     show_header: true          # Show the sidebar header/brand
+    #     show_search: true          # Show the sidebar search input
+    #   toc:
+    #     show: true                 # Show/hide the table of contents
+    #     title: "On this page"      # Custom TOC title
+    #     show_level_h2: true        # Show h2 headings in the TOC
+    #     show_level_h3: true        # Show h3 headings in the TOC
+    #     show_level_h4: true        # Show h4 headings in the TOC
+    #   footer:
+    #     show: true                 # Show/hide the entire footer
+    #     show_prev_next: true       # Show prev/next page navigation
+    #     show_copyright: true       # Show the copyright text
+    #     copyright_text: ""         # Custom copyright (overrides config.copyright)
+    #   content:
+    #     show: true                 # Show/hide the content area
+    #     show_progress_bar: true    # Reading progress bar at the top
+    #     show_back_to_top: true     # Back-to-top floating button
+    #   search:
+    #     show: true                 # Show/hide search functionality
+    #     shortcut_key: "/"          # Keyboard shortcut to open search
+    #     placeholder: "Search..."   # Search input placeholder
+    #   notes:
+    #     show: true                 # Show/hide the notes/annotations system
+    #     shortcut_key: "Ctrl+Shift+N"  # Keyboard shortcut to toggle notes
+    #   code:
+    #     show_copy_button: true     # Copy-to-clipboard button on code blocks
+    #     show_line_numbers: false   # Line numbers on code blocks by default
+    #     highlight_lines: true      # Highlighted line support
+    #   admonitions:
+    #     show: true                 # Enable admonition styling
+    #   mermaid:
+    #     show: true                 # Enable mermaid diagram rendering
+    #     cdn_url: ""                # Custom mermaid CDN URL
+    #   math:
+    #     show: true                 # Enable math (KaTeX) rendering
+    #     cdn_url: ""                # Custom KaTeX CDN URL
+    #   highlighting:
+    #     show: true                 # Enable code highlighting (highlight.js)
+    #     cdn_url: ""                # Custom highlight.js CDN URL
+    #     theme_dark: github-dark    # hljs theme used in dark mode
+    #     theme_light: github        # hljs theme used in light mode
+    #   repo_popover:
+    #     show: true                 # Show repo info popover on hover
+    #   tags:
+    #     show: true                 # Enable tag/pill styling
+    #   toast:
+    #     show: true                 # Enable toast notification system
+    #   keyboard_help:
+    #     show: true                 # Enable the "?" keyboard-shortcuts help
 
 extra:
   neoabs_version: 9

@@ -1,3 +1,4 @@
+{% set _comp = config.extra.neoabs_components | default({}) %}
 <!doctype html>
 <html lang="{{ config.theme.language | default('en') }}"
       class="no-js"
@@ -77,11 +78,14 @@
     {% endblock %}
 
     {% block hljs_styles %}
-    {% if config.extra and config.extra.neoabs_highlight %}
+    {% set _hljs_base = _comp.highlighting.cdn_url | default("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/", true) %}
+    {% set _hljs_dark = _comp.highlighting.theme_dark | default("github-dark", true) %}
+    {% set _hljs_light = _comp.highlighting.theme_light | default("github", true) %}
+    {% if config.extra and config.extra.neoabs_highlight and (_comp.highlighting.show | default(true)) %}
     <link id="neoabs-hljs-theme-dark" rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+          href="{{ _hljs_base }}{{ _hljs_dark }}.min.css">
     <link id="neoabs-hljs-theme-light" rel="stylesheet" disabled
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+          href="{{ _hljs_base }}{{ _hljs_light }}.min.css">
     {% endif %}
     {% endblock %}
 
@@ -140,12 +144,14 @@
     {% endblock %}
 
     {% block header %}
+    {% if _comp.header.show | default(true) %}
     {% include "partials/header.html" %}
+    {% endif %}
     {% endblock %}
 
     <div class="neoabs-layout">
       {% block nav %}
-      {% if nav %}
+      {% if nav and (_comp.sidebar.show | default(true)) %}
       {% include "partials/nav.html" %}
       {% endif %}
       {% endblock %}
@@ -153,33 +159,39 @@
       <main class="neoabs-main" id="neoabs-content" tabindex="-1">
         <article class="neoabs-article">
           {% block content %}
+          {% if _comp.content.show | default(true) %}
           <div class="neoabs-content" data-md-component="content">
             <div class="neoabs-typeset">
               {% include "partials/content.html" %}
             </div>
           </div>
+          {% endif %}
           {% endblock %}
         </article>
       </main>
 
       {% block toc %}
-      {% if page and page.toc %}
+      {% if page and page.toc and (_comp.toc.show | default(true)) %}
       {% include "partials/toc.html" %}
       {% endif %}
       {% endblock %}
     </div>
 
     {% block footer %}
+    {% if _comp.footer.show | default(true) %}
     {% include "partials/footer.html" %}
+    {% endif %}
     {% endblock %}
 
     {% block search %}
-    {% if "search" in config.plugins %}
+    {% if "search" in config.plugins and (_comp.search.show | default(true)) %}
     {% include "partials/search.html" %}
     {% endif %}
     {% endblock %}
 
+    {% if _comp.content.show_progress_bar | default(true) %}
     {% include "partials/progress.html" %}
+    {% endif %}
 
     {% block config %}
     <script>
@@ -194,8 +206,9 @@
           "ttl_ms": {{ config.extra.neoabs_notes_ttl | default(259200000) | tojson }}
         },
         "math": {
-          "enabled": {{ config.extra.neoabs_math | default(true) | tojson }}
+          "enabled": {{ ((config.extra.neoabs_math | default(true)) and (_comp.math.show | default(true))) | tojson }}
         },
+        "components": {{ config.extra.neoabs_components | default({}) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {

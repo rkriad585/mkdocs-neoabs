@@ -1,4 +1,5 @@
 <footer class="neoabs-footer" data-md-component="footer">
+  {% if _comp.footer.show_prev_next | default(true) %}
   <div class="neoabs-footer__inner">
     {% if page.previous_page %}
     <a href="{{ page.previous_page.url | url }}" class="neoabs-footer__link neoabs-footer__link--prev" title="{{ page.previous_page.title }}">
@@ -28,15 +29,21 @@
     <div class="neoabs-footer__link neoabs-footer__link--placeholder"></div>
     {% endif %}
   </div>
+  {% endif %}
 
   <div class="neoabs-footer__bottom">
+    {% if _comp.footer.show_copyright | default(true) %}
     <div class="neoabs-footer__copyright">
-      {% if config.copyright %}
+      {% set _footer_copyright = _comp.footer.copyright_text | default('', true) %}
+      {% if _footer_copyright %}
+      {{ _footer_copyright }}
+      {% elif config.copyright %}
       {{ config.copyright }}
       {% else %}
       {% set _year = config.extra.neoabs_copyright_year if config.extra and config.extra.neoabs_copyright_year else "" %}
       &copy; {{ _year }} {{ config.site_name }}
       {% endif %}
     </div>
+    {% endif %}
   </div>
 </footer>

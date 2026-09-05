@@ -5,6 +5,45 @@
 
 ---
 
+## ⚠️ Mandatory Working Rules (READ BEFORE STARTING ANY WORK)
+
+> These rules apply to **every** phase in this plan. Breaking any of them is a
+> defect and must be treated as one. Re-read them before finishing each phase.
+
+1. **Don't remove any element.** Never delete existing HTML elements, Jinja
+   blocks, CSS rules/classes, IDs, or markup that the theme already renders.
+   Extend them or hide them via config — never strip them out.
+2. **Don't remove any feature.** Every feature documented in the README, the
+   `docs/` folder, or present in the theme today must keep working after any
+   phase. Enabling/disabling goes through the existing config defaults; nothing
+   may silently disappear.
+3. **Don't remove any function.** Never delete or rename an existing JavaScript
+   function, Python method, plugin hook, or init entry point. New code may wrap
+   or extend; existing call sites stay intact and callable.
+4. **Don't make any typo.** Verify every identifier — config keys, CSS custom
+   property names, function names, class names, and file paths — against the
+   actual source before and after every edit. A typo in a config key, class, or
+   asset URL is a runtime bug.
+5. **Don't touch any code outside the phase's topic.** Each phase lists the
+   files it may modify. You must not edit any file outside that list. If a
+   change appears to require an out-of-scope file, stop and add that file to the
+   phase's list first.
+6. **Don't miss any feature in a phase.** Each phase defines a **complete** set
+   of config keys, templates, and behaviors. Implement them **all**. A phase is
+   not done until every listed config key has a working consumer and every task
+   in that phase is checked off.
+7. **Everything stays enabled/active by default.** All new features default to
+   ON (or keep their previous default value). Never ship a config default of
+   `false` unless the phase explicitly says otherwise.
+8. **Verification is part of the phase.** After each phase:
+   `npm run build`, `mkdocs build --quiet`, `npm test`, and the relevant
+   harnesses must all pass before moving on. No phase is complete without a
+   green build and green tests.
+9. **Never "fix" a symptom by deleting the feature.** If a feature misbehaves,
+   fix the bug. Do not disable, hide, or remove the feature to make tests pass.
+
+---
+
 ## Current Config (Defaults)
 
 ```yaml
@@ -109,6 +148,31 @@ theme:
       medium: "0 4px 12px rgba(0,0,0,0.4)"
       large: "0 8px 24px rgba(0,0,0,0.5)"
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -234,6 +298,31 @@ theme:
         show: true                 # Enable keyboard shortcuts help (? key)
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -304,6 +393,31 @@ theme:
           icon: "star"
           new_tab: true
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -377,6 +491,31 @@ theme:
               url: "https://discord.gg/invite"
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -417,6 +556,31 @@ theme:
         show: true                 # Show section headings
         style: "uppercase"         # "uppercase" | "bold" | "default"
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -464,6 +628,31 @@ theme:
       permalink: true              # Show # anchor link on headings
       permalink_symbol: "#"        # Custom permalink symbol
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -545,6 +734,31 @@ theme:
           action: "toggle_reading_mode"
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -595,6 +809,31 @@ theme:
     custom_css: []                  # Additional CSS file paths (merged with theme.extra_css)
     custom_js: []                   # Additional JS file paths (merged with theme.extra_javascript)
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -666,6 +905,31 @@ theme:
       color: ""                    # Text selection text color
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -708,6 +972,31 @@ theme:
         show_breadcrumb: true      # Show page path
         show_highlights: true      # Show highlighted terms
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -780,6 +1069,31 @@ theme:
         persist_state: true        # Remember checked state in localStorage
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -819,6 +1133,31 @@ theme:
     neoabs_site_tagline: "Glass + NothingOS Design"        # Subtitle below site name
     neoabs_site_badge: ""                                  # Version badge text (e.g. "v0.1.2")
 ```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
 
 ### Implementation
 
@@ -863,6 +1202,31 @@ neoabs:
 ---
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -893,6 +1257,31 @@ plugins:
       # (merged with theme.neoabs, plugin takes precedence)
 ```
 
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — new features default to
+>   ON (or keep their previous default value).
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
 ### Implementation
 
 **Files to modify:**
@@ -918,6 +1307,10 @@ plugins:
 | 12 | Low | Small | Global branding & meta |
 | 13 | Medium | Medium | Page-level front matter overrides |
 | 14 | Low | Small | Plugin config passthrough |
+
+> **Per-phase checklist (rule 6):** each phase's config block above IS the
+> acceptance list. Implement every listed key and behavior; a phase is done only
+> when all of them work AND the Mandatory Working Rules are satisfied.
 
 ---
 
@@ -1019,3 +1412,130 @@ extra:
   neoabs_custom_body_start: ""
   neoabs_custom_body_end: ""
 ```
+
+---
+
+## Documentation & GitHub Wiki Plan (Phases D1–D8)
+
+> Plan for **updating all existing docs** with a proper use/create/learning path
+> for developers and for **adding the GitHub Wiki** to this project.
+> Deep-dive details, target content inventory, and target nav live in
+> **`DOCS_WIKI_PLAN.md`**; positioning lives in **`WHY_PLAN.md`**.
+> These phases are documentation-only: they may touch `docs/`, `README.md`,
+> `mkdocs.yml` (nav/extensions), `tools/` (doc/screenshot utilities) and the
+> wiki. Per the Mandatory Working Rules they must not remove or rename any
+> feature, function, or element, and must not touch template/JS/SCSS behavior
+> except where a feature doc depends on already-planned changes.
+
+| Phase | Priority | Effort | Description |
+|-------|----------|--------|-------------|
+| D1 | High | Medium | Audit & fix the docs foundation (links, screenshots, dead-config talk, `tools/check_docs.py`, CI) |
+| D2 | High | Medium | Why & onboarding (why-neoabs, showcase, quick start, model project, `neoabs new`) |
+| D3 | High | Large | Configuration Bible (generated from plugin, kitchen-sink config, per-key pages) |
+| D4 | Medium | Large | Design system & components deep-dive (7-section template per component) |
+| D5 | Medium | Medium | Theme behavior & features (search, SPA, SW, repo popover, persistence, degradation table) |
+| D6 | Medium | Large | Developer docs & learning curve (architecture, development, testing, 4-level "Learn" track) |
+| D7 | Medium | Medium | GitHub Wiki (enable, seed, sidebar, sync Action, cross-links) |
+| D8 | Low | Small | Quality & CI maintenance (reference diff, example builds, release→wiki sync, translation readiness) |
+
+### D1 — Audit & fix the docs foundation
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- Reconcile `docs/screenshots.md` ↔ disk (add `light-mode.png`, `code-blocks.png`,
+  `mobile.png` or drop the refs).
+- Document `theme.font` / `theme.features` truthfully (after `WHY_PLAN.md` P1
+  wires them); until wired, remove them from examples so no one copies a no-op.
+- New `tools/check_docs.py`: intra-doc links, screenshot existence, config-key
+  existence, one-H1 rule, no TODO/FIXME. Wire into `.github/workflows/docs.yml`.
+- **Acceptance:** link/screenshot/config checks pass in CI.
+
+### D2 — Why & onboarding
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- `docs/why-neoabs.md` (three pillars + dated honest comparison), `docs/showcase.md`,
+  rewritten `docs/getting-started.md`, `docs/getting-started/model-project.md`.
+- **Acceptance:** clean machine → visible branded site in under 5 minutes via
+  `pip install mkdocs-neoabs` + the minimal config.
+
+### D3 — Configuration Bible
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- `tools/emit_config_reference.py` generates `docs/getting-started/configuration.md`
+  from `_NEOABS_TOKEN_MAP`, `_neoabs_defaults`, `extra.*`, plugin options.
+- Kitchen-sink commented config; component-toggle before/after docs (Phase 2).
+- **Acceptance:** every documented key has a consumer; reference regenerates
+  deterministically (CI diff).
+
+### D4 — Design system & components deep-dive
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- Expand `docs/design/*` (tokens, glass table, dot-matrix, animation, borders,
+  a11y/`prefers-reduced-motion`).
+- Every `docs/components/*` page follows the 7-section template (what/when/
+  markdown/config/screenshot/under-the-hood/a11y); add missing ones; extend
+  `tools/screenshots_gen.py` so each has a screenshot.
+- **Acceptance:** full §3.5 inventory covered; screenshots exist and are linked.
+
+### D5 — Theme behavior & features
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- New `docs/features/**`: search, SPA nav & scroll restore, service worker
+  diagram, repo popover (caching + rate limits; token when shipped),
+  persistence (tabs/task lists/palette/notes export), keyboard reference,
+  progress/TOC tracking, graceful-degradation table (no-JS/offline/reduced
+  motion/no `backdrop-filter`).
+- **Acceptance:** every documented behavior matches code (verified by existing
+  harnesses referenced from the docs).
+
+### D6 — Developer docs & learning curve
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- Expand `docs/architecture.md` + `docs/development.md`; add
+  `docs/contributing.md`, `docs/testing.md`, and `docs/learn/*` with four levels
+  (Explorer → Maker → Customizer → Contributor), each ending in checkpoints.
+- **Acceptance:** a first-time contributor completes the Contributor level using
+  only these docs.
+
+### D7 — GitHub Wiki
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- Enable `rkriad585/mkdocs-neoabs.wiki`; seed `Home`, `_Sidebar`, `Why-NeoAbs`,
+  `Quick-Start`, `Configuration-Bible`, `Recipes`, `Release-Notes`,
+  `Screenshots`, `Contributing-to-the-Wiki`.
+- `tools/wiki_sync/` + release-triggered GitHub Action; docs↔wiki cross-link
+  contract.
+- **Acceptance:** wiki live at `github.com/rkriad585/mkdocs-neoabs/wiki`; sync
+  Action green on tag; every wiki page links back to the canonical docs.
+
+### D8 — Quality, CI & maintenance
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope
+> edits, no skipped items in this phase, everything stays on by default;
+> build + `tools/check_docs.py` + tests green before done.
+
+
+- CI owns docs quality: `check_docs.py`, generated-reference diff, docs-examples
+  build (each snippet tested), screenshot regeneration.
+- Release → `CHANGELOG.md` → wiki `Release-Notes.md` alignment; translation
+  readiness (`docs/translating.md`); sitemap/llms.txt wiring (`WHY_PLAN.md` P4).
+- **Acceptance:** push → CI proves docs health with zero manual steps.

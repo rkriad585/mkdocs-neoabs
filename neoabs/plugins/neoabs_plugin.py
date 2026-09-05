@@ -1,6 +1,9 @@
 """NeoAbs theme plugin for MkDocs."""
 
-from datetime import datetime
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import ClassVar
 
 from mkdocs.plugins import BasePlugin
 
@@ -57,11 +60,106 @@ _NEOABS_TOKEN_MAP = {
     },
 }
 
+# Phase 2 - Component visibility toggles.
+#
+# Every configurable component/section of the theme plus its default state.
+# Every default is ON: the theme ships fully featured, and a user can opt
+# specific pieces out from `theme.neoabs.components.<name>.<key>`.
+_NEOABS_DEFAULT_COMPONENTS = {
+    "header": {
+        "show": True,
+        "show_logo": True,
+        "show_site_name": True,
+        "show_search": True,
+        "show_repo_link": True,
+        "show_palette_toggle": True,
+        "show_page_title": True,
+    },
+    "sidebar": {
+        "show": True,
+        "show_header": True,
+        "show_search": True,
+    },
+    "toc": {
+        "show": True,
+        "title": "On this page",
+        "show_level_h2": True,
+        "show_level_h3": True,
+        "show_level_h4": True,
+    },
+    "footer": {
+        "show": True,
+        "show_prev_next": True,
+        "show_copyright": True,
+        "copyright_text": "",
+    },
+    "content": {
+        "show": True,
+        "show_progress_bar": True,
+        "show_back_to_top": True,
+    },
+    "search": {
+        "show": True,
+        "shortcut_key": "/",
+        "placeholder": "Search...",
+    },
+    "notes": {
+        "show": True,
+        "shortcut_key": "Ctrl+Shift+N",
+    },
+    "code": {
+        "show_copy_button": True,
+        "show_line_numbers": False,
+        "highlight_lines": True,
+    },
+    "admonitions": {
+        "show": True,
+    },
+    "mermaid": {
+        "show": True,
+        "cdn_url": "",
+    },
+    "math": {
+        "show": True,
+        "cdn_url": "",
+    },
+    "highlighting": {
+        "show": True,
+        "cdn_url": "",
+        "theme_dark": "github-dark",
+        "theme_light": "github",
+    },
+    "repo_popover": {
+        "show": True,
+    },
+    "tags": {
+        "show": True,
+    },
+    "toast": {
+        "show": True,
+    },
+    "keyboard_help": {
+        "show": True,
+    },
+}
+
+
+def _deep_merge(defaults, user):
+    """Merge user config over defaults; nested dicts merge recursively."""
+    merged = dict(defaults)
+    if isinstance(user, dict):
+        for key, value in user.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = value
+    return merged
+
 
 class NeoAbsPlugin(BasePlugin):
     """Plugin that enhances the NeoAbs theme with additional context."""
 
-    _neoabs_defaults = {
+    _neoabs_defaults: ClassVar[dict[str, object]] = {
         "glass": "medium",
         "dot_matrix": True,
         "animation": "normal",
@@ -80,19 +178,32 @@ class NeoAbsPlugin(BasePlugin):
             neoabs.setdefault(key, value)
         theme["neoabs"] = neoabs
 
+        # Phase 2: resolve component visibility toggles. User overrides are
+        # deep-merged onto the all-ON defaults and exposed to templates plus
+        # the JS bootstrap (serialized into `#__config` as `components`).
+        provided_components = neoabs.get("components")
+        if not isinstance(provided_components, dict):
+            provided_components = {}
+        components = _deep_merge(_NEOABS_DEFAULT_COMPONENTS, provided_components)
+        neoabs["components"] = components
+        theme["neoabs"] = neoabs
+
         # B2: inject current year for the footer copyright far from relying on a
         # Jinja `now` global that MkDocs does not provide.
         # C1-C3: surface the neoabs theme options to templates so they can be
         # applied to the rendered output (glass, dot matrix, animation, border).
         extra = config.get("extra") or {}
-        extra["neoabs_copyright_year"] = datetime.now().year
+        extra["neoabs_copyright_year"] = datetime.now(tz=timezone.utc).year
         extra["neoabs_glass"] = neoabs["glass"]
         extra["neoabs_dot_matrix"] = bool(neoabs["dot_matrix"])
         extra["neoabs_animation"] = neoabs["animation"]
         extra["neoabs_border"] = neoabs["border"]
-        extra["neoabs_highlight"] = bool(neoabs["highlight"])
-        extra["neoabs_notes"] = bool(neoabs["notes"])
+        extra["neoabs_highlight"] = bool(
+            neoabs["highlight"] and components["highlighting"]["show"]
+        )
+        extra["neoabs_notes"] = bool(neoabs["notes"] and components["notes"]["show"])
         extra["neoabs_notes_ttl"] = neoabs.get("notes_ttl")
+        extra["neoabs_components"] = components
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.

@@ -9,7 +9,7 @@ description = "NeoAbs - Glass + NothingOS design language for MkDocs"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-keywords = ["mkdocs", "theme", "documentation", "glass", "nothingos", "neoabs"]
+keywords = ["mkdocs", "theme", "documentation", "rkriad585", "neostore", "glass", "nothingos", "neoabs"]
 authors = [
   { name = "rkriad585", email = "rkriad585@gmail.com" },
 ]
