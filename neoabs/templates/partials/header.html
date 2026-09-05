@@ -19,16 +19,16 @@
       <a href="{{ config.site_url | default('/', true) | url }}" class="neoabs-header__brand" title="{{ config.site_name }}">
         {% if _logo_dark %}
         {% if _logo_dark.startswith("http") %}
-        <img src="{{ _logo_dark }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
+        <img src="{{ _logo_dark }}" alt="" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
         {% else %}
-        <img src="{{ _logo_dark | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
+        <img src="{{ _logo_dark | url }}" alt="" width="26" height="26" class="neoabs-header__brand-logo{{ '' if not _two_tone else ' neoabs-header__brand-logo--dark' }}">
         {% endif %}
         {% endif %}
         {% if _two_tone %}
         {% if _logo_light.startswith("http") %}
-        <img src="{{ _logo_light }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
+        <img src="{{ _logo_light }}" alt="" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% else %}
-        <img src="{{ _logo_light | url }}" alt="{{ _brand }}" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
+        <img src="{{ _logo_light | url }}" alt="" width="26" height="26" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% endif %}
         {% endif %}
         <span class="neoabs-header__site-name">{{ _brand }}</span>

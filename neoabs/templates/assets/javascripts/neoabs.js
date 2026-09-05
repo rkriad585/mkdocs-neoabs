@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "8"
+  var NEOABS_VERSION = "9"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -2475,6 +2475,19 @@
     })
   }
 
+  // Empty code-fence line anchors (pymdownx "linenums" output, e.g.
+  // id="__codelineno-0-1") are focusable links with no text. They're valid
+  // fragment targets for deep-linking, but as empty tab stops they trip
+  // "links must have discernible text" audits. Pull them out of the tab order
+  // and the accessibility tree.
+  function initCodeFenceLinks() {
+    const anchors = document.querySelectorAll('a[id^="__codelineno"]')
+    anchors.forEach(function (a) {
+      a.setAttribute("aria-hidden", "true")
+      a.tabIndex = -1
+    })
+  }
+
   // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
@@ -2494,6 +2507,7 @@
       () => initCopyButtons(config), initTabs, initTaskLists,
       () => initNotes(config), initAnchorLinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
+      initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),
       () => initSPANavigation(config)]
     init.forEach(function (fn) {

@@ -3085,8 +3085,28 @@ tbody tr {
 // 16. MISSING COMPONENT STYLES (from audit)
 // ============================================================================
 
-// --- Visually hidden (sr-only) for toggle inputs and skip link ---
-.neoabs-toggle,
+// --- Theme state toggles (drawer / search checkboxes) ---
+// Hidden outright: they're driven by the visible header buttons + overlay
+// labels, and staying out of the accessibility tree avoids "form elements
+// need a visible text label" audits. When JS is unavailable, fall back to an
+// sr-only box so no-JS users can still reach the toggles with the keyboard.
+.neoabs-toggle {
+	display: none;
+}
+
+.no-js .neoabs-toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+// --- Visually hidden (sr-only) for the skip link ---
 .neoabs-skip {
 	position: absolute;
 	width: 1px;

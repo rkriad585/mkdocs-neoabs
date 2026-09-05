@@ -2,7 +2,14 @@
   "name": "mkdocs-neoabs",
   "version": "0.1.2",
   "description": "NeoAbs - Glass + NothingOS design language for MkDocs",
-  "keywords": ["mkdocs", "theme", "documentation", "glass", "nothingos", "neoabs"],
+  "keywords": [
+    "mkdocs",
+    "theme",
+    "documentation",
+    "glass",
+    "nothingos",
+    "neoabs"
+  ],
   "homepage": "https://github.com/rkriad585/mkdocs-neoabs",
   "license": "MIT",
   "private": true,
@@ -13,11 +20,13 @@
     "test": "node tests/neoabs.test.js"
   },
   "devDependencies": {
-    "sass": "^1.97.2",
-    "postcss": "^8.5.6",
     "autoprefixer": "^10.4.23",
+    "axe-core": "^4.13.0",
+    "chokidar": "^5.0.0",
     "cssnano": "^6.0.0",
-    "chokidar": "^5.0.0"
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.6",
+    "sass": "^1.97.2"
   },
   "engines": {
     "node": ">= 18"
