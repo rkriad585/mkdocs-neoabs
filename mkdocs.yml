@@ -83,7 +83,7 @@ theme:
     #   large: "0 8px 32px rgba(0,0,0,0.5)"
 
 extra:
-  neoabs_version: 7
+  neoabs_version: 8
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

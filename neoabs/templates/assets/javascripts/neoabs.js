@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "7"
+  var NEOABS_VERSION = "8"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -2115,8 +2115,7 @@
 
       const authorLink = '<a href="' + repoPopoverEscape(ownerData.html_url || "https://github.com/" + ownerLogin)
         + '" target="_blank" rel="noopener">'
-        + repoPopoverEscape(ownerName || "")
-        + (ownerName ? ' <span class="neoabs-repo-pop__k">@' + repoPopoverEscape(ownerLogin) + "</span>" : "@" + repoPopoverEscape(ownerLogin))
+        + repoPopoverEscape(ownerName || "@" + ownerLogin)
         + "</a>"
 
       pop.innerHTML =
