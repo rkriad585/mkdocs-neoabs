@@ -8,6 +8,28 @@
 {% if _sbr_width %}
 {% set _sbr_style.parts = _sbr_style.parts + ["--neoabs-sidebar-width: " ~ _sbr_width] %}
 {% endif %}
+{% set _toc_cfg = config.theme.neoabs.toc if (config.theme.neoabs is mapping and config.theme.neoabs.toc is mapping) else {} %}
+{% set _toc_position = _toc_cfg.position if (_toc_cfg.position is defined) else "right" %}
+{% set _toc_width = _toc_cfg.width if (_toc_cfg.width is defined) else none %}
+{% set _toc_title = _toc_cfg.title if (_toc_cfg.title is defined) else (_comp.toc.title | default("On this page")) %}
+{% set _toc_title_style = _toc_cfg.title_style if (_toc_cfg.title_style is defined) else "uppercase" %}
+{% set _toc_collapsible = _toc_cfg.collapsible if (_toc_cfg.collapsible is defined) else true %}
+{% set _toc_default_collapsed = _toc_cfg.default_collapsed if (_toc_cfg.default_collapsed is defined) else false %}
+{% set _toc_glass = _toc_cfg.glass if (_toc_cfg.glass is defined) else true %}
+{% set _toc_tracking_enabled = _toc_cfg.tracking.enabled if (_toc_cfg.tracking is mapping and _toc_cfg.tracking.enabled is defined) else true %}
+{% set _toc_tracking_offset = _toc_cfg.tracking.offset if (_toc_cfg.tracking is mapping and _toc_cfg.tracking.offset is defined) else none %}
+{% set _toc_permalink = _toc_cfg.permalink if (_toc_cfg.permalink is defined) else true %}
+{% set _toc_permalink_symbol = _toc_cfg.permalink_symbol if (_toc_cfg.permalink_symbol is defined and _toc_cfg.permalink_symbol) else none %}
+{% set _toc_levels = _toc_cfg.levels if (_toc_cfg.levels is mapping) else none %}
+{% set _toc_levels_effective = _toc_levels if _toc_levels else {
+    "h2": _comp.toc.show_level_h2 | default(true),
+    "h3": _comp.toc.show_level_h3 | default(true),
+    "h4": _comp.toc.show_level_h4 | default(true)
+  } %}
+{% set _toc_style = namespace(parts=[]) %}
+{% if _toc_width %}
+{% set _toc_style.parts = _toc_style.parts + ["--neoabs-toc-width: " ~ _toc_width] %}
+{% endif %}
 <!doctype html>
 <html lang="{{ config.theme.language | default('en') }}"
       class="no-js"
@@ -133,7 +155,7 @@
     {% endif %}
   </head>
 
-  <body dir="{{ config.theme.direction | default('ltr') }}"{% if _sbr_position != "left" %} data-md-neoabs-sidebar-position="{{ _sbr_position }}"{% endif %}{% if _sbr_style.parts %} style="{{ _sbr_style.parts | join('; ') }}"{% endif %}>
+  <body dir="{{ config.theme.direction | default('ltr') }}"{% if (_sbr_position == "right") or (_toc_position == "left") %} data-md-neoabs-sidebar-position="right"{% endif %}{% if _sbr_style.parts or _toc_style.parts %} style="{{ (_sbr_style.parts + _toc_style.parts) | join('; ') }}"{% endif %}>
 
     {% if config.extra.neoabs_dot_matrix %}
     <div class="neoabs-dot-matrix" aria-hidden="true"></div>
@@ -221,6 +243,13 @@
         "sidebar": {
           "collapsible": {{ _sbr_collapsible | tojson }},
           "default_collapsed": {{ _sbr_default_collapsed | tojson }}
+        },
+        "toc": {
+          "collapsible": {{ _toc_collapsible | tojson }},
+          "default_collapsed": {{ _toc_default_collapsed | tojson }},
+          "levels": {{ _toc_levels_effective | tojson }},
+          "tracking_enabled": {{ _toc_tracking_enabled | tojson }}{% if _toc_tracking_offset %},"tracking_offset": {{ _toc_tracking_offset | tojson }}{% endif %},
+          "permalink": {{ _toc_permalink | tojson }}{% if _toc_permalink_symbol %},"permalink_symbol": {{ _toc_permalink_symbol | tojson }}{% endif %}
         },
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {

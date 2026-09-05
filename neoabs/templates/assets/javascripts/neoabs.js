@@ -554,9 +554,14 @@
   let _tocScrollBound = false
 
   function initTocTracking() {
-    if (!componentShow("toc", "show")) return
+    const tocCfg = (_config && _config.toc) || {}
+    if (!componentShow("toc", "show") || tocCfg.tracking_enabled === false) return
     const tocLinks = $$(".neoabs-toc__link")
-    const headings = $$(".neoabs-content h2, .neoabs-content h3, .neoabs-content h4")
+    const levelSel = (tocCfg.levels && Object.keys(tocCfg.levels).length)
+      ? ["h2", "h3", "h4", "h5", "h6"].filter((k) => tocCfg.levels[k] !== false).join(",")
+      : "h2,h3,h4"
+    if (!levelSel) return
+    const headings = $$(".neoabs-content " + levelSel)
     if (!tocLinks.length || !headings.length) return
     const linkMap = {}
     tocLinks.forEach((link) => {
@@ -582,11 +587,19 @@
       }
     }
 
-    // The section whose heading is closest above a probe line ~25% down the
-    // viewport. This is the standard "current position" algorithm and it keeps
-    // the highlight glued to the section being read.
+    // The section whose heading is closest above a probe line (the tracking
+    // offset in px, or ~25% down the viewport by default). This is the
+    // standard "current position" algorithm and it keeps the highlight glued
+    // to the section being read.
+    let probeOffset = null
+    if (tocCfg.tracking_offset != null) {
+      const parsed = parseFloat(tocCfg.tracking_offset)
+      if (!isNaN(parsed)) probeOffset = parsed
+    }
     function refresh() {
-      const probe = window.scrollY + window.innerHeight * 0.25
+      const probe = probeOffset != null
+        ? window.scrollY + probeOffset
+        : window.scrollY + window.innerHeight * 0.25
       let current = null
       for (let i = 0; i < list.length; i++) {
         const top = list[i].getBoundingClientRect().top + window.scrollY
@@ -1047,6 +1060,24 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 10b. TOC Permalinks (heading anchor links)
+  // ---------------------------------------------------------------------------
+
+  // Phase 6: theme.neoabs.toc — `permalink: false` hides the heading anchor
+  // links; `permalink_symbol` swaps their glyph (handled here so SPA-swapped
+  // content gets them reapplied on every page).
+  function initPermalinks() {
+    const tocCfg = (_config && _config.toc) || {}
+    if (tocCfg.permalink === false) {
+      document.body.classList.add("neoabs-no-permalink")
+    }
+    const symbol = tocCfg.permalink_symbol
+    if (symbol) {
+      $$(".headerlink").forEach((link) => { link.textContent = symbol })
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // 11. Keyboard Navigation
   // ---------------------------------------------------------------------------
 
@@ -1131,6 +1162,8 @@
     modal.setAttribute("aria-label", "Keyboard shortcuts")
 
     const combo = (mods, k) => (mods ? mods + " " : "") + k
+    const sidebarCfg = (_config && _config.sidebar) || {}
+    const tocCfg = (_config && _config.toc) || {}
     const shortcuts = [
       { keys: "/", desc: "Open search" },
       { keys: "Esc", desc: "Close active overlay" },
@@ -1138,8 +1171,12 @@
       { keys: "Enter", desc: "Open selected result" },
       { keys: "\u2190 / \u2192", desc: "Switch tabs (when a tab is focused)" },
       { keys: combo("Ctrl/Cmd+Shift", "N"), desc: "Toggle notes panel" },
-      { keys: combo("Ctrl/Cmd+Shift", "B"), desc: "Toggle sidebar" },
-      { keys: combo("Ctrl/Cmd+Shift", "T"), desc: "Toggle table of contents" },
+      ...(sidebarCfg.collapsible !== false
+        ? [{ keys: combo("Ctrl/Cmd+Shift", "B"), desc: "Toggle sidebar" }]
+        : []),
+      ...(tocCfg.collapsible !== false
+        ? [{ keys: combo("Ctrl/Cmd+Shift", "T"), desc: "Toggle table of contents" }]
+        : []),
       { keys: "?", desc: "Show keyboard shortcuts" },
     ]
 
@@ -1227,6 +1264,10 @@
     const collapsible = sidebarCfg.collapsible !== false
     const defaultCollapsed = sidebarCfg.default_collapsed === true
 
+    const tocCfg = (_config && _config.toc) || {}
+    const tocCollapsible = tocCfg.collapsible !== false
+    const tocDefaultCollapsed = tocCfg.default_collapsed === true
+
     const store = (key) => storageGet("ui-" + key) === "1"
     const save = (key, on) => storageSet("ui-" + key, on ? "1" : "0")
 
@@ -1234,7 +1275,13 @@
     if (collapsible && (store("sidebar") || defaultCollapsed)) {
       setBody("nav-hidden", true)
     }
-    if (store("toc")) setBody("toc-hidden", true)
+    // Restore persisted TOC state, falling back to the config default.
+    if (tocCollapsible && (store("toc") || tocDefaultCollapsed)) {
+      setBody("toc-hidden", true)
+    } else if (!tocCollapsible) {
+      // A non-collapsible TOC can never stay hidden.
+      setBody("toc-hidden", false)
+    }
 
     function setBody(cls, on) {
       document.body.classList.toggle("neoabs-" + cls, on)
@@ -1256,7 +1303,7 @@
     }
 
     // Ctrl/Cmd+Shift+T toggles the "On this page" TOC (persisted).
-    if (toc) {
+    if (toc && tocCollapsible) {
       document.addEventListener("keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "t" || e.key === "T")) {
           e.preventDefault()
@@ -2305,7 +2352,8 @@
       const inits = [
         initTocTracking, initHighlighting, initMermaid,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
-        initUIExamples, () => initMath(_navConfig), initNavToggle
+        initUIExamples, () => initMath(_navConfig), initNavToggle,
+        initPermalinks
       ]
       inits.forEach(function (fn) {
         try { fn() } catch (e) {}
@@ -2549,7 +2597,7 @@
       () => initSearch(config), initTocTracking, initBackToTop,
       initScrollBehavior, initHighlighting, initMermaid,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), initAnchorLinks, initKeyboardNav,
+      () => initNotes(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

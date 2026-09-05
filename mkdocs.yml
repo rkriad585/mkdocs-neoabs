@@ -241,6 +241,31 @@ theme:
     #   sections:
     #     show: true                   # Show section heading rows (default true)
     #     style: "uppercase"           # uppercase | bold | default (default uppercase)
+    # --- Phase 6: Table of contents customization (optional) -------------------
+    # Customize the right sidebar "On this page" rail. Every option defaults to
+    # the theme's current look; uncomment only the keys you want to change.
+    # `position` reuses the Phase 5 swap mechanism (data attribute on <body>;
+    # `left` swaps TOC & sidebar); `width` is applied via an inline CSS custom
+    # variable on <body>; `glass`, `title_style` via data attributes on <aside>.
+    # toc:
+    #   position: "right"              # right | left (left swaps toc & sidebar) (default right)
+    #   width: "240px"                 # TOC width (default 240px)
+    #   title: "On this page"          # Custom TOC title (default On this page)
+    #   title_style: "uppercase"       # uppercase | bold | default (default uppercase)
+    #   collapsible: true              # Ctrl/Cmd+Shift+T toggle (default true)
+    #   default_collapsed: false       # Start with the TOC collapsed (default false)
+    #   glass: true                    # Glass backdrop (false = opaque rail) (default true)
+    #   levels:                        # Heading levels to show in the TOC
+    #     h2: true                     #   (all levels shown unless listed false)
+    #     h3: true
+    #     h4: true
+    #     h5: false
+    #     h6: false
+    #   tracking:
+    #     enabled: true                # Scrollspy active-heading highlight (default true)
+    #     offset: "100px"              # Scroll offset for activation (default 25% viewport)
+    #   permalink: true                # Show # anchor links on headings (default true)
+    #   permalink_symbol: ""           # Replace the permalink glyph (empty = markdown default)
 
 extra:
   neoabs_version: 9

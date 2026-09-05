@@ -1191,6 +1191,30 @@ $neoabs-breakpoint-mobile: 768px;
 	padding-left: var(--neoabs-space-4);
 }
 
+// Phase 6: theme.neoabs.toc.title_style — "bold" turns the title into a plain
+// bold heading; "default" keeps a regular (non-uppercase) heading.
+.neoabs-toc[data-md-neoabs-toc-title-style="bold"] .neoabs-toc__title {
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.neoabs-toc[data-md-neoabs-toc-title-style="default"] .neoabs-toc__title {
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	font-weight: 400;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+// Phase 6: theme.neoabs.toc.glass — glass off makes the TOC backdrop fully
+// opaque (`--neoabs-ink` is scheme-aware: dark in slate, light in default).
+.neoabs-toc[data-md-neoabs-toc-glass="false"] {
+	background: var(--neoabs-ink, #000);
+}
+
 // TOC list
 .neoabs-toc__list {
 	list-style: none;
@@ -3084,6 +3108,11 @@ h6:hover .headerlink {
 
 .headerlink:hover {
 	color: var(--neoabs-accent);
+}
+
+// Phase 6: theme.neoabs.toc.permalink — false hides the heading anchor links
+.neoabs-no-permalink .headerlink {
+	display: none;
 }
 
 // --- Tabbed content (pymdownx.tabbed) ---

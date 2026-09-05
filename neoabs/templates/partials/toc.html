@@ -1,12 +1,15 @@
-{% set _show_levels = {
-  "h2": _comp.toc.show_level_h2 | default(true),
-  "h3": _comp.toc.show_level_h3 | default(true),
-  "h4": _comp.toc.show_level_h4 | default(true)
-} %}
+{% set _toc_levels_eff = _toc_levels_effective if (_toc_levels_effective is defined and _toc_levels_effective is mapping) else {
+    "h2": _comp.toc.show_level_h2 | default(true),
+    "h3": _comp.toc.show_level_h3 | default(true),
+    "h4": _comp.toc.show_level_h4 | default(true)
+  } %}
+{% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else "On this page" %}
+{% set _toc_ttl_style = _toc_title_style if (_toc_title_style is defined) else "uppercase" %}
+{% set _toc_gls = _toc_glass if (_toc_glass is defined) else true %}
 
 {% macro render_toc_item(toc_item) %}
 {% set _level_key = "h" ~ toc_item.level %}
-{% if _show_levels.get(_level_key, true) %}
+{% if _toc_levels_eff.get(_level_key, true) %}
 {% set active = "neoabs-toc__link--active" if toc_item.active %}
 <li class="neoabs-toc__item neoabs-toc__item--h{{ toc_item.level }}">
   <a href="{{ toc_item.url }}" class="neoabs-toc__link {{ active }}" title="{{ toc_item.title }}">
@@ -23,10 +26,10 @@
 {% endif %}
 {% endmacro %}
 
-<aside class="neoabs-toc" data-md-component="toc" aria-labelledby="neoabs-toc-title">
+<aside class="neoabs-toc" data-md-component="toc" aria-labelledby="neoabs-toc-title"{% if not _toc_gls %} data-md-neoabs-toc-glass="false"{% endif %}{% if _toc_ttl_style != "uppercase" %} data-md-neoabs-toc-title-style="{{ _toc_ttl_style }}"{% endif %}>
   <div class="neoabs-toc__scroll">
     <div class="neoabs-toc__inner">
-      <h2 class="neoabs-toc__title" id="neoabs-toc-title">{{ _comp.toc.title | default("On this page") }}</h2>
+      <h2 class="neoabs-toc__title" id="neoabs-toc-title">{{ _toc_ttl }}</h2>
       <ul class="neoabs-toc__list">
         {% for toc_item in page.toc %}
         {{ render_toc_item(toc_item) }}
