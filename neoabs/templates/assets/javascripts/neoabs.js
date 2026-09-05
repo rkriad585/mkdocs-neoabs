@@ -2296,7 +2296,13 @@
       const rootKey = siteRootKey()
       const s = sessionGet()
       if (s.lastPage && hereKey === rootKey && s.lastPage !== rootKey) {
-        navigateTo(s.lastPage, false)
+        // Use directory-style URLs (trailing slash) so the fetch hits the page
+        // directly instead of being 302-redirected by the server.
+        let resumeUrl = s.lastPage
+        if (resumeUrl && resumeUrl.charAt(resumeUrl.length - 1) !== "/") {
+          resumeUrl += "/"
+        }
+        navigateTo(resumeUrl, false, { resume: true })
         return
       }
       applyNavMemory()
@@ -2304,7 +2310,7 @@
       recordCurrentVisit()
     }
 
-    function navigateTo(url, push) {
+    function navigateTo(url, push, opts) {
       if (!url) return
       const target = new URL(url, location.href)
       if (samePageHash(target)) {
@@ -2318,6 +2324,7 @@
       // Save the current page's scroll position before leaving it.
       saveCurrentScroll()
       const targetKey = pageKeyFromUrl(target.href)
+      const originHref = location.href
 
       if (push) history.pushState(null, "", url)
       else history.replaceState(null, "", url)
@@ -2336,7 +2343,16 @@
           recordCurrentVisit()
           closeNavOverlays()
         })
-        .catch(function () {
+        .catch(function (e) {
+          if (opts && opts.resume) {
+            // A stale remembered page (e.g. 404) must not yank the visitor off
+            // the landing page. Forget it and settle here instead.
+            sessionMutate(function (s) { delete s.lastPage })
+            history.replaceState(null, "", originHref)
+            applyNavMemory()
+            restoreScroll(pageKeyFromUrl(originHref))
+            return
+          }
           // On failure, fall back to a normal full-page navigation.
           location.href = url
         })
