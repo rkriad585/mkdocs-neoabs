@@ -251,6 +251,7 @@
           "tracking_enabled": {{ _toc_tracking_enabled | tojson }}{% if _toc_tracking_offset %},"tracking_offset": {{ _toc_tracking_offset | tojson }}{% endif %},
           "permalink": {{ _toc_permalink | tojson }}{% if _toc_permalink_symbol %},"permalink_symbol": {{ _toc_permalink_symbol | tojson }}{% endif %}
         },
+        "keyboard": {{ config.extra.neoabs_keyboard | default({}) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {
@@ -284,7 +285,23 @@
 
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("{{ 'sw.js' | url }}")
+        var swURL = new URL("{{ 'sw.js' | url }}", location.href).href
+        // The worker's scope is the directory of its script. If the site is
+        // mounted at a subpath while an old root-scoped worker (scope "/")
+        // still controls this origin, that stale worker keeps re-fetching a
+        // script that no longer exists at the origin root (404 spam) and can
+        // interfere with any site on the same host. Clean it up: a root-mounted
+        // site (pathname "/") keeps its legit origin-root worker untouched.
+        if (location.pathname.replace(/\/$/, "") && navigator.serviceWorker.getRegistrations) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            registrations.forEach(function (registration) {
+              if (registration.scope === new URL("/", location.href).href) {
+                registration.unregister()
+              }
+            })
+          })
+        }
+        navigator.serviceWorker.register(swURL).catch(function () {})
       }
     </script>
   </body>

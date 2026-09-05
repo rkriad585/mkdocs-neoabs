@@ -266,9 +266,64 @@ theme:
     #     offset: "100px"              # Scroll offset for activation (default 25% viewport)
     #   permalink: true                # Show # anchor links on headings (default true)
     #   permalink_symbol: ""           # Replace the permalink glyph (empty = markdown default)
+    # --- Phase 7: Keyboard shortcuts customization (optional) --------------------
+    # Remap every built-in global shortcut and/or add your own. Every option
+    # defaults to the current key binding; uncomment only the keys you want to
+    # change. `enabled: false` disables a single shortcut; `persisted` controls
+    # whether a toggle state is remembered in localStorage. Keys may use plain
+    # letters ("/", "g"), named keys ("Escape", "ArrowUp", "F1") or combos
+    # ("Ctrl+K", "Ctrl+Shift+B", "Ctrl+Alt+B"). Ctrl and Cmd (Meta) are treated
+    # as equivalent. `enabled: false` on the whole `keyboard` block turns off all
+    # shortcuts at once.
+    # keyboard:
+    #   enabled: true                  # Master switch for all shortcuts (default true)
+    #   shortcuts:
+    #     search:
+    #       key: "/"                   # Open search (default "/")
+    #       label: "Open search"       # Text shown in the "?" help modal
+    #     close:
+    #       key: "Escape"              # Close active overlay (default Escape)
+    #       label: "Close active overlay"
+    #     search_up:
+    #       key: "ArrowUp"             # Navigate search results (default ArrowUp)
+    #       label: "Navigate search results up"
+    #     search_down:
+    #       key: "ArrowDown"           # (default ArrowDown)
+    #       label: "Navigate search results down"
+    #     search_open:
+    #       key: "Enter"               # Open the selected result (default Enter)
+    #       label: "Open selected result"
+    #     tab_left:
+    #       key: "ArrowLeft"           # Previous tab (default ArrowLeft)
+    #       label: "Switch to previous tab"
+    #     tab_right:
+    #       key: "ArrowRight"          # Next tab (default ArrowRight)
+    #       label: "Switch to next tab"
+    #     toggle_sidebar:
+    #       key: "Ctrl+Shift+B"        # Collapse/expand the sidebar (default Ctrl+Shift+B)
+    #       label: "Toggle sidebar"
+    #       persisted: true            # Remember the collapsed state (default true)
+    #     toggle_toc:
+    #       key: "Ctrl+Shift+T"        # Collapse/expand the TOC (default Ctrl+Shift+T)
+    #       label: "Toggle table of contents"
+    #       persisted: true            # Remember the collapsed state (default true)
+    #     toggle_notes:
+    #       key: "Ctrl+Shift+N"        # Open/close the notes panel (default Ctrl+Shift+N)
+    #       label: "Toggle notes panel"
+    #       enabled: true              # Set false to disable this shortcut
+    #     help:
+    #       key: "?"                   # Show the keyboard-shortcuts modal (default "?")
+    #       label: "Show keyboard shortcuts"
+    #   custom:                        # Your own shortcuts (list of entries)
+    #     - key: "g"                   #   Press "g" to jump to the top
+    #       label: "Go to top"
+    #       action: "scroll_to_top"    #     scroll_to_top | toggle_reading_mode | registered action name
+    #     - key: "r"                   #   Press "r" to flip reading mode
+    #       label: "Toggle reading mode"
+    #       action: "toggle_reading_mode"
 
 extra:
-  neoabs_version: 9
+  neoabs_version: 10
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

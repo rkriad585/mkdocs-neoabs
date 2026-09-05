@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import ClassVar
 
+from mkdocs.exceptions import ConfigurationError
 from mkdocs.plugins import BasePlugin
 
 # Phase 1 - Design token overrides.
@@ -143,6 +144,64 @@ _NEOABS_DEFAULT_COMPONENTS = {
     },
 }
 
+# Phase 7 - Keyboard shortcuts.
+#
+# Every built-in shortcut is configurable and ON by default. `custom` holds
+# user-defined shortcuts that dispatch to built-in action names; a built-in
+# set of actions (scroll_to_top, toggle_sidebar, toggle_toc, toggle_notes,
+# open_search, open_help, toggle_reading_mode) is resolved in `neoabs.js`.
+_NEOABS_DEFAULT_KEYBOARD = {
+    "enabled": True,
+    "shortcuts": {
+        "search": {"key": "/", "label": "Open search", "enabled": True},
+        "close": {"key": "Escape", "label": "Close active overlay", "enabled": True},
+        "search_up": {
+            "key": "ArrowUp",
+            "label": "Navigate search results up",
+            "enabled": True,
+        },
+        "search_down": {
+            "key": "ArrowDown",
+            "label": "Navigate search results down",
+            "enabled": True,
+        },
+        "search_open": {
+            "key": "Enter",
+            "label": "Open selected result",
+            "enabled": True,
+        },
+        "tab_left": {
+            "key": "ArrowLeft",
+            "label": "Switch to previous tab",
+            "enabled": True,
+        },
+        "tab_right": {
+            "key": "ArrowRight",
+            "label": "Switch to next tab",
+            "enabled": True,
+        },
+        "toggle_sidebar": {
+            "key": "Ctrl+Shift+B",
+            "label": "Toggle sidebar",
+            "enabled": True,
+            "persisted": True,
+        },
+        "toggle_toc": {
+            "key": "Ctrl+Shift+T",
+            "label": "Toggle table of contents",
+            "enabled": True,
+            "persisted": True,
+        },
+        "toggle_notes": {
+            "key": "Ctrl+Shift+N",
+            "label": "Toggle notes panel",
+            "enabled": True,
+        },
+        "help": {"key": "?", "label": "Show keyboard shortcuts", "enabled": True},
+    },
+    "custom": [],
+}
+
 
 def _deep_merge(defaults, user):
     """Merge user config over defaults; nested dicts merge recursively."""
@@ -154,6 +213,65 @@ def _deep_merge(defaults, user):
             else:
                 merged[key] = value
     return merged
+
+
+def _validate_shortcut_entry(name, entry):
+    """Validate a single `theme.neoabs.keyboard.shortcuts.<name>` mapping."""
+    if not isinstance(entry, dict):
+        raise ConfigurationError(
+            f"theme.neoabs.keyboard.shortcuts.{name} must be a mapping with "
+            "a 'key' and 'label'."
+        )
+    key_value = entry.get("key")
+    if key_value is not None and (
+        not isinstance(key_value, str) or not key_value.strip()
+    ):
+        raise ConfigurationError(
+            f"theme.neoabs.keyboard.shortcuts.{name}.key must be a non-empty string."
+        )
+    label_value = entry.get("label")
+    if label_value is not None and not isinstance(label_value, str):
+        raise ConfigurationError(
+            f"theme.neoabs.keyboard.shortcuts.{name}.label must be a string."
+        )
+    for field in ("enabled", "persisted"):
+        value = entry.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.keyboard.shortcuts.{name}.{field} must be a boolean."
+            )
+
+
+def _validate_keyboard(keyboard):
+    """Validate a merged `theme.neoabs.keyboard` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently
+    degrading the shortcut layer."""
+    shortcuts = keyboard.get("shortcuts")
+    if isinstance(shortcuts, dict):
+        for name, entry in shortcuts.items():
+            _validate_shortcut_entry(name, entry)
+
+    custom = keyboard.get("custom")
+    if custom is None:
+        return
+    if not isinstance(custom, list):
+        raise ConfigurationError("theme.neoabs.keyboard.custom must be a list.")
+    for index, entry in enumerate(custom):
+        if not isinstance(entry, dict):
+            raise ConfigurationError(
+                f"theme.neoabs.keyboard.custom[{index}] must be a mapping with "
+                "'key', 'action', and 'label'."
+            )
+        for field in ("key", "action", "label"):
+            value = entry.get(field)
+            if value is not None and not isinstance(value, str):
+                raise ConfigurationError(
+                    f"theme.neoabs.keyboard.custom[{index}].{field} must be a string."
+                )
+        if not isinstance(entry.get("action"), str) or not entry["action"].strip():
+            raise ConfigurationError(
+                f"theme.neoabs.keyboard.custom[{index}].action is required."
+            )
 
 
 class NeoAbsPlugin(BasePlugin):
@@ -188,6 +306,18 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["components"] = components
         theme["neoabs"] = neoabs
 
+        # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
+        # shortcut works out of the box); user overrides are deep-merged and
+        # validated so a malformed key or custom action fails the build with a
+        # clear message instead of silently disabling the shortcut layer.
+        provided_keyboard = neoabs.get("keyboard")
+        if not isinstance(provided_keyboard, dict):
+            provided_keyboard = {}
+        keyboard = _deep_merge(_NEOABS_DEFAULT_KEYBOARD, provided_keyboard)
+        _validate_keyboard(keyboard)
+        neoabs["keyboard"] = keyboard
+        theme["neoabs"] = neoabs
+
         # B2: inject current year for the footer copyright far from relying on a
         # Jinja `now` global that MkDocs does not provide.
         # C1-C3: surface the neoabs theme options to templates so they can be
@@ -204,6 +334,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_notes"] = bool(neoabs["notes"] and components["notes"]["show"])
         extra["neoabs_notes_ttl"] = neoabs.get("notes_ttl")
         extra["neoabs_components"] = components
+        extra["neoabs_keyboard"] = keyboard
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.

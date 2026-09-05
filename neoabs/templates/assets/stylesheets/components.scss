@@ -74,6 +74,12 @@ $neoabs-breakpoint-mobile: 768px;
 	width: 100%;
 }
 
+// Phase 7: reading mode (toggled by the "toggle_reading_mode" custom shortcut)
+.neoabs-reading-mode .neoabs-article {
+	font-size: var(--neoabs-font-size-lg, 1.125rem);
+	line-height: 1.75;
+}
+
 // ============================================================================
 // 1. HEADER
 // ============================================================================

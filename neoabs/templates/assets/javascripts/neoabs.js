@@ -146,6 +146,36 @@
     return ""
   }
 
+  // Phase 7 keyboard helpers. `_config.keyboard` is injected by the theme
+  // plugin (all shortcuts enabled by default); every built-in shortcut can be
+  // re-keyed, relabeled, or disabled via `theme.neoabs.keyboard`.
+  const readKeyboard = () => (_config.keyboard || {})
+
+  function kbdShortcut(name) {
+    const kb = readKeyboard()
+    return (kb.shortcuts && kb.shortcuts[name]) || {}
+  }
+
+  function kbdEnabled(name) {
+    const kb = readKeyboard()
+    if (kb.enabled === false) return false
+    return kbdShortcut(name).enabled !== false
+  }
+
+  function kbdKey(name, fallback) {
+    const key = kbdShortcut(name).key
+    return typeof key === "string" && key.trim() ? key.trim() : fallback
+  }
+
+  function kbdLabel(name, fallback) {
+    const label = kbdShortcut(name).label
+    return typeof label === "string" && label.trim() ? label.trim() : fallback
+  }
+
+  function kbdPersisted(name) {
+    return kbdShortcut(name).persisted !== false
+  }
+
   // ---------------------------------------------------------------------------
   // 1. Theme Initialization
   // ---------------------------------------------------------------------------
@@ -502,15 +532,15 @@
       debounce = setTimeout(() => runSearch(input.value), 150)
     })
 
-    // Keyboard navigation
+    // Keyboard navigation (configurable via `theme.neoabs.keyboard`).
     input.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowDown") {
+      if (kbdEnabled("search_down") && matchesKeyCombo(e, kbdKey("search_down", "ArrowDown"))) {
         e.preventDefault()
         setActive(activeIndex + 1)
-      } else if (e.key === "ArrowUp") {
+      } else if (kbdEnabled("search_up") && matchesKeyCombo(e, kbdKey("search_up", "ArrowUp"))) {
         e.preventDefault()
         setActive(activeIndex - 1)
-      } else if (e.key === "Enter") {
+      } else if (kbdEnabled("search_open") && matchesKeyCombo(e, kbdKey("search_open", "Enter"))) {
         const items = $$(".neoabs-search__result", listEl)
         if (items.length) {
           e.preventDefault()
@@ -721,9 +751,11 @@
         label.setAttribute("aria-selected", i === activeIndex ? "true" : "false")
 
         label.addEventListener("keydown", function (e) {
-          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+          const left = kbdEnabled("tab_left") && matchesKeyCombo(e, kbdKey("tab_left", "ArrowLeft"))
+          const right = kbdEnabled("tab_right") && matchesKeyCombo(e, kbdKey("tab_right", "ArrowRight"))
+          if (!left && !right) return
           e.preventDefault()
-          const dir = e.key === "ArrowRight" ? 1 : -1
+          const dir = right ? 1 : -1
           const next = (activeIndex + dir + labels.length) % labels.length
           activate(next)
         })
@@ -1083,9 +1115,104 @@
 
   let isComposing = false
 
+  // Map a configured shortcut string like "Ctrl+Shift+B", "Escape", "g", or
+  // "Cmd+Shift+K" to the matching KeyboardEvent. `Ctrl` and `Meta` are treated
+  // as interchangeable (Cmd == Ctrl on macOS), matching the theme's existing
+  // toggles. Plain keys (no modifiers) only fire without Ctrl/Meta/Alt; Shift
+  // is tolerated so shifted punctuation such as "?" still works.
+  function matchesKeyCombo(e, combo) {
+    const parts = String(combo || "").split("+").map((p) => p.trim())
+    if (!parts.length) return false
+    const ctrl = parts.indexOf("Ctrl") !== -1 || parts.indexOf("Cmd") !== -1 || parts.indexOf("Meta") !== -1
+    const shift = parts.indexOf("Shift") !== -1
+    const alt = parts.indexOf("Alt") !== -1
+    const key = parts[parts.length - 1]
+    if (!key || e.key.toLowerCase() !== key.toLowerCase()) return false
+    if (!ctrl && !shift && !alt) return !e.ctrlKey && !e.metaKey && !e.altKey
+    if (ctrl && !(e.ctrlKey || e.metaKey)) return false
+    if (!ctrl && (e.ctrlKey || e.metaKey)) return false
+    if (shift && !e.shiftKey) return false
+    if (alt && !e.altKey) return false
+    return true
+  }
+
+  // Human-friendly display for a configured key string (used in the help modal).
+  function displayKey(combo) {
+    return String(combo || "")
+      .replace("Cmd", "Ctrl/Cmd")
+      .replace("Ctrl", "Ctrl/Cmd")
+      .replace("Escape", "Esc")
+      .replace("ArrowUp", "\u2191")
+      .replace("ArrowDown", "\u2193")
+      .replace("ArrowLeft", "\u2190")
+      .replace("ArrowRight", "\u2192")
+  }
+
+  // Built-in action registry for user-defined shortcuts
+  // (`theme.neoabs.keyboard.custom`). Feature toggles register their exact
+  // handlers here; unknown action names resolve to null and are ignored.
+  const keyboardActions = {}
+
+  function toggleReadingMode() {
+    return document.body.classList.toggle("neoabs-reading-mode")
+  }
+
+  function resolveKeyboardAction(name) {
+    if (keyboardActions[name]) return keyboardActions[name]
+    if (name === "scroll_to_top") {
+      return function () { window.scrollTo({ top: 0, behavior: "smooth" }) }
+    }
+    if (name === "open_search") {
+      return function () {
+        const searchEl = $(".neoabs-search")
+        if (searchEl && searchEl._neoabsOpen) searchEl._neoabsOpen()
+      }
+    }
+    if (name === "open_help") {
+      return function () { toggleKeyboardHelp() }
+    }
+    if (name === "toggle_reading_mode") {
+      return toggleReadingMode
+    }
+    return null
+  }
+
   function initKeyboardNav() {
     document.addEventListener("compositionstart", () => { isComposing = true })
     document.addEventListener("compositionend", () => { isComposing = false })
+
+    const editableGuard = (e) => {
+      if (isComposing) return true
+      const tag = (document.activeElement || {}).tagName
+      const editable = (document.activeElement || {}).isContentEditable
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || editable
+    }
+    const overlayOpen = (e) => {
+      const searchEl = $(".neoabs-search")
+      const drawerCheckbox = document.getElementById("neoabs-drawer")
+      if (searchEl && searchEl.classList.contains("neoabs-search--active")) return true
+      if (drawerCheckbox && drawerCheckbox.checked) return true
+      return false
+    }
+
+    // User-defined shortcuts bind at boot, one listener per configured key.
+    const custom = readKeyboard().custom
+    if (Array.isArray(custom)) {
+      custom.forEach((entry) => {
+        if (!entry || typeof entry.key !== "string" || typeof entry.action !== "string") return
+        const combo = entry.key
+        document.addEventListener("keydown", (e) => {
+          if (editableGuard(e) || overlayOpen(e)) return
+          const action = resolveKeyboardAction(entry.action)
+          if (!action) return
+          if (matchesKeyCombo(e, combo)) {
+            e.preventDefault()
+            e.stopPropagation()
+            action()
+          }
+        })
+      })
+    }
 
     document.addEventListener("keydown", (e) => {
       // Skip during IME composition
@@ -1095,14 +1222,15 @@
       const editable = (document.activeElement || {}).isContentEditable
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || editable
 
-      if (inInput && e.key !== "Escape") return
+      if (inInput && !matchesKeyCombo(e, kbdKey("close", "Escape"))) return
 
       const searchEl = $(".neoabs-search")
       const searchOpen = searchEl && searchEl.classList.contains("neoabs-search--active")
       const drawerCheckbox = document.getElementById("neoabs-drawer")
       const drawerOpen = drawerCheckbox && drawerCheckbox.checked
 
-      if (e.key === "Escape") {
+      // Escape — Close active overlay (search, drawer, help modal)
+      if (kbdEnabled("close") && matchesKeyCombo(e, kbdKey("close", "Escape"))) {
         if (searchOpen && searchEl._neoabsClose) {
           e.preventDefault()
           e.stopPropagation()
@@ -1124,19 +1252,22 @@
 
       if (searchOpen || drawerOpen) return
 
-      // / — Open search (preventDefault blocks Firefox quick find)
-      const searchKey = (_config.components && _config.components.search &&
-        _config.components.search.shortcut_key) || "/"
-      if (e.key === searchKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // / — Open search (preventDefault blocks Firefox quick find). Reads the
+      // Phase 7 keyboard config, falling back to the Phase 2 component key.
+      const searchKey = kbdKey("search",
+        (_config.components && _config.components.search &&
+          _config.components.search.shortcut_key) || "/")
+      if (kbdEnabled("search") && matchesKeyCombo(e, searchKey)) {
         e.preventDefault()
         e.stopPropagation()
         if (searchEl && searchEl._neoabsOpen) searchEl._neoabsOpen()
         return
       }
 
-      // ? — Show keyboard shortcuts help
-      if (componentShow("keyboard_help", "show") &&
-          e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // ? — Show keyboard shortcuts help (also gated by the Phase 2
+      // keyboard_help component toggle).
+      if (componentShow("keyboard_help", "show") && kbdEnabled("help") &&
+          matchesKeyCombo(e, kbdKey("help", "?"))) {
         e.preventDefault()
         e.stopPropagation()
         toggleKeyboardHelp()
@@ -1148,6 +1279,46 @@
   // ---------------------------------------------------------------------------
   // 11b. Keyboard Shortcuts Help Modal
   // ---------------------------------------------------------------------------
+
+  function keyboardHelpRows() {
+    const rows = []
+    const searchFallback = (_config.components && _config.components.search &&
+      _config.components.search.shortcut_key) || "/"
+    const sidebarCfg = (_config && _config.sidebar) || {}
+    const tocCfg = (_config && _config.toc) || {}
+
+    const push = (enabled, keys, desc) => {
+      if (enabled) rows.push({ keys, desc })
+    }
+
+    push(kbdEnabled("search"), displayKey(kbdKey("search", searchFallback)), kbdLabel("search", "Open search"))
+    push(kbdEnabled("close"), displayKey(kbdKey("close", "Escape")), kbdLabel("close", "Close active overlay"))
+    if (kbdEnabled("search_up") || kbdEnabled("search_down")) {
+      rows.push({ keys: "\u2191 / \u2193", desc: "Navigate search results" })
+    }
+    push(kbdEnabled("search_open"), displayKey(kbdKey("search_open", "Enter")), kbdLabel("search_open", "Open selected result"))
+    if (kbdEnabled("tab_left") || kbdEnabled("tab_right")) {
+      rows.push({ keys: "\u2190 / \u2192", desc: "Switch tabs (when a tab is focused)" })
+    }
+    push(kbdEnabled("toggle_notes"), displayKey(kbdKey("toggle_notes", "Ctrl+Shift+N")), kbdLabel("toggle_notes", "Toggle notes panel"))
+    push(sidebarCfg.collapsible !== false && kbdEnabled("toggle_sidebar"),
+      displayKey(kbdKey("toggle_sidebar", "Ctrl+Shift+B")), kbdLabel("toggle_sidebar", "Toggle sidebar"))
+    push(tocCfg.collapsible !== false && kbdEnabled("toggle_toc"),
+      displayKey(kbdKey("toggle_toc", "Ctrl+Shift+T")), kbdLabel("toggle_toc", "Toggle table of contents"))
+    push(componentShow("keyboard_help", "show") && kbdEnabled("help"),
+      displayKey(kbdKey("help", "?")), kbdLabel("help", "Show keyboard shortcuts"))
+
+    const custom = readKeyboard().custom
+    if (Array.isArray(custom)) {
+      custom.forEach((entry) => {
+        if (!entry || typeof entry.key !== "string") return
+        const label = typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : ""
+        if (!label) return
+        rows.push({ keys: displayKey(entry.key), desc: label })
+      })
+    }
+    return rows
+  }
 
   function toggleKeyboardHelp() {
     let modal = $(".neoabs-keyboard-help")
@@ -1161,29 +1332,10 @@
     modal.setAttribute("role", "dialog")
     modal.setAttribute("aria-label", "Keyboard shortcuts")
 
-    const combo = (mods, k) => (mods ? mods + " " : "") + k
-    const sidebarCfg = (_config && _config.sidebar) || {}
-    const tocCfg = (_config && _config.toc) || {}
-    const shortcuts = [
-      { keys: "/", desc: "Open search" },
-      { keys: "Esc", desc: "Close active overlay" },
-      { keys: "\u2191 / \u2193", desc: "Navigate search results" },
-      { keys: "Enter", desc: "Open selected result" },
-      { keys: "\u2190 / \u2192", desc: "Switch tabs (when a tab is focused)" },
-      { keys: combo("Ctrl/Cmd+Shift", "N"), desc: "Toggle notes panel" },
-      ...(sidebarCfg.collapsible !== false
-        ? [{ keys: combo("Ctrl/Cmd+Shift", "B"), desc: "Toggle sidebar" }]
-        : []),
-      ...(tocCfg.collapsible !== false
-        ? [{ keys: combo("Ctrl/Cmd+Shift", "T"), desc: "Toggle table of contents" }]
-        : []),
-      { keys: "?", desc: "Show keyboard shortcuts" },
-    ]
-
-    const rows = shortcuts.map((s) =>
+    const rows = keyboardHelpRows().map((s) =>
       '<div class="neoabs-keyboard-help__row">' +
-      '<kbd class="neoabs-keyboard-help__keys">' + s.keys + "</kbd>" +
-      '<span class="neoabs-keyboard-help__desc">' + s.desc + "</span>" +
+      '<kbd class="neoabs-keyboard-help__keys">' + escapeHtml(s.keys) + "</kbd>" +
+      '<span class="neoabs-keyboard-help__desc">' + escapeHtml(s.desc) + "</span>" +
       "</div>"
     ).join("")
 
@@ -1272,11 +1424,11 @@
     const save = (key, on) => storageSet("ui-" + key, on ? "1" : "0")
 
     // Restore persisted sidebar state, falling back to the config default.
-    if (collapsible && (store("sidebar") || defaultCollapsed)) {
+    if (collapsible && ((kbdPersisted("toggle_sidebar") && store("sidebar")) || defaultCollapsed)) {
       setBody("nav-hidden", true)
     }
     // Restore persisted TOC state, falling back to the config default.
-    if (tocCollapsible && (store("toc") || tocDefaultCollapsed)) {
+    if (tocCollapsible && ((kbdPersisted("toggle_toc") && store("toc")) || tocDefaultCollapsed)) {
       setBody("toc-hidden", true)
     } else if (!tocCollapsible) {
       // A non-collapsible TOC can never stay hidden.
@@ -1289,29 +1441,40 @@
 
     function setSidebar(hidden) {
       setBody("nav-hidden", hidden)
-      save("sidebar", hidden)
+      if (kbdPersisted("toggle_sidebar")) save("sidebar", hidden)
     }
 
-    // Ctrl/Cmd+Shift+B toggles the nav sidebar (persisted).
-    if (collapsible) {
+    function setToc(hidden) {
+      setBody("toc-hidden", hidden)
+      if (kbdPersisted("toggle_toc")) save("toc", hidden)
+    }
+
+    // Configurable shortcut (default Ctrl/Cmd+Shift+B) toggles the nav sidebar.
+    if (collapsible && kbdEnabled("toggle_sidebar")) {
       document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "b" || e.key === "B")) {
+        if (matchesKeyCombo(e, kbdKey("toggle_sidebar", "Ctrl+Shift+B"))) {
           e.preventDefault()
           setSidebar(!document.body.classList.contains("neoabs-nav-hidden"))
         }
       })
     }
+    keyboardActions.toggle_sidebar = function () {
+      if (!collapsible) return
+      setSidebar(!document.body.classList.contains("neoabs-nav-hidden"))
+    }
 
-    // Ctrl/Cmd+Shift+T toggles the "On this page" TOC (persisted).
-    if (toc && tocCollapsible) {
+    // Configurable shortcut (default Ctrl/Cmd+Shift+T) toggles the TOC.
+    if (toc && tocCollapsible && kbdEnabled("toggle_toc")) {
       document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "t" || e.key === "T")) {
+        if (matchesKeyCombo(e, kbdKey("toggle_toc", "Ctrl+Shift+T"))) {
           e.preventDefault()
-          const hidden = !document.body.classList.contains("neoabs-toc-hidden")
-          setBody("toc-hidden", hidden)
-          save("toc", hidden)
+          setToc(!document.body.classList.contains("neoabs-toc-hidden"))
         }
       })
+    }
+    keyboardActions.toggle_toc = function () {
+      if (!toc || !tocCollapsible) return
+      setToc(!document.body.classList.contains("neoabs-toc-hidden"))
     }
   }
 
@@ -1769,11 +1932,14 @@
     if (storageGet("ui-notes") === "1") notesSetOpen(true)
 
     document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "n" || e.key === "N")) {
+      if (kbdEnabled("toggle_notes") && matchesKeyCombo(e, kbdKey("toggle_notes", "Ctrl+Shift+N"))) {
         e.preventDefault()
         notesSetOpen(!_notesOpen)
       }
     })
+    keyboardActions.toggle_notes = function () {
+      notesSetOpen(!_notesOpen)
+    }
 
     document.addEventListener("keydown", notesFocusTrap)
   }
@@ -2488,6 +2654,17 @@
         targetPath !== siteRoot &&
         targetPath.indexOf(siteRoot + "/") !== 0
       ) {
+        if (opts && opts.resume) {
+          // A stale remembered page that resolves outside the current mount
+          // must not yank the visitor into a redirect loop (the server 302s
+          // "/" back to the site root, which re-triggers this resume). Forget
+          // it and settle on the landing page instead.
+          sessionMutate(function (s) { delete s.lastPage })
+          history.replaceState(null, "", location.href)
+          applyNavMemory()
+          restoreScroll(pageKeyFromUrl(location.href))
+          return
+        }
         location.href = url
         return
       }
