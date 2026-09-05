@@ -520,6 +520,11 @@
   // 6. TOC Intersection Tracking
   // ---------------------------------------------------------------------------
 
+  // Module-level TOC state. The scroll listener is bound once; every page
+  // (including SPA-swapped pages) swaps in its own refresh closure.
+  let _tocPage = null
+  let _tocScrollBound = false
+
   function initTocTracking() {
     const tocLinks = $$(".neoabs-toc__link")
     const headings = $$(".neoabs-content h2, .neoabs-content h3, .neoabs-content h4")
@@ -527,58 +532,66 @@
     const linkMap = {}
     tocLinks.forEach((link) => {
       const href = link.getAttribute("href")
-      if (href && href.startsWith("#")) {
+      if (href && href.charAt(0) === "#") {
         const id = decodeURIComponent(href.slice(1))
         linkMap[id] = link
       }
     })
+    const list = headings.filter((h) => h.id && linkMap[h.id])
+    if (!list.length) return
 
     let activeLink = null
 
     function setActive(id) {
-      if (!linkMap[id]) return
-      if (activeLink === linkMap[id]) return
+      const link = linkMap[id]
+      if (!link || link === activeLink) return
       tocLinks.forEach((l) => l.classList.remove("neoabs-toc__link--active"))
-      linkMap[id].classList.add("neoabs-toc__link--active")
-      activeLink = linkMap[id]
-      activeLink.scrollIntoView({ block: "nearest", behavior: "auto" })
+      link.classList.add("neoabs-toc__link--active")
+      activeLink = link
+      if (typeof link.scrollIntoView === "function") {
+        link.scrollIntoView({ block: "nearest", behavior: "auto" })
+      }
     }
 
-    function deactivateAll() {
-      if (activeLink) {
+    // The section whose heading is closest above a probe line ~25% down the
+    // viewport. This is the standard "current position" algorithm and it keeps
+    // the highlight glued to the section being read.
+    function refresh() {
+      const probe = window.scrollY + window.innerHeight * 0.25
+      let current = null
+      for (let i = 0; i < list.length; i++) {
+        const top = list[i].getBoundingClientRect().top + window.scrollY
+        if (top > probe + 1) break
+        current = list[i].id
+      }
+      if (current) setActive(current)
+      else if (activeLink) {
         tocLinks.forEach((l) => l.classList.remove("neoabs-toc__link--active"))
         activeLink = null
       }
     }
-    window._neoabsTocDeactivate = deactivateAll
 
-    // Re-create the observer each time so it tracks the current page's headings.
-    if ("IntersectionObserver" in window) {
-      if (window._neoabsTocObserver) window._neoabsTocObserver.disconnect()
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) setActive(entry.target.id)
-          })
-        },
-        { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
-      )
-      window._neoabsTocObserver = observer
-      headings.forEach((h) => { if (h.id) observer.observe(h) })
+    _tocPage = { refresh }
 
-      // Wire the per-scroll check only once.
-      if (!window._neoabsTocScrollBound) {
-        window._neoabsTocScrollBound = true
-        window.addEventListener("scroll", () => {
-          if (window._neoabsTocTicking) return
-          window._neoabsTocTicking = true
-          requestAnimationFrame(() => {
-            if (window._neoabsTocDeactivate) window._neoabsTocDeactivate()
-            window._neoabsTocTicking = false
-          })
-        }, { passive: true })
+    if (!_tocScrollBound) {
+      _tocScrollBound = true
+      let ticking = false
+      const onScroll = () => {
+        if (ticking) return
+        ticking = true
+        window.requestAnimationFrame(() => {
+          ticking = false
+          if (_tocPage) {
+            try { _tocPage.refresh() } catch (e) {}
+          }
+        })
       }
+      window.addEventListener("scroll", onScroll, { passive: true })
+      window.addEventListener("resize", onScroll, { passive: true })
     }
+
+    // Immediate calc so the right item is already highlighted on load.
+    refresh()
   }
 
   // ---------------------------------------------------------------------------
@@ -1884,6 +1897,32 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
   }
 
+  // GitHub's avatar API now returns short-lived JWT-signed "private" URLs
+  // (private-avatars.githubusercontent.com?jwt=…) that expire within ~20
+  // minutes — useless once cached. Prefer a long-lived public
+  // avatars.githubusercontent.com URL, otherwise redirect through
+  // https://github.com/<owner>.png which GitHub rewrites to a freshly signed
+  // avatar on every request (no rate limit, never stale).
+  function githubAvatarUrl(rawUrl, login) {
+    const u = String(rawUrl || "")
+    if (!/\bjwt=/i.test(u) && /^(https?:)?\/\/(?:avatars\.)?githubusercontent\.com\//.test(u)) return u
+    if (login) return "https://github.com/" + encodeURIComponent(login) + ".png?size=80"
+    return u
+  }
+
+  // Inline <img onerror> target: swap the letter avatar in when the image
+  // fails to load (offline, blocked CDN, expired private-avatar URL).
+  function avatarFallback(img) {
+    if (!img || !img.parentNode) return
+    img.onerror = null
+    const letter = ((img.getAttribute("alt") || "R").charAt(0) || "R").toUpperCase()
+    const span = document.createElement("span")
+    span.className = "neoabs-repo-pop__avatar"
+    span.textContent = letter
+    img.parentNode.replaceChild(span, img)
+  }
+  window._neoabsAvatarFallback = avatarFallback
+
   function initRepoPopover(config) {
     if (config.repo === false || config.repo_url === "") return
     const link = document.querySelector(".neoabs-header__repo")
@@ -1968,6 +2007,18 @@
       if (cached) { renderBody(cached); position(); return }
       if (loading) return
       loading = true
+
+      // Immediate skeleton so the popover is never an empty void while the
+      // GitHub API responds (or hangs on a rate-limited / offline network).
+      pop.innerHTML =
+        '<div class="neoabs-repo-pop__head">'
+        + '<span class="neoabs-repo-pop__avatar">' + repoPopoverEscape((slug.owner.charAt(0) || "R").toUpperCase()) + "</span>"
+        + '<span class="neoabs-repo-pop__title"><span class="neoabs-repo-pop__name">'
+        + repoPopoverEscape(slug.owner + "/" + slug.name) + "</span></span></div>"
+        + '<div class="neoabs-repo-pop__body"><div class="neoabs-repo-pop__row">'
+        + '<span class="neoabs-repo-pop__k">Status</span><span class="neoabs-repo-pop__v">Loading…</span>'
+        + "</div></div>"
+      position()
 
       const api = REPO_API_BASE + slug.owner + "/" + slug.name
       Promise.all([
@@ -2062,9 +2113,10 @@
       const ownerBlock = d.full_name ? d.full_name.split("/")[0] : ownerLogin
 
       let avatarHtml
-      if (ownerData.avatar_url) {
-        avatarHtml = '<img class="neoabs-repo-pop__avatar" src="' + repoPopoverEscape(ownerData.avatar_url)
-          + '" alt="' + repoPopoverEscape(ownerName || ownerLogin) + '" loading="lazy" onerror="this.style.display=\'none\'">'
+      const avatarSrc = githubAvatarUrl(ownerData.avatar_url, ownerLogin)
+      if (avatarSrc) {
+        avatarHtml = '<img class="neoabs-repo-pop__avatar" src="' + repoPopoverEscape(avatarSrc)
+          + '" alt="' + repoPopoverEscape(ownerName || ownerLogin) + '" referrerpolicy="no-referrer">'
       } else {
         avatarHtml = '<span class="neoabs-repo-pop__avatar">' + repoPopoverEscape((ownerBlock[0] || "R").toUpperCase()) + "</span>"
       }
@@ -2111,6 +2163,9 @@
           { k: "Last pushed", v: fmtDate(d.pushed_at) }
         ])
         + "</div>"
+
+      const avImg = pop.querySelector("img.neoabs-repo-pop__avatar")
+      if (avImg) avImg.addEventListener("error", avatarFallback)
     }
 
     // Hover / focus to open; leave / blur starts a 3s close timer so the user
