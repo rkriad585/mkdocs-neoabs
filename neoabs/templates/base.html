@@ -1,4 +1,6 @@
 {% set _comp = config.extra.neoabs_components | default({}) %}
+{% set _all_css = (config.theme.extra_css if (config.theme.extra_css is defined and config.theme.extra_css) else []) + ((config.theme.neoabs.custom_css | default([])) if (config.theme.neoabs is mapping) else []) + (config.extra_css | default([])) %}
+{% set _all_js = (config.theme.extra_javascript if (config.theme.extra_javascript is defined and config.theme.extra_javascript) else []) + ((config.theme.neoabs.custom_js | default([])) if (config.theme.neoabs is mapping) else []) + (config.extra_javascript | default([])) %}
 {% set _sbr_cfg = config.theme.neoabs.sidebar if (config.theme.neoabs is mapping and config.theme.neoabs.sidebar is mapping) else {} %}
 {% set _sbr_position = _sbr_cfg.position if (_sbr_cfg.position is defined) else "left" %}
 {% set _sbr_width = _sbr_cfg.width if (_sbr_cfg.width is defined) else none %}
@@ -46,7 +48,7 @@
       data-md-color-scheme="{{ _scheme }}"
       data-md-neoabs-glass="{{ config.extra.neoabs_glass if config.extra and config.extra.neoabs_glass else 'medium' }}"
       data-md-neoabs-animation="{{ config.extra.neoabs_animation if config.extra and config.extra.neoabs_animation else 'normal' }}"
-      data-md-neoabs-border="{{ config.extra.neoabs_border if config.extra and config.extra.neoabs_border else 'thin' }}">
+      data-md-neoabs-border="{{ config.extra.neoabs_border if config.extra and config.extra.neoabs_border else 'thin' }}"{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
   <head>
     {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}
@@ -126,7 +128,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     {% endblock %}
 
-    {% for path in config.extra_css %}
+    {% for path in _all_css %}
     <link rel="stylesheet" href="{{ path | url }}">
     {% endfor %}
 
@@ -150,12 +152,20 @@
 
     {% block extrahead %}{% endblock %}
 
+    {% block custom_head %}
+    {% if config.extra and config.extra.neoabs_custom_head %}{{ config.extra.neoabs_custom_head | safe }}{% endif %}
+    {% endblock %}
+
     {% if config.theme.palette %}
     {% include "partials/javascripts/palette.html" %}
     {% endif %}
   </head>
 
   <body dir="{{ config.theme.direction | default('ltr') }}"{% if (_sbr_position == "right") or (_toc_position == "left") %} data-md-neoabs-sidebar-position="right"{% endif %}{% if _sbr_style.parts or _toc_style.parts %} style="{{ (_sbr_style.parts + _toc_style.parts) | join('; ') }}"{% endif %}>
+
+    {% block custom_body_start %}
+    {% if config.extra and config.extra.neoabs_custom_body_start %}{{ config.extra.neoabs_custom_body_start | safe }}{% endif %}
+    {% endblock %}
 
     {% if config.extra.neoabs_dot_matrix %}
     <div class="neoabs-dot-matrix" aria-hidden="true"></div>
@@ -279,7 +289,7 @@
     <script src="{{ 'assets/javascripts/neoabs.js' | url }}?v={{ _asset_version }}"></script>
     {% endblock %}
 
-    {% for path in config.extra_javascript %}
+    {% for path in _all_js %}
     <script src="{{ path | url }}"></script>
     {% endfor %}
 
@@ -304,5 +314,9 @@
         navigator.serviceWorker.register(swURL).catch(function () {})
       }
     </script>
+
+    {% block custom_body_end %}
+    {% if config.extra and config.extra.neoabs_custom_body_end %}{{ config.extra.neoabs_custom_body_end | safe }}{% endif %}
+    {% endblock %}
   </body>
 </html>
