@@ -1223,11 +1223,17 @@
     const toc = $(".neoabs-toc")
     if (!nav) return
 
+    const sidebarCfg = (_config && _config.sidebar) || {}
+    const collapsible = sidebarCfg.collapsible !== false
+    const defaultCollapsed = sidebarCfg.default_collapsed === true
+
     const store = (key) => storageGet("ui-" + key) === "1"
     const save = (key, on) => storageSet("ui-" + key, on ? "1" : "0")
 
-    // Restore persisted sidebar state on load.
-    if (store("sidebar")) setBody("nav-hidden", true)
+    // Restore persisted sidebar state, falling back to the config default.
+    if (collapsible && (store("sidebar") || defaultCollapsed)) {
+      setBody("nav-hidden", true)
+    }
     if (store("toc")) setBody("toc-hidden", true)
 
     function setBody(cls, on) {
@@ -1240,12 +1246,14 @@
     }
 
     // Ctrl/Cmd+Shift+B toggles the nav sidebar (persisted).
-    document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "b" || e.key === "B")) {
-        e.preventDefault()
-        setSidebar(!document.body.classList.contains("neoabs-nav-hidden"))
-      }
-    })
+    if (collapsible) {
+      document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "b" || e.key === "B")) {
+          e.preventDefault()
+          setSidebar(!document.body.classList.contains("neoabs-nav-hidden"))
+        }
+      })
+    }
 
     // Ctrl/Cmd+Shift+T toggles the "On this page" TOC (persisted).
     if (toc) {

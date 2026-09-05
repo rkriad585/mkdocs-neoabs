@@ -575,16 +575,27 @@ $neoabs-breakpoint-mobile: 768px;
 	z-index: var(--neoabs-z-sticky);
 	display: flex;
 	flex-direction: column;
-	background: rgba(0, 0, 0, 0.6);
-	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
-	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	background: var(--neoabs-sidebar-bg, rgba(0, 0, 0, 0.6));
+	backdrop-filter: blur(var(--neoabs-sidebar-blur, var(--neoabs-glass-blur))) saturate(var(--neoabs-sidebar-saturate, var(--neoabs-glass-saturation)));
+	-webkit-backdrop-filter: blur(var(--neoabs-sidebar-blur, var(--neoabs-glass-blur))) saturate(var(--neoabs-sidebar-saturate, var(--neoabs-glass-saturation)));
 	border-right: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
 	overflow: hidden;
 	transition: transform var(--neoabs-transition-slow);
 }
 
+// Phase 5: theme.neoabs.sidebar — glass off makes the sidebar fully opaque
+.neoabs-nav[data-md-neoabs-sidebar-glass="false"] {
+	background: var(--neoabs-ink, #000);
+}
+
+// Phase 5: theme.neoabs.sidebar — blur off keeps the translucent backdrop
+.neoabs-nav[data-md-neoabs-sidebar-blur="false"] {
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
 [data-md-color-scheme="default"] .neoabs-nav {
-	background: rgba(255, 255, 255, 0.7);
+	background: var(--neoabs-sidebar-bg, rgba(255, 255, 255, 0.7));
 }
 
 // Scrollable inner area
@@ -638,6 +649,20 @@ $neoabs-breakpoint-mobile: 768px;
 	padding: var(--neoabs-space-4) var(--neoabs-space-6) var(--neoabs-space-2);
 }
 
+// Phase 5: theme.neoabs.sidebar.sections.style variants
+.neoabs-nav[data-md-neoabs-nav-sections-style="bold"] .neoabs-nav__title {
+	text-transform: none;
+	font-weight: 700;
+	font-size: 11px;
+	letter-spacing: 0.02em;
+}
+
+.neoabs-nav[data-md-neoabs-nav-sections-style="default"] .neoabs-nav__title {
+	text-transform: none;
+	font-weight: 500;
+	letter-spacing: normal;
+}
+
 // Navigation link
 .neoabs-nav__link {
 	display: flex;
@@ -676,7 +701,7 @@ $neoabs-breakpoint-mobile: 768px;
 // Nested nav list
 .neoabs-nav__list--nested {
 	.neoabs-nav__link {
-		padding-left: calc(var(--neoabs-space-6) + var(--neoabs-space-4));
+		padding-left: calc(var(--neoabs-space-6) + var(--neoabs-nav-indent, var(--neoabs-space-4)));
 		border-left-color: var(--neoabs-glass-border);
 		font-size: 13px;
 
@@ -686,14 +711,14 @@ $neoabs-breakpoint-mobile: 768px;
 
 		&.active,
 		&--active {
-			border-left-color: var(--neoabs-accent);
+			border-left-color: var(--neoabs-nav-active-border-color, var(--neoabs-accent));
 		}
 	}
 
 	// Deeper nesting
 	.neoabs-nav__list--nested {
 		.neoabs-nav__link {
-			padding-left: calc(var(--neoabs-space-6) + var(--neoabs-space-8));
+			padding-left: calc(var(--neoabs-space-6) + (var(--neoabs-nav-indent, var(--neoabs-space-4)) * 2));
 
 			&:hover {
 				border-left-color: var(--neoabs-text-muted);
@@ -747,6 +772,40 @@ $neoabs-breakpoint-mobile: 768px;
 	&--open svg {
 		transform: rotate(90deg);
 	}
+}
+
+// Phase 5: sections rendered without expand/collapse buttons
+.neoabs-nav__toggle--static {
+	display: flex;
+	align-items: center;
+	padding: var(--neoabs-space-2) var(--neoabs-space-6);
+	font-family: var(--neoabs-font-body);
+	font-size: 14px;
+	color: var(--neoabs-text-secondary);
+	border-left: 3px solid transparent;
+	cursor: default;
+	text-align: left;
+}
+
+// Phase 5: active item border theming (theme.neoabs.sidebar.nav)
+.neoabs-nav .neoabs-nav__link.active,
+.neoabs-nav .neoabs-nav__link--active {
+	border-left-color: var(--neoabs-nav-active-border-color, var(--neoabs-accent));
+}
+
+.neoabs-nav .neoabs-nav__list--nested .neoabs-nav__link.active,
+.neoabs-nav .neoabs-nav__list--nested .neoabs-nav__link--active {
+	border-left-color: var(--neoabs-nav-active-border-color, var(--neoabs-accent));
+}
+
+.neoabs-nav[data-md-neoabs-nav-active-border="false"] .neoabs-nav__link.active,
+.neoabs-nav[data-md-neoabs-nav-active-border="false"] .neoabs-nav__link--active {
+	border-left-color: transparent;
+}
+
+.neoabs-nav[data-md-neoabs-nav-active-border="false"] .neoabs-nav__list--nested .neoabs-nav__link.active,
+.neoabs-nav[data-md-neoabs-nav-active-border="false"] .neoabs-nav__list--nested .neoabs-nav__link--active {
+	border-left-color: transparent;
 }
 
 // ============================================================================
@@ -2490,6 +2549,96 @@ $neoabs-breakpoint-mobile: 768px;
 @media (min-width: 1400px) {
 	.neoabs-nav {
 		width: max(var(--neoabs-sidebar-width), 320px);
+	}
+}
+
+// ============================================================================
+// PHASE 5: theme.neoabs.sidebar.position — sidebar on the right (swap with TOC)
+// ============================================================================
+
+[data-md-neoabs-sidebar-position="right"] {
+	// Nav rail moves to the right edge
+	.neoabs-nav {
+		left: auto;
+		right: 0;
+		border-right: none;
+		border-left: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	}
+
+	// TOC moves to the left edge
+	.neoabs-toc {
+		right: auto;
+		left: 0;
+		border-left: none;
+		border-right: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	}
+
+	// Content mirrors the swapped rails
+	.neoabs-main {
+		margin-left: var(--neoabs-toc-width);
+		margin-right: var(--neoabs-sidebar-width);
+
+		@media (max-width: $neoabs-breakpoint-toc) {
+			margin-left: 0;
+		}
+
+		@media (max-width: $neoabs-breakpoint-mobile) {
+			margin-right: 0;
+		}
+	}
+
+	.neoabs-footer {
+		margin-left: var(--neoabs-toc-width);
+		margin-right: var(--neoabs-sidebar-width);
+
+		@media (max-width: $neoabs-breakpoint-toc) {
+			margin-left: 0;
+		}
+
+		@media (max-width: $neoabs-breakpoint-mobile) {
+			margin-right: 0;
+		}
+	}
+
+	// Reclaim space when the swapped rails collapse
+	.neoabs-nav-hidden .neoabs-main,
+	.neoabs-nav-hidden .neoabs-footer {
+		margin-left: var(--neoabs-toc-width);
+		margin-right: 0;
+	}
+
+	.neoabs-nav-hidden .neoabs-toc {
+		margin-right: 0;
+	}
+
+	.neoabs-toc-hidden .neoabs-main,
+	.neoabs-toc-hidden .neoabs-footer {
+		margin-left: 0;
+		margin-right: var(--neoabs-sidebar-width);
+	}
+
+	// Large screens - wider right rail
+	@media (min-width: 1400px) {
+		.neoabs-main {
+			margin-right: max(var(--neoabs-sidebar-width), 320px);
+		}
+
+		.neoabs-footer {
+			margin-left: var(--neoabs-toc-width);
+			margin-right: 320px;
+		}
+	}
+}
+
+// Mobile drawer for a right-side sidebar slides in from the right
+@media (max-width: $neoabs-breakpoint-mobile) {
+	[data-md-neoabs-sidebar-position="right"] .neoabs-nav {
+		transform: translateX(100%);
+		z-index: var(--neoabs-z-overlay);
+
+		&--open {
+			transform: translateX(0);
+		}
 	}
 }
 
