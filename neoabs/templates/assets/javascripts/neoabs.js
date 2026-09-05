@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "2"
+  var NEOABS_VERSION = "3"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -435,6 +435,10 @@
         }
       } else if (data.allowSearch) {
         searchReady = true
+        // The input may have received text (restored from the session or typed)
+        // before the worker finished warming up — re-run it so the overlay is
+        // never stuck on "Loading search...".
+        if (input.value && input.value.trim().length >= minSearchLength) runSearch(input.value)
       } else if (data.results) {
         if (pendingQuery === 0) return
         pendingQuery = 0
@@ -484,9 +488,9 @@
         setActive(activeIndex - 1)
       } else if (e.key === "Enter") {
         const items = $$(".neoabs-search__result", listEl)
-        if (activeIndex >= 0 && activeIndex < items.length) {
+        if (items.length) {
           e.preventDefault()
-          items[activeIndex].click()
+          items[activeIndex >= 0 ? activeIndex : 0].click()
         }
       }
     })
@@ -564,11 +568,10 @@
         if (top > probe + 1) break
         current = list[i].id
       }
+      // At the very top nothing is above the probe line yet — highlight the
+      // first section so the indicator never sits empty.
+      if (!current) current = list[0].id
       if (current) setActive(current)
-      else if (activeLink) {
-        tocLinks.forEach((l) => l.classList.remove("neoabs-toc__link--active"))
-        activeLink = null
-      }
     }
 
     _tocPage = { refresh }
@@ -2495,7 +2498,9 @@
       () => initMath(config), () => initRepoPopover(config),
       () => initSPANavigation(config)]
     init.forEach(function (fn) {
-      try { fn() } catch (e) { /* keep booting */ }
+      try { fn() } catch (e) {
+        if (window.console && console.error) console.error("[neoabs] init failed:", e)
+      }
     })
 
     // Restore the remembered scroll position for the initial page.
