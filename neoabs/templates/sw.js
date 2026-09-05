@@ -41,8 +41,10 @@
       return
     }
 
-    // Same-origin: static assets → stale-while-revalidate
+    // Same-origin: versioned assets → pass through (isVersioned). Unversioned
+    // static assets → stale-while-revalidate.
     if (isStaticAsset(path)) {
+      if (isVersioned(url)) return
       e.respondWith(staleWhileRevalidate(e.request, CACHE_STATIC))
     }
     // Everything else on same-origin: pass through to browser
@@ -60,6 +62,13 @@
     if (path.indexOf("neoabs.css") !== -1) return true
     if (path.indexOf("neoabs.js") !== -1) return true
     return false
+  }
+
+  // Versioned asset URLs (?v=N) must never be served from the offline cache —
+  // their whole point is to bypass stale copies the moment a new release
+  // bumps N. Pass them through to the browser's HTTP cache, which revalidates.
+  function isVersioned(url) {
+    return /[?&]v=/.test(url.search)
   }
 
   function staleWhileRevalidate(request, cacheName) {

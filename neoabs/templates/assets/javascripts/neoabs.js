@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "3"
+  var NEOABS_VERSION = "4"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
