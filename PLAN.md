@@ -1168,6 +1168,7 @@ theme:
   - Add PWA manifest `<link>` from `neoabs_manifest`
   - Add Twitter card meta tags from `neoabs_twitter_handle`
 - `neoabs/templates/partials/header.html` — render site tagline and badge
+- `neoabs/templates/assets/stylesheets/components.scss` — styles for the header tagline and version badge (matching the existing brand/site-name styling; defaults fit the current header)
 
 ---
 

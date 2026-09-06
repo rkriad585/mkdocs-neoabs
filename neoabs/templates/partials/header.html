@@ -72,7 +72,15 @@
         <img src="{{ _logo_light | url }}" alt="" width="{{ _hdr_logo_size }}" height="{{ _hdr_logo_size }}" class="neoabs-header__brand-logo neoabs-header__brand-logo--light">
         {% endif %}
         {% endif %}
-        <span class="neoabs-header__site-name">{{ _site_name }}</span>
+        <span class="neoabs-header__brand-text">
+          <span class="neoabs-header__site-name">{{ _site_name }}</span>
+          {% if config.extra and config.extra.neoabs_site_tagline %}
+          <span class="neoabs-header__tagline">{{ config.extra.neoabs_site_tagline }}</span>
+          {% endif %}
+        </span>
+        {% if config.extra and config.extra.neoabs_site_badge %}
+        <span class="neoabs-header__badge">{{ config.extra.neoabs_site_badge }}</span>
+        {% endif %}
       </a>
       {% endif %}
     </div>

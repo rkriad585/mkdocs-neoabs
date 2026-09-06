@@ -407,11 +407,21 @@ theme:
     #     show_highlights: true        # Highlight terms inside matched text
 
 extra:
-  neoabs_version: 11
+  neoabs_version: 12
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg
   neoabs_favicon_light: assets/images/favicon-light.svg
+  # --- Phase 12: Global branding & meta (extra) -------------------------------
+  # Site identity + social metadata. All keys default to empty (absent); set a
+  # value to publish the corresponding tag. The tagline/badge render next to the
+  # header site name; og/twitter/theme-color/manifest tags land in <head>.
+  # neoabs_og_image: "https://example.com/og-image.png"  # OpenGraph image (large summary card)
+  # neoabs_theme_color: "#000000"                        # Browser <meta name="theme-color">
+  # neoabs_manifest: "/manifest.json"                    # PWA manifest <link rel="manifest">
+  # neoabs_twitter_handle: "@username"                   # Twitter card @handle (also used for site/creator)
+  # neoabs_site_tagline: "Glass + NothingOS Design"      # Subtitle shown under the header site name
+  # neoabs_site_badge: "v0.1.2"                          # Version pill shown next to the site name
   # --- Phase 8: raw markup / <html> attribute injection (extra) ---------------
   # Custom markup is injected verbatim (no escaping), so blocks are fine and
   # anything that is valid HTML there is valid on the page. All keys are empty
