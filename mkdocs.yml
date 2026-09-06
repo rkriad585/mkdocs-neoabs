@@ -449,6 +449,36 @@ theme:
     #     show_icon: true              # Show page icon in results
     #     show_breadcrumb: true        # Show page path in results
     #     show_highlights: true        # Highlight terms inside matched text
+    # --- Phase 13: Page-level overrides (front matter) -------------------------
+    # Any page can override these theme settings *for that page only* with a
+    # `neoabs:` block in its front matter. Absent keys keep the theme config.
+    # The keys mirror their Phase 1-12 counterparts: header/sidebar/toc/footer
+    # `show`, toc `levels` (h2/h3/h4), content `show_progress_bar`/`glass`, the
+    # scalar `glass` ("light"|"medium"|"heavy"|"none"), `dot_matrix: false`,
+    # a per-page `custom_css` and `layout` ("default"|"wide"|"full").
+    # Example front matter:
+    #
+    # ---
+    # title: "My Page"
+    # neoabs:
+    #   header:
+    #     show: false
+    #   sidebar:
+    #     show: false
+    #   toc:
+    #     show: false
+    #     levels:
+    #       h3: false
+    #   footer:
+    #     show: false
+    #   content:
+    #     show_progress_bar: false
+    #     glass: true
+    #   glass: "heavy"
+    #   dot_matrix: false
+    #   custom_css: "page-specific.css"
+    #   layout: "wide"                # default | wide | full
+    # ---
 
 extra:
   neoabs_version: 13
@@ -483,7 +513,36 @@ extra:
 
 plugins:
   - search
-  - neoabs
+  - neoabs:
+      # --- Phase 14: Plugin configuration passthrough (optional) ---------------
+      # Every theme setting can also be configured directly on the `- neoabs:`
+      # plugin entry, so a site can be tuned from a single place. Options given
+      # here are merged over `theme.neoabs` (the plugin wins on conflicts) and
+      # validated exactly like the theme keys — a wrong type or an out-of-range
+      # value aborts the build with a clear message naming the offending key.
+      # Nothing is required: leave this empty to keep the theme defaults.
+      #
+      # Plugin-specific options:
+      # highlight: true              # highlight.js syntax highlighting (default true)
+      # notes: true                  # Notes/annotations panel (default true)
+      # notes_ttl: 259200000         # Notes TTL in ms (default 259200000 = 3 days)
+      #
+      # The Phase 1-13 `theme.neoabs.*` keys are all accepted here as a
+      # convenience and behave identically (and win over `theme.neoabs`):
+      # glass, dot_matrix, animation, border, colors, typography, spacing,
+      # border_radius, transitions, shadows, components, header, footer,
+      # sidebar, toc, search, keyboard, content, custom_css, custom_js.
+      # glass: "medium"              # "light" | "medium" | "heavy" | "none"
+      # dot_matrix: true             # Show the dot matrix overlay
+      # animation: "normal"          # "normal" | "reduced" | "none"
+      # border: "thin"               # "none" | "thin" | "thick"
+      # components:
+      #   toc:
+      #     show: true
+      # content:
+      #   glass: false
+      # colors:
+      #   primary: "#ff3030"
 
 markdown_extensions:
   - admonition

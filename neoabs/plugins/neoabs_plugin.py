@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import ClassVar
 
+from mkdocs.config.base import PlainConfigSchema
+from mkdocs.config.config_options import Type
 from mkdocs.exceptions import ConfigurationError
 from mkdocs.plugins import BasePlugin
 
@@ -356,8 +359,120 @@ def _validate_keyboard(keyboard):
             )
 
 
+_NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
+_NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
+_NEOABS_BORDER_VALUES = ("none", "thin", "thick")
+
+
+def _coerce_bool(value, label):
+    """Coerce YAML-ish booleans (true/false, 1/0, on/off, yes/no) to ``bool``."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ("true", "1", "yes", "on"):
+            return True
+        if lowered in ("false", "0", "no", "off"):
+            return False
+    raise ConfigurationError(f"{label} must be a boolean, got {value!r}.")
+
+
+def _validate_visual_options(neoabs, plugin_options):
+    """Validate and normalize the merged top-level visual options.
+
+    Runs on the single merged surface (``theme.neoabs`` + ``plugins.neoabs``)
+    so a malformed value fails the build loudly no matter which source defined
+    it. Keys supplied by the plugin dict are labeled accordingly.
+    """
+
+    def label(key):
+        base = "plugins.neoabs" if key in plugin_options else "theme.neoabs"
+        return f"{base}.{key}"
+
+    if "dot_matrix" in neoabs:
+        dot = neoabs["dot_matrix"]
+        if isinstance(dot, dict):
+            if "enabled" in dot:
+                dot["enabled"] = _coerce_bool(
+                    dot["enabled"], label("dot_matrix") + ".enabled"
+                )
+        else:
+            neoabs["dot_matrix"] = _coerce_bool(dot, label("dot_matrix"))
+
+    for key in ("highlight", "notes"):
+        if key in neoabs:
+            neoabs[key] = _coerce_bool(neoabs[key], label(key))
+
+    notes_ttl = neoabs.get("notes_ttl")
+    if notes_ttl is not None and (
+        isinstance(notes_ttl, bool) or not isinstance(notes_ttl, int)
+    ):
+        raise ConfigurationError(
+            f"{label('notes_ttl')} must be an integer, got {notes_ttl!r}."
+        )
+
+    visual = {
+        "glass": ("intensity", _NEOABS_GLASS_VALUES),
+        "animation": ("mode", _NEOABS_ANIMATION_VALUES),
+        "border": ("width", _NEOABS_BORDER_VALUES),
+    }
+    for key, (inner_key, allowed) in visual.items():
+        value = neoabs.get(key)
+        if value is None:
+            continue
+        if isinstance(value, str):
+            allowed_values = ", ".join(allowed)
+            if value not in allowed:
+                raise ConfigurationError(
+                    f"{label(key)} must be one of {allowed_values}; got {value!r}."
+                )
+        elif isinstance(value, dict):
+            inner = value.get(inner_key)
+            if inner is not None and isinstance(inner, str) and inner not in allowed:
+                allowed_values = ", ".join(allowed)
+                raise ConfigurationError(
+                    f"{label(key)}.{inner_key} must be one of {allowed_values}; "
+                    f"got {inner!r}."
+                )
+        else:
+            raise ConfigurationError(
+                f"{label(key)} must be a string or a mapping, got {value!r}."
+            )
+
+
 class NeoAbsPlugin(BasePlugin):
     """Plugin that enhances the NeoAbs theme with additional context."""
+
+    # Phase 14: every `theme.neoabs` key is also accepted as a `- neoabs:`
+    # plugin option, plus the plugin-specific scalars (highlight, notes,
+    # notes_ttl). Options given here win over `theme.neoabs`. Option entries
+    # deliberately carry no default: an absent key stays `None` and is skipped
+    # during the merge so defaults keep flowing from `theme.neoabs`.
+    config_scheme: ClassVar[PlainConfigSchema] = [  # type: ignore[assignment]
+        ("glass", Type((str, dict))),
+        ("dot_matrix", Type((bool, dict))),
+        ("animation", Type((str, dict))),
+        ("border", Type((str, dict))),
+        ("highlight", Type(bool)),
+        ("notes", Type(bool)),
+        ("notes_ttl", Type(int)),
+        ("colors", Type(dict)),
+        ("typography", Type(dict)),
+        ("spacing", Type(dict)),
+        ("border_radius", Type(dict)),
+        ("transitions", Type(dict)),
+        ("shadows", Type(dict)),
+        ("components", Type(dict)),
+        ("header", Type(dict)),
+        ("footer", Type(dict)),
+        ("sidebar", Type(dict)),
+        ("toc", Type(dict)),
+        ("search", Type(dict)),
+        ("keyboard", Type(dict)),
+        ("content", Type(dict)),
+        ("custom_css", Type(list)),
+        ("custom_js", Type(list)),
+    ]
 
     _neoabs_defaults: ClassVar[dict[str, object]] = {
         "glass": "medium",
@@ -374,6 +489,21 @@ class NeoAbsPlugin(BasePlugin):
         neoabs = theme.get("neoabs") if "neoabs" in theme else {}
         if not isinstance(neoabs, dict):
             neoabs = {}
+
+        # Phase 14: the `- neoabs:` plugin options are a first-class settings
+        # surface. Keys supplied inline in the plugin dict are deep-merged over
+        # `theme.neoabs` (the plugin wins), then the merged result is validated
+        # and normalized as a single unit so a bad value fails loudly no matter
+        # which source defined it.
+        plugin_opts = self.config if isinstance(self.config, Mapping) else {}
+        known_plugin_keys = {name for name, _ in self.config_scheme}
+        plugin_opts = {
+            key: value
+            for key, value in plugin_opts.items()
+            if key in known_plugin_keys and value is not None
+        }
+        neoabs = _deep_merge(neoabs, plugin_opts)
+        _validate_visual_options(neoabs, plugin_opts)
         for key, value in self._neoabs_defaults.items():
             neoabs.setdefault(key, value)
         theme["neoabs"] = neoabs
@@ -435,7 +565,13 @@ class NeoAbsPlugin(BasePlugin):
         extra = config.get("extra") or {}
         extra["neoabs_copyright_year"] = datetime.now(tz=timezone.utc).year
         extra["neoabs_glass"] = neoabs["glass"]
-        extra["neoabs_dot_matrix"] = bool(neoabs["dot_matrix"])
+        dot_matrix = neoabs["dot_matrix"]
+        dot_enabled = (
+            dot_matrix.get("enabled", True)
+            if isinstance(dot_matrix, dict)
+            else dot_matrix
+        )
+        extra["neoabs_dot_matrix"] = bool(dot_enabled)
         extra["neoabs_animation"] = neoabs["animation"]
         extra["neoabs_border"] = neoabs["border"]
         extra["neoabs_highlight"] = bool(
