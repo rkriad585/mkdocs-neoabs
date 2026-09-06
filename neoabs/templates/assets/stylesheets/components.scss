@@ -80,6 +80,51 @@ $neoabs-breakpoint-mobile: 768px;
 	line-height: 1.75;
 }
 
+// Phase 15: reading mode. JS sets `data-md-neoabs-reading="active"` on <html>
+// (plus the `.neoabs-reading-mode` body class). The attribute drives section
+// hiding and the reading measure — nothing in the DOM is deleted, mirroring
+// the `.neoabs-nav-hidden` / `.neoabs-toc-hidden` pattern. The view inherits
+// the active color scheme (dark by default); optional per-token overrides are
+// emitted by base.html as !important rules under the same selector.
+
+// Sections configured via `reading_mode.sections.<name>` are hidden while the
+// reading view is active. Each selector only fires when the corresponding
+// token is present in `data-md-neoabs-reading-hide` (a space-separated list).
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="header"] .neoabs-header,
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="sidebar"] .neoabs-nav,
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="toc"] .neoabs-toc,
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="footer"] .neoabs-footer,
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="progress"] .neoabs-progress,
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-hide~="progress"] .neoabs-back-to-top {
+	display: none !important;
+}
+
+// `reading_mode.notes.show: false` hides the notes launcher while reading.
+html[data-md-neoabs-reading="active"][data-md-neoabs-reading-notes="false"] .neoabs-notes-btn {
+	display: none !important;
+}
+
+// Reclaim the space the sidebar/TOC occupied, mirroring the nav-hidden rules.
+html[data-md-neoabs-reading="active"] .neoabs-main,
+html[data-md-neoabs-reading="active"] .neoabs-footer {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+// Center the article at the configured reading measure (default: full width).
+html[data-md-neoabs-reading="active"] .neoabs-article,
+html[data-md-neoabs-reading="active"] .neoabs-content {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: var(--neoabs-reading-measure, 100%);
+}
+
+// Reading typography, token-driven like the rest of the theme.
+html[data-md-neoabs-reading="active"] .neoabs-article {
+	font-size: var(--neoabs-reading-font-size, 1.125rem);
+	line-height: var(--neoabs-reading-line-height, 1.75);
+}
+
 // ============================================================================
 // 1. HEADER
 // ============================================================================

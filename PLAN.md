@@ -1287,6 +1287,705 @@ plugins:
 
 ---
 
+## Phase 15: Reading Mode
+
+**Goal:** One keypress (default `Alt+Shift+R`) enters a distraction-free
+reading view: hide the header, left sidebar, right sidebar (TOC), footer, and
+progress chrome; keep only the article and the notes panel on screen; switch
+the colour theme to a built-in **Ink** palette; and make every aspect of the
+view configurable from `mkdocs.yml` exactly like the other phases.
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    # Built-in keyboard shortcut (Phase 7 layer; listed in the help modal)
+    keyboard:
+      shortcuts:
+        toggle_reading_mode:
+          key: "Alt+Shift+R"          # Enter/exit reading mode
+          label: "Toggle reading mode"
+          enabled: true
+          persisted: true             # Remember the state across reloads
+
+    reading_mode:
+      enabled: true                   # Master switch; OFF disables the whole feature
+      shortcut_key: "Alt+Shift+R"     # Default key (keyboard.shortcuts above wins if set)
+
+      sections:                       # What is hidden while reading (default: all)
+        header: true                  #   top header / navbar
+        sidebar: true                 #   left navigation sidebar (.neoabs-nav)
+        toc: true                     #   right table of contents (.neoabs-toc)
+        footer: true                  #   footer + prev/next nav (.neoabs-footer)
+        progress: true                #   reading progress bar + back-to-top button
+
+      notes:
+        show: true                    # Keep the notes button/panel usable while reading
+        open_on_enter: false          # Auto-open the notes panel when entering
+
+      persisted: true                 # Restore reading mode on the next visit
+
+      scheme:
+        enabled: true                 # Allow reading-mode colour overrides
+        name: "ink"                   # Optional label; unused by the engine
+        colors:                       # Phase 1 token overrides (empty = inherit active scheme)
+          background: "#000000"       #   (--neoabs-ink)
+          surface: ""                 #   glass panels (--neoabs-glass-bg)
+          text: "#ffffff"             #   (--neoabs-text-primary)
+          text_secondary: ""          #   (--neoabs-text-secondary)
+          border: ""                  #   (--neoabs-glass-border)
+          accent: "#ff3030"           #   links / highlights (--neoabs-accent)
+
+      typography:                     # Reading measure + type scale
+        font_size: "1.125rem"         #   --neoabs-reading-font-size
+        line_height: "1.75"           #   --neoabs-reading-line-height
+        measure: "100%"               #   max content width (--neoabs-reading-measure)
+```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; extend it or hide it via config only.
+> - **Don't remove any feature** — everything the theme does today keeps
+>   working; disabling happens through config defaults, never by removal.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed. The existing
+>   `toggleReadingMode()` / `resolveKeyboardAction()` entry points stay; this
+>   phase **extends** them and adds `initReadingMode()`.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — the feature is ON by
+>   default (`enabled: true`, shortcut bound). Hiding/recolouring only applies
+>   *while reading mode is active*; outside of it nothing changes.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Notes on the mechanism (no element is ever deleted):**
+- Reading mode is a *view state*. JS toggles the existing body class
+  `neoabs-reading-mode` (kept, per the rules above) and an `active` marker on
+  `<html>`: `data-md-neoabs-reading="active"` (removed → `off` when exiting).
+- Sections disappear through CSS `display: none` driven by that attribute —
+  the DOM, templates, and features are untouched, mirroring how
+  `.neoabs-nav-hidden` / `.neoabs-toc-hidden` already work.
+- The reading view keeps the **active colour scheme** — the theme's dark
+  NothingOS look by default, or the user's own light/dark palette if they
+  toggled one. No tokens are forced; `reading_mode.scheme.colors` (when the
+  author opts in) emits Phase 1 token overrides scoped to
+  `html[data-md-neoabs-reading="active"]`, so colors apply only while the
+  `active` attribute is present and revert on exit. Phase 9
+  `prefers-reduced-motion` and the existing transition tokens apply.
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`:
+  - Add `_NEOABS_DEFAULT_READING_MODE` with the all-ON defaults above. No
+    palette is baked in by default — the view inherits the active colour
+    scheme (dark); `scheme.colors` is an optional author override.
+  - Deep-merge user `theme.neoabs.reading_mode`, then validate with clear
+    `ConfigurationError` messages (same style as `_validate_keyboard`):
+    booleans for `enabled` / `sections.*` / `notes.*` / `persisted` /
+    `scheme.enabled`; non-empty strings for `shortcut_key`, `scheme.name`,
+    and `typography.*`; `scheme.colors` keys restricted to the Phase 1
+    `_NEOABS_TOKEN_MAP["colors"]` set.
+  - Sync into the Phase 7 keyboard layer: seed
+    `keyboard.shortcuts.toggle_reading_mode` from
+    `{key: reading_mode.shortcut_key, label: "Toggle reading mode",
+    enabled: reading_mode.enabled, persisted: reading_mode.persisted}`
+    **before** the Phase 7 deep-merge, so an explicit
+    `keyboard.shortcuts.toggle_reading_mode` still wins.
+  - Emit `extra["neoabs_reading_mode"] = reading_mode` (like
+    `neoabs_keyboard` / `neoabs_content`).
+- `neoabs/templates/base.html`:
+  - Add `data-md-neoabs-reading-hide="header sidebar toc footer progress"`
+    to `<html>` listing only the `sections.<name>` set to true, and
+    `data-md-neoabs-reading-notes="false"` when `notes.show` is false.
+  - Render the configured `scheme.colors` overrides (when the author sets any)
+    + typography into the Phase 1 token `<style>` override block, scoped to
+    `html[data-md-neoabs-reading="active"] { ... }` (user values win over
+    anything emitted by the compiled CSS; `scheme.enabled: false` emits
+    nothing, keeping the active scheme untouched).
+  - Add `"reading_mode": {{ config.extra.neoabs_reading_mode | default({}) | tojson }}`
+    to the `#__config` JSON.
+- `neoabs/templates/assets/stylesheets/neoabs.scss`:
+  - Add `--neoabs-reading-font-size`, `--neoabs-reading-line-height`,
+    `--neoabs-reading-measure` defaults to the `:root` token block.
+- `neoabs/templates/assets/stylesheets/components.scss`:
+  - No default palette is emitted — the view inherits the active colour
+    scheme (dark by default); `scheme.colors` overrides come from the
+    `#neoabs-reading-tokens` block in `base.html`.
+  - Section hiding: `html[data-md-neoabs-reading="active"]` +
+    `[data-md-neoabs-reading-hide~="sidebar"]` → `.neoabs-nav` hidden, and
+    matching rules for `header`/`.neoabs-header`, `toc`/`.neoabs-toc`,
+    `footer`/`.neoabs-footer`, `progress`/`.neoabs-progress` +
+    `.neoabs-back-to-top`; `data-md-neoabs-reading-notes="false"` →
+    `.neoabs-notes-btn` hidden.
+  - Space reclaim + measure: `[data-md-neoabs-reading="active"] .neoabs-main`
+    resets `margin-left/right: 0` (mirrors the existing `.neoabs-nav-hidden`
+    rules) and `.neoabs-article` / `.neoabs-content` centers itself with
+    `max-width: var(--neoabs-reading-measure)`.
+  - Typography: keep the existing Phase 7
+    `.neoabs-reading-mode .neoabs-article` stub intact and add token-driven
+    rules under `[data-md-neoabs-reading="active"]` using
+    `var(--neoabs-reading-font-size, ...)` / `var(--neoabs-reading-line-height, ...)`.
+- `neoabs/templates/assets/javascripts/neoabs.js`:
+  - Extend `toggleReadingMode()` (do not rename/delete): return early when
+    `_config.reading_mode.enabled === false`; toggle
+    `neoabs-reading-mode` on `<body>` and `data-md-neoabs-reading`
+    `"active"`/`"off"` on `<html>`; persist `ui-reading-mode` when
+    `persisted`; on enter, `notesSetOpen(true)` if `notes.open_on_enter`,
+    and `notesSetOpen(false)` if `notes.show === false`.
+  - New `initReadingMode()`: restore the persisted state on boot; bind the
+    built-in keydown branch via the existing helpers —
+    `kbdEnabled("toggle_reading_mode")` +
+    `matchesKeyCombo(e, kbdKey("toggle_reading_mode", "Alt+Shift+R"))` →
+    `preventDefault()` + `toggleReadingMode()`; register
+    `keyboardActions.toggle_reading_mode = toggleReadingMode`. Register it in
+    the boot init list.
+  - Help modal: add the `toggle_reading_mode` row alongside the existing
+    `toggle_notes` / `toggle_sidebar` / `toggle_toc` rows.
+- `mkdocs.yml` + `PLAN.md` — add the Phase 15 reference block above after the
+  Phase 14 block and record this phase in the implementation order / full
+  default config sections.
+- Harness: new `phase15-harness` (temp) verifying the default build shows no
+  reading attributes, `Alt+Shift+R` binds, entering hides the configured
+  sections and keeps the active colour scheme (dark by default),
+  `scheme.colors` overrides apply when supplied, `notes.open_on_enter` /
+  `notes.show: false` behave, `persisted` round-trips, `enabled: false`
+  leaves the feature inert, and a bad config type fails the build with a
+  clear message.
+
+---
+
+## Phase 16: Action Button Cluster (Plus Menu)
+
+**Goal:** Evolve the floating notes launcher into a richer action hub: a single
+"plus" button (an enhancement of the existing `.neoabs-notes-btn`) that expands
+into a cluster of quick actions — **?** (keyboard shortcuts), **notes** (notes
+panel), **timer** (focus timer), and **read** (reading mode). Every visual and
+behavioral aspect is configurable from `mkdocs.yml`, and each action dispatches
+through the existing `keyboardActions` registry so features built later (Phase
+17 timer) light up automatically.
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    # Phase 7 keyboard layer: shortcut to expand/collapse the cluster
+    keyboard:
+      shortcuts:
+        toggle_action_cluster:
+          key: "Alt+Shift+A"
+          label: "Toggle action cluster"
+          enabled: true
+          persisted: false
+
+    action_cluster:
+      enabled: true                   # Master switch for the whole cluster
+      position: "bottom-left"         #  bottom-left | bottom-right
+      offset: { bottom: "16px", left: "16px" }
+
+      main:
+        icon: "plus"                  #  plus | menu | notes
+        size: "56px"
+        glass: true                   # Reuse the note-btn glass pill look
+        icon_transform: true          # plus morphs into x while open
+
+      behavior:
+        min_actions: 2                # Hide the cluster if fewer actions are enabled
+        close_on_select: true         # Collapse after an action is chosen
+        close_on_escape: true
+        close_on_outside: true
+        animation: "normal"           #  normal | reduced | none (Phase 9 tokens apply)
+        tooltips: true                # Show action labels on hover / focus
+        focus_trap: true              # Keep Tab cycling inside the open cluster
+
+      actions:                        # Each slot is independently configurable
+        - id: keyboard_help           #  "?" icon
+          icon: "help"
+          label: "Keyboard shortcuts"
+          enabled: true
+        - id: notes                   #  notes icon
+          icon: "notes"
+          label: "Open notes panel"
+          enabled: true
+        - id: timer                   #  timer icon (engine lands in Phase 17)
+          icon: "timer"
+          label: "Focus timer"
+          enabled: true
+        - id: reading_mode            #  read icon (Phase 15 feature)
+          icon: "reading"
+          label: "Reading mode"
+          enabled: true
+
+      replaces_notes_button: true     # Keep hiding the standalone notes button
+                                      # (display:none driven by data attr; the
+                                      # notes feature, panel, and shortcut stay on)
+```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — the `.neoabs-notes-btn` element and
+>   `notesEnsureUi()` keep existing; when `replaces_notes_button: true` the
+>   button is hidden via an attribute-driven CSS rule, never deleted.
+> - **Don't remove any feature** — notes, help, reading mode all keep their
+>   existing entry points (`.neoabs-notes-btn` stays functional when config
+>   allows); the cluster only adds new ones.
+> - **Don't remove any function** — no existing JS function, Python method,
+>   plugin hook, or init entry point may be deleted or renamed; add
+>   `initActionCluster()` / `toggleActionCluster()` and extend the
+>   `keyboardActions` registry.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — the cluster ships ON
+>   (`enabled: true`, all four actions shown, shortcut bound). The `timer`
+>   action button is rendered now; its handler (`keyboardActions.timer_toggle`)
+>   is intentionally a Phase 17 dependency, following the Phase 15 precedent of
+>   building on Phase 7 groundwork.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`:
+  - Add `_NEOABS_DEFAULT_ACTION_CLUSTER` with the defaults above (including the
+    four action slots and the icon/label/enabled per action).
+  - Deep-merge user `theme.neoabs.action_cluster` and validate with clear
+    `ConfigurationError` messages: booleans, `position` in the allowed set,
+    `offset` keys as length strings, `icon` in the allowed set, `actions` a
+    list of known `id`s with boolean `enabled`; unknown action `id`s and
+    unknown `icon` values fail the build with the offending key named.
+  - Sync the Phase 7 layer: seed `keyboard.shortcuts.toggle_action_cluster`
+    before the Phase 7 deep-merge (so an explicit override wins).
+  - Emit `extra["neoabs_action_cluster"] = action_cluster` (consumed by
+    `#__config` and the `<html>` attribute emission below).
+- `neoabs/templates/base.html`:
+  - Emit `data-md-neoabs-action-cluster="replace-notes"` on `<html>` when
+    `replaces_notes_button` is true (CSS then hides `.neoabs-notes-btn`).
+  - Add `"action_cluster": {{ config.extra.neoabs_action_cluster | default({}) | tojson }}`
+    to `#__config`.
+- `neoabs/templates/assets/stylesheets/components.scss`:
+  - `.neoabs-action-cluster` container: fixed positioning driven by
+    `--neoabs-action-cluster-bottom` / `--neoabs-action-cluster-left`.
+  - `.neoabs-action-cluster__main`: reuses the notes-btn glass-pill language
+    (`--neoabs-glass-bg-strong`, `--neoabs-glass-border-strong`,
+    `--neoabs-shadow-md`, `--neoabs-radius-pill`); the `plus` icon rotates 45°
+    into an x when `.neoabs-action-cluster--open` (configurable via
+    `icon_transform`).
+  - `.neoabs-action-cluster__menu`: staggered reveal animation for the stacked
+    action buttons; `aria-hidden`/inert handling not CSS — see JS.
+  - `.neoabs-action-cluster[data-md-neoabs-action-cluster-tooltips="false"]`
+    label suppression, `prefers-reduced-motion` no-animation override, and the
+    hide rule `[data-md-neoabs-action-cluster="replace-notes"]
+    .neoabs-notes-btn { display: none }`.
+- `neoabs/templates/assets/javascripts/neoabs.js`:
+  - New `initActionCluster()`: reads `_config.action_cluster`; builds the
+    container from the configured `actions` list (inline SVG per icon: help,
+    notes, timer, reading, plus); wires `aria-expanded` / `aria-controls`
+    focus trap; Escape / outside-click / select close per `behavior`.
+  - New `toggleActionCluster()`; register
+    `keyboardActions.toggle_action_cluster = toggleActionCluster`;
+    add the `toggle_action_cluster` keydown branch in `initKeyboardNav()`.
+  - Dispatch: each action button calls
+    `(keyboardActions[id] || resolveKeyboardAction(id))` — `keyboard_help →
+    open_help`, `notes → toggle_notes`, `reading_mode → toggle_reading_mode`,
+    `timer → timer_toggle` (registered by Phase 17). Register `initActionCluster`
+    in the boot init list.
+  - Help modal: add the `toggle_action_cluster` row with
+    `kbdKey("toggle_action_cluster", "Alt+Shift+A")`.
+- `mkdocs.yml` + `PLAN.md` — add the Phase 16 reference block and record the
+  phase in the implementation order / full default config sections.
+- Harness: new `phase16-harness` (temp) verifying defaults render the four
+  actions, `Alt+Shift+A` binds, open/close state toggles the body/container
+  class, `replaces_notes_button` emits the attr (notes button still present in
+  DOM), a disabled action is not rendered, and an invalid action `id` / `icon`
+  / `position` fails the build with a clear message.
+
+---
+
+## Phase 17: Focus Timer
+
+**Goal:** A built-in focus timer controlled from the cluster's timer action or
+its own shortcut: start/pause/reset, live status in the **TOC panel**, and a
+dedicated chip while **reading mode** is active (the TOC is hidden there, so
+the chip is the visible surface). A settings popup on the timer action lets the
+reader configure the defaults; everything is configurable from `mkdocs.yml`.
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    # Phase 7 keyboard layer
+    keyboard:
+      shortcuts:
+        timer_toggle:
+          key: "Alt+Shift+T"
+          label: "Toggle focus timer"
+          enabled: true
+
+    timer:
+      enabled: true                   # Master switch for the whole timer
+      default_minutes: 25             # Duration used when starting fresh
+      toc:
+        show: true                    # Status widget inside the TOC panel
+        position: "bottom"            #  top | bottom of the .neoabs-toc column
+        style: "ring"                 #  ring | bar | digits
+      reading:
+        show: true                    # Chip visible while reading mode is active
+      notifications:
+        enabled: true
+        toast: true                   #  neoabsToast("session complete")
+        sound: true                   #  short WebAudio chime
+      persist: true                   # Keep elapsed/remaining across reloads + SPA nav
+      settings_popup: true            # Config popup opened from the timer action
+      colors:
+        progress: "#8a5a33"           # Ring/bar progress accent while running
+```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — the TOC widget and reading chip are new
+>   elements injected into existing containers (`.neoabs-toc__inner` and
+>   `<body>`); nothing existing is deleted.
+> - **Don't remove any feature** — nothing the theme does today stops working;
+>   when `toc.show` or `reading.show` are off, the widget/chip elements are
+>   simply not injected (config gate, not removal).
+> - **Don't remove any function** — timestamped tick engine, notes-UI pattern,
+>   toast, and storage helpers are reused, not renamed; add `initFocusTimer()`
+>   and the `focusTimerStart/Pause/Reset/Tick` helpers.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — the timer ships ON
+>   (`enabled: true`, TOC widget, reading chip, notifications). Session state
+>   is not started automatically; `default_minutes` only applies on start.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`:
+  - Add `_NEOABS_DEFAULT_TIMER` with the defaults above.
+  - Deep-merge and validate (clear `ConfigurationError`): booleans, positive
+    integer `default_minutes`, `toc.position` / `toc.style` / allowed sets,
+    string `colors.progress`. Emit `extra["neoabs_timer"] = timer` and seed
+    `keyboard.shortcuts.timer_toggle` before the Phase 7 merge.
+- `neoabs/templates/base.html`:
+  - `#__config`: add `"timer": {{ config.extra.neoabs_timer | default({}) | tojson }}`.
+- `neoabs/templates/assets/stylesheets/components.scss`:
+  - `.neoabs-timer-toc`: compact widget inside `.neoabs-toc__inner` —
+    `position: top|bottom` variants, `style: ring` (SVG circle +
+    `stroke-dashoffset` driven by `--neoabs-timer-progress`), `style: bar`
+    (thin gradient bar), `style: digits` (monospace mm:ss).
+  - `.neoabs-timer-reading`: floating chip positioned inside `read` view —
+    bound to `[data-md-neoabs-reading="active"]` so it appears exactly when
+    the TOC is hidden, with the same glass styling family.
+  - `.neoabs-timer-settings`: modal reuse of the `.neoabs-keyboard-help`
+    pattern (overlay + panel + header + close).
+- `neoabs/templates/assets/javascripts/neoabs.js`:
+  - New `initFocusTimer()`: state machine (idle → running → paused) driven by
+    `Date.now()` accounting (not `setInterval` count, so the browser throttling
+    never drifts the time); `focusTimerStart(width)` / `focusTimerPause()` /
+    `focusTimerReset()`; persists `{remaining, running, updatedAt}` under the
+    `focus-timer` storage key when `persist` is on, restored on boot and on
+    SPA route changes.
+  - `focusTimerEnsureUi()` (mirrors `notesEnsureUi`): injects the TOC widget
+    into `.neoabs-toc__inner` when `toc.show`, and the reading chip when
+    `reading.show`; `focusTimerTick()` updates all surfaces from a single
+    shared state.
+  - `openTimerSettings()`: popup with fields for `default_minutes`,
+    `toc.style`/`toc.position`, `reading.show`, `notifications.toast/sound`;
+    values saved back to the store and applied live. The cluster timer action
+    opens this popup when a session is idle, otherwise toggles
+    start/pause (documented split in the plan so the acceptance tests are
+    unambiguous).
+  - Completion: `neoabsToast` + WebAudio chime when
+    `notifications.enabled`; auto-reset to idle.
+  - Register `keyboardActions.timer_toggle = function () { ... }` (start/pause/
+    open-popup semantics above); bind the `timer_toggle` keydown branch; add
+    the `timer_toggle` help-modal row. Register `initFocusTimer` in the boot
+    init list.
+- `mkdocs.yml` + `PLAN.md` — add the Phase 17 reference block and record the
+  phase in the implementation order / full default config sections.
+- Harness: new `phase17-harness` (temp) verifying the TOC widget renders per
+  `position`/`style`, the reading chip appears only with
+  `data-md-neoabs-reading="active"`, start/pause/reset transitions persist
+  between two consecutive builds (store replayed), `default_minutes` respects
+  the configured value, the settings popup round-trips user values, and a bad
+  `default_minutes` type fails the build with a clear message.
+
+---
+
+## Phase 18: Action Shortcuts & Cluster Customization
+
+**Goal:** Complete the keyboard surface for all cluster actions — every action
+gets a configurable shortcut, the help modal lists them all, and the cluster /
+timer gain the "more" customizations (per-action shortcut/badge, timer display
+format, live tab-title countdown, auto-start when reading begins). Everything
+remains `mkdocs.yml`-driven as in the other phases.
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    # Phase 7 keyboard layer — full built-in keymap for the new actions
+    keyboard:
+      shortcuts:
+        toggle_action_cluster: { key: "Alt+Shift+A", label: "Toggle action cluster", enabled: true }
+        timer_toggle: { key: "Alt+Shift+T", label: "Toggle focus timer", enabled: true }
+        # notes (Ctrl+Shift+N), help (?), reading mode (Alt+Shift+R) already built in
+
+    action_cluster:
+      actions:
+        - id: timer
+          shortcut: "Alt+Shift+T"    # Shown in tooltip + help modal
+          badge: time                #  none | time  (remaining mm:ss on the action)
+        - id: reading_mode
+          shortcut: "Alt+Shift+R"
+        - id: keyboard_help
+          shortcut: "?"
+        - id: notes
+          shortcut: "Ctrl+Shift+N"
+
+    timer:
+      start_with_reading: false      # Auto-start (or restart) when reading mode turns on
+      display_format: "mm:ss"        #  mm:ss | m:ss | "SS"
+      document_title: true           # Show remaining time in the tab title while running
+      badge_in_cluster: true         # Mirror the badge into the cluster timer action
+```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — no existing HTML, CSS rule/class, ID, or
+>   markup may be deleted; everything here extends Phase 16/17 surfaces.
+> - **Don't remove any feature** — cluster, timer, notes, help, reading mode
+>   all keep behaving as before; this phase only adds configurability.
+> - **Don't remove any function** — the Phase 16/17 init functions, the
+>   `keyboardActions` registry, `toggleKeyboardHelp()` and `kbdKey/kbdEnabled`
+>   helpers are untouched except for additive rows and registry entries.
+> - **Don't make any typo** — every config key, CSS variable, class name, and
+>   file path must be verified against the actual source before and after
+>   every edit.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — all added surfaces default
+>   to ON; `start_with_reading` and `document_title` default false/off only
+>   because they change behavior *auto-starting* a session or *rewriting the
+>   page title*, which the phase explicitly defines as opt-in.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`:
+  - Extend `_NEOABS_DEFAULT_TIMER` and the `action_cluster.actions` schema with
+    the keys above; validate (`shortcut` non-empty string, `badge` in
+    `none|time`, booleans, `display_format` in the allowed set).
+  - `timer.start_with_reading` syncs into the Phase 15 reading block merge
+    (an explicit `reading_mode` key stays authoritative); emit the extended
+    `extra["neoabs_timer"]` / `extra["neoabs_action_cluster"]`.
+- `neoabs/templates/assets/javascripts/neoabs.js`:
+  - Per-action `shortcut`: an additive keydown branch (parsed with the existing
+    `matchesKeyCombo`) per configured action; rows for these appear in the help
+    modal via `keyboardHelpRows()` regardless of whether they alias a built-in.
+  - `badge: time`: the cluster timer action shows `mm:ss` (updated by
+    `focusTimerTick()`), honoring `timer.badge_in_cluster`.
+  - `document_title`: while running, `document.title = "<mm:ss> — <site>"`,
+    restored on pause/reset (safe-edits only when `timer.document_title`).
+  - `start_with_reading`: `toggleReadingMode()` (Phase 15) route — on entering
+    reading mode with the config flag, `focusTimerStart()` is invoked if the
+    session is idle (idempotent; does not restart a running session).
+  - Help modal: ensure `toggle_action_cluster` + `timer_toggle` rows stay in
+    sync with their (possibly overridden) keys.
+- `neoabs/templates/assets/stylesheets/components.scss`:
+  - `.neoabs-action-cluster__action--badge`: small `mm:ss` pill on the timer
+    action; `.neoabs-timer-toc--digits`, `--ring`, `--bar` formatting refinements.
+- `mkdocs.yml` + `PLAN.md` — add the Phase 18 reference block and update the
+  implementation order / full default config sections.
+- Harness: extend `phase17-harness` → `phase18-harness` (temp) verifying each
+  action shortcut fires its handler via a synthetic keydown, the timer badge
+  text updates, `document_title` is set/restored, `start_with_reading`
+  auto-starts only from idle, and invalid `badge` / `display_format` /
+  `shortcut` values fail the build with a clear message.
+
+---
+
+## Phase 19: AI-Readable Content Mode
+
+**Goal:** Make every page directly readable by AI agents' `curl` / `webfetch`
+tools. The plugin emits a clean, **watermarked markdown mirror** of each page
+next to its HTML output (so `curl https://site/foo/bar.md` returns proper
+structured markdown — no JS, no rendering), a machine-readable **`llms.txt`**
+index at the site root, and an optional **`llms-full.txt`** with the whole site
+concatenated; HTML output gains a machine-readable watermark + an `alternate`
+link to the mirror so agents that fetch the HTML first can discover the
+markdown. Everything is configurable from `mkdocs.yml`.
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    ai_reader:
+      enabled: true                   # Master switch for the whole feature
+      markup: true                    # Emit per-page markdown mirrors (.md sidecars)
+
+      url_style: "sidecar"            # sidecar (foo/bar.md) | inline (foo/bar/index.md)
+      overwrite: false                # Never clobber an existing real .md source file
+      auto_title: true                # Add "# <Title>" when the source has no H1
+      exclude: []                     # src_path globs to skip (e.g. "drafts/*.md")
+
+      llms: true                      # Emit llms.txt at the site root
+      llms_full: true                 # Emit llms-full.txt (all mirrors concatenated)
+      sitemap: true                   # List the mirror URLs in sitemap.xml
+
+      description: ""                 # llms.txt description source override
+                                      #  (empty = page.meta.description or page title)
+
+      watermark:
+        enabled: true
+        header: true                  # Metadata block at the top of every mirror
+        footer: true                  # Short closing line at the bottom
+        text: "Generated by NeoAbs for AI agents."   # Marker line
+        include_site: true            #   site_name
+        include_url: true             #   canonical URL of the page
+        include_generated: true       #   build timestamp (UTC)
+        include_version: true         #   theme version
+
+    # HTML-side discoverability (baseline markup, no extra config needed):
+    #  <link rel="alternate" type="text/markdown" href="<mirror URL>">
+    #  <!-- neoabs-ai-readable: <mirror URL> -->  at the very top of <body>
+```
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — mirrors and indexes are new files; existing
+>   HTML, CSS, JS, and features are untouched. HTML output only gains a
+>   `<head>` `alternate` link and a leading comment.
+> - **Don't remove any feature** — the normal site renders exactly as before;
+>   the AI surface is additive and invisible to readers (only mirrored files
+>   and llms indexes are added).
+> - **Don't remove any function** — the plugin's existing `on_config` stays;
+>   the phase adds `on_post_page` / `on_post_build` hooks and helpers.
+> - **Don't make any typo** — every config key, glob, file path, and URL must
+>   be verified against the actual source before and after every edit;
+>   `data-md-*` attribute, `rel="alternate"` type, and llms.txt line format
+>   (`<url>\t<description>`) are exact.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited; anything else is out of scope.
+> - **Don't miss any feature in this phase** — implement **every** config
+>   key, template, and behavior listed above; nothing in this phase may be
+>   skipped or left partially wired.
+> - **Everything stays enabled/active by default** — the AI surface ships ON
+>   (`enabled: true`, mirrors + llms.txt + llms-full.txt + watermarks).
+>   `overwrite: false` and `auto_title: true` mirror only the defaults above.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`:
+  - Add `_NEOABS_DEFAULT_AI_READER` with the defaults above; deep-merge user
+    `theme.neoabs.ai_reader` and validate with clear `ConfigurationError`
+    messages (`url_style` in `sidecar|inline`, booleans, `exclude` a list of
+    non-empty glob strings, watermark booleans + non-empty `text` when
+    `watermark.enabled`).
+  - New `on_post_page(output, page, config, files)` hook (the plugin currently
+    only implements `on_config`, so this is purely additive):
+    - Skip when `ai_reader.enabled`/`markup` is off, or `page.file.src_path`
+      matches an `exclude` glob.
+    - Derive the mirror destination from `page.file` / `page.url`
+      (directory-URL aware): `url_style=sidecar` → `foo/bar.md`;
+      `url_style=inline` → `foo/bar/index.md`. When `overwrite: false`, skip
+      (and warn once) if a real source page already owns that destination.
+    - Build the mirror from `page.markdown` (raw source, highest fidelity for
+      agents), prepending/appending the `watermark` block (site, URL,
+      generated timestamp, version, `text` marker — all gated by their
+      `include_*` / `header` / `footer` keys) and adding `# <Title>` when
+      `auto_title` is on and the source has no H1. Write it into
+      `config["site_dir"]`.
+    - Inject the HTML-side watermark: a `<!-- neoabs-ai-readable: <url> -->`
+      comment before the rendered markup and
+      `<link rel="alternate" type="text/markdown" href="<mirror>">` into the
+      `<head>`, then return the modified `output`.
+  - New `on_post_build(config)`:
+    - Emit `llms.txt` at `site_dir` root when `llms` is on: title + one
+      `<url>\t<description>` line per mirrored page (description from the
+      configured `description` template, else `page.meta.description`, else
+      the page title).
+    - Emit `llms-full.txt` when `llms_full` is on: all watermarked mirrors
+      concatenated with `\n\n--- (site) ---\n\n` separators.
+    - When `sitemap` is on, append the mirror URLs to the generated
+      `sitemap.xml` entries (deduped against existing `<loc>`).
+- `neoabs/templates/base.html`:
+  - Add `"ai_reader": {{ config.extra.neoabs_ai_reader | default({}) | tojson }}`
+    to `#__config` for parity with the other phases (JS is NOT required for
+    this feature — the mirrors and indexes are pure build output, which is
+    what makes them `curl`/`webfetch`-friendly).
+- `mkdocs.yml` + `PLAN.md` — add the Phase 19 reference block and record the
+  phase in the implementation order / full default config sections; note in
+  the D8 section that its *"sitemap/llms.txt wiring"* item is now delivered by
+  Phase 19.
+- Harness: new `phase19-harness` (temp) verifying: for a two-page doc,
+  `foo.md` (sidecar) and `dir/index.md` (inline style) exist and contain the
+  watermark (site/url/version lines); `auto_title` adds no duplicate H1;
+  `exclude` and `overwrite` collision cases skip cleanly; `llms.txt` line
+  format matches `<url>\t<description>`; `llms-full.txt` concatenation order;
+  the HTML contains the `alternate` link + `neoabs-ai-readable` comment;
+  `sitemap` lists the mirrors; and an invalid `url_style` / non-list `exclude`
+  fails the build with a clear message. Verify a real `curl` of
+  `http://site/foo.md` (or the local `mkdocs serve`) returns the mirror.
+
+---
+
 ## Implementation Order
 
 | Phase | Priority | Effort | Description |
@@ -1305,6 +2004,11 @@ plugins:
 | 12 | Low | Small | Global branding & meta |
 | 13 | Medium | Medium | Page-level front matter overrides |
 | 14 | Low | Small | Plugin config passthrough |
+| 15 | Medium | Medium | Reading mode (Alt+Shift+R, Ink colour theme) |
+| 16 | Medium | Medium | Action button cluster (plus menu with ?/notes/timer/read) |
+| 17 | Medium | Medium | Focus timer (TOC status, reading chip, settings popup) |
+| 18 | Low | Small | Action shortcuts & cluster customization ("and more") |
+| 19 | Medium | Medium | AI-readable content mode (markdown mirrors, llms.txt, watermark) |
 
 > **Per-phase checklist (rule 6):** each phase's config block above IS the
 > acceptance list. Implement every listed key and behavior; a phase is done only
@@ -1385,7 +2089,12 @@ theme:
     toc: { position: "right", width: "240px", title: "On this page", collapsible: true, levels: { h2: true, h3: true, h4: true }, tracking: { enabled: true } }
 
     # Phase 7: Keyboard
-    keyboard: { enabled: true, shortcuts: {} }
+    keyboard:
+      enabled: true
+      shortcuts:
+        toggle_reading_mode: { key: "Alt+Shift+R", label: "Toggle reading mode", enabled: true, persisted: true }
+        toggle_action_cluster: { key: "Alt+Shift+A", label: "Toggle action cluster", enabled: true }
+        timer_toggle: { key: "Alt+Shift+T", label: "Toggle focus timer", enabled: true }
 
     # Phase 9: Visual
     glass: { intensity: "medium", blur: true, blur_amount: "12px" }
@@ -1398,6 +2107,69 @@ theme:
 
     # Phase 11: Content
     content: { max_width: "800px", code: { show_copy_button: true }, admonitions: { enabled: true } }
+
+    # Phase 15: Reading mode
+    reading_mode:
+      enabled: true
+      shortcut_key: "Alt+Shift+R"
+      sections: { header: true, sidebar: true, toc: true, footer: true, progress: true }
+      notes: { show: true, open_on_enter: false }
+      persisted: true
+      scheme:
+        enabled: true
+        name: "ink"
+        colors: {}                   # empty = inherit the active colour scheme (dark default)
+      typography: { font_size: "1.125rem", line_height: "1.75", measure: "100%" }
+
+    # Phase 16: Action cluster (plus menu)
+    action_cluster:
+      enabled: true
+      position: "bottom-left"
+      offset: { bottom: "16px", left: "16px" }
+      main: { icon: "plus", size: "56px", glass: true, icon_transform: true }
+      behavior: { close_on_select: true, close_on_escape: true, close_on_outside: true, animation: "normal", tooltips: true }
+      actions:
+        - { id: keyboard_help, icon: "help", label: "Keyboard shortcuts", enabled: true }
+        - { id: notes, icon: "notes", label: "Open notes panel", enabled: true }
+        - { id: timer, icon: "timer", label: "Focus timer", shortcut: "Alt+Shift+T", badge: time, enabled: true }
+        - { id: reading_mode, icon: "reading", label: "Reading mode", shortcut: "Alt+Shift+R", enabled: true }
+
+    # Phase 17 + 18: Focus timer
+    timer:
+      enabled: true
+      default_minutes: 25
+      toc: { show: true, position: "bottom", style: "ring" }
+      reading: { show: true }
+      notifications: { enabled: true, toast: true, sound: true }
+      persist: true
+      settings_popup: true
+      start_with_reading: false
+      display_format: "mm:ss"
+      document_title: false           # Opt-in: live mm:ss in the tab title
+      badge_in_cluster: true
+      colors: { progress: "#8a5a33" }
+
+    # Phase 19: AI-readable content mode
+    ai_reader:
+      enabled: true
+      markup: true
+      url_style: "sidecar"
+      overwrite: false
+      auto_title: true
+      exclude: []
+      llms: true
+      llms_full: true
+      sitemap: true
+      description: ""
+      watermark:
+        enabled: true
+        header: true
+        footer: true
+        text: "Generated by NeoAbs for AI agents."
+        include_site: true
+        include_url: true
+        include_generated: true
+        include_version: true
 
 extra:
   neoabs_logo_dark: ""
@@ -1522,7 +2294,8 @@ extra:
   `Quick-Start`, `Configuration-Bible`, `Recipes`, `Release-Notes`,
   `Screenshots`, `Contributing-to-the-Wiki`.
 - `tools/wiki_sync/` + release-triggered GitHub Action; docs↔wiki cross-link
-  contract.
+  contract. No changes to `llms.txt`/sitemap here — that wiring is shipped by
+  Phase 19 (`ai_reader`).
 - **Acceptance:** wiki live at `github.com/rkriad585/mkdocs-neoabs/wiki`; sync
   Action green on tag; every wiki page links back to the canonical docs.
 

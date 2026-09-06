@@ -1462,7 +1462,45 @@
   const keyboardActions = {}
 
   function toggleReadingMode() {
-    return document.body.classList.toggle("neoabs-reading-mode")
+    const cfg = _config.reading_mode || {}
+    if (cfg.enabled === false) return false
+    const entering = document.documentElement.getAttribute("data-md-neoabs-reading") !== "active"
+    readingModeSet(entering)
+    return entering
+  }
+
+  // Apply/remove the reading view state. The state lives on `data-md-neoabs-reading`
+  // ("active"/"off") on <html> plus the `neoabs-reading-mode` body class; the
+  // compiled CSS drives the section hiding, Ink palette, and reading measure.
+  // Nothing is removed — the DOM and templates stay intact, like the Phase 5/6
+  // sidebar/TOC collapse pattern.
+  function readingModeSet(active) {
+    const cfg = _config.reading_mode || {}
+    const root = document.documentElement
+    root.setAttribute("data-md-neoabs-reading", active ? "active" : "off")
+    document.body.classList.toggle("neoabs-reading-mode", active)
+    if (cfg.persisted) storageSet("ui-reading", active ? "1" : "0")
+    if (!active) return
+    const notes = cfg.notes || {}
+    if (notes.open_on_enter) notesSetOpen(true)
+    if (notes.show === false) notesSetOpen(false)
+  }
+
+  function initReadingMode(config) {
+    const cfg = config.reading_mode || {}
+    if (cfg.enabled === false) return
+
+    // Restore the persisted reading state on boot (only when the author opted in).
+    if (cfg.persisted && storageGet("ui-reading") === "1") readingModeSet(true)
+
+    document.addEventListener("keydown", (e) => {
+      if (kbdEnabled("toggle_reading_mode") &&
+          matchesKeyCombo(e, kbdKey("toggle_reading_mode", "Alt+Shift+R"))) {
+        e.preventDefault()
+        toggleReadingMode()
+      }
+    })
+    keyboardActions.toggle_reading_mode = toggleReadingMode
   }
 
   function resolveKeyboardAction(name) {
@@ -1620,6 +1658,8 @@
       displayKey(kbdKey("toggle_sidebar", "Ctrl+Shift+B")), kbdLabel("toggle_sidebar", "Toggle sidebar"))
     push(tocCfg.collapsible !== false && kbdEnabled("toggle_toc"),
       displayKey(kbdKey("toggle_toc", "Ctrl+Shift+T")), kbdLabel("toggle_toc", "Toggle table of contents"))
+    push(kbdEnabled("toggle_reading_mode"),
+      displayKey(kbdKey("toggle_reading_mode", "Alt+Shift+R")), kbdLabel("toggle_reading_mode", "Toggle reading mode"))
     push(componentShow("keyboard_help", "show") && kbdEnabled("help"),
       displayKey(kbdKey("help", "?")), kbdLabel("help", "Show keyboard shortcuts"))
 
@@ -3092,7 +3132,7 @@
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
       initContentTables, initMermaid,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), initAnchorLinks, initPermalinks, initKeyboardNav,
+      () => initNotes(config), () => initReadingMode(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

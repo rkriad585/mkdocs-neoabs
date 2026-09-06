@@ -352,6 +352,11 @@ theme:
     #     help:
     #       key: "?"                   # Show the keyboard-shortcuts modal (default "?")
     #       label: "Show keyboard shortcuts"
+    #     toggle_reading_mode:
+    #       key: "Alt+Shift+R"         # Enter/exit reading mode (Phase 15; default Alt+Shift+R)
+    #       label: "Toggle reading mode"
+    #       enabled: true              # Set false to disable this shortcut
+    #       persisted: true            # Remember reading mode across reloads (default true)
     #   custom:                        # Your own shortcuts (list of entries)
     #     - key: "g"                   #   Press "g" to jump to the top
     #       label: "Go to top"
@@ -473,6 +478,42 @@ theme:
     #   custom_css: "page-specific.css"
     #   layout: "wide"                # default | wide | full
     # ---
+    # --- Phase 15: Reading mode (optional) --------------------------------------
+    # One keypress (default Alt+Shift+R) enters a distraction-free reading view:
+    # the header, sidebars, TOC, footer, and progress chrome are hidden and the
+    # article re-measures to the full width. The active colour scheme (dark by
+    # default) is kept; `scheme.colors` may override it. Every aspect is
+    # configurable here; defaults keep the feature ON.
+    # The shortcut is also exposed as `keyboard.shortcuts.toggle_reading_mode`
+    # (that key wins over `shortcut_key` if both are set).
+    # reading_mode:
+    #   enabled: true                  # Master switch (default true)
+    #   shortcut_key: "Alt+Shift+R"    # Enter/exit reading mode (default Alt+Shift+R)
+    #   sections:                      # What is hidden while reading (default: all)
+    #     header: true                 #   top header / navbar
+    #     sidebar: true                #   left navigation sidebar
+    #     toc: true                    #   right table of contents
+    #     footer: true                 #   footer + prev/next nav
+    #     progress: true               #   reading progress bar + back-to-top
+    #   notes:
+    #     show: true                   # Keep the notes button/panel usable while reading
+    #     open_on_enter: false         # Auto-open the notes panel when entering
+    #   persisted: true                # Restore reading mode on the next visit
+    #   scheme:
+    #     enabled: true
+    #     name: "ink"                  # Optional label; unused by the engine
+    #     colors:                      # Optional Phase 1 token overrides; empty =
+    #                                  # inherit the active colour scheme (dark default)
+    #       background: "#000000"
+    #       surface: ""
+    #       text: "#ffffff"
+    #       text_secondary: ""
+    #       border: ""
+    #       accent: "#ff3030"
+    #   typography:                    # Reading measure + type scale
+    #     font_size: "1.125rem"
+    #     line_height: "1.75"
+    #     measure: "100%"
 
 extra:
   neoabs_version: 13
@@ -525,7 +566,7 @@ plugins:
       # convenience and behave identically (and win over `theme.neoabs`):
       # glass, dot_matrix, animation, border, colors, typography, spacing,
       # border_radius, transitions, shadows, components, header, footer,
-      # sidebar, toc, search, keyboard, content, custom_css, custom_js.
+      # sidebar, toc, search, keyboard, content, reading_mode, custom_css, custom_js.
       # glass: "medium"              # "light" | "medium" | "heavy" | "none"
       # dot_matrix: true             # Show the dot matrix overlay
       # animation: "normal"          # "normal" | "reduced" | "none"

@@ -196,9 +196,53 @@ _NEOABS_DEFAULT_KEYBOARD = {
             "enabled": True,
         },
         "help": {"key": "?", "label": "Show keyboard shortcuts", "enabled": True},
+        "toggle_reading_mode": {
+            "key": "Alt+Shift+R",
+            "label": "Toggle reading mode",
+            "enabled": True,
+            "persisted": True,
+        },
     },
     "custom": [],
 }
+
+# Phase 15 - Reading mode.
+#
+# One keypress (default Alt+Shift+R) enters a distraction-free reading view:
+# the header, sidebars, TOC, footer, and progress chrome are hidden, and the
+# article is re-measured. The view keeps the active color scheme (dark by
+# default); `reading_mode.scheme.colors` optionally overrides it. Every aspect
+# is configurable via `theme.neoabs.reading_mode`; the defaults keep the
+# feature fully ON.
+_NEOABS_DEFAULT_READING_MODE = {
+    "enabled": True,
+    "shortcut_key": "Alt+Shift+R",
+    "sections": {
+        "header": True,
+        "sidebar": True,
+        "toc": True,
+        "footer": True,
+        "progress": True,
+    },
+    "notes": {
+        "show": True,
+        "open_on_enter": False,
+    },
+    "persisted": True,
+    "typography": {
+        "font_size": "1.125rem",
+        "line_height": "1.75",
+        "measure": "100%",
+    },
+}
+
+# The only `scheme.colors` keys a reading mode may set. Each maps 1:1 onto a
+# compiled-CSS token (--neoabs-ink, --neoabs-glass-bg, --neoabs-text-primary,
+# --neoabs-text-secondary, --neoabs-glass-border, --neoabs-accent). Unknown
+# keys are rejected so a typo cannot silently produce a dead config value.
+_VALID_READING_COLOR_KEYS = frozenset(
+    ("background", "surface", "text", "text_secondary", "border", "accent")
+)
 
 # Phase 11 - Content area customization.
 #
@@ -354,6 +398,93 @@ def _validate_keyboard(keyboard):
             )
 
 
+def _validate_reading_mode(reading_mode):
+    """Validate a merged `theme.neoabs.reading_mode` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently
+    degrading the reading view."""
+    if not isinstance(reading_mode, dict):
+        raise ConfigurationError("theme.neoabs.reading_mode must be a mapping.")
+
+    for field in ("enabled", "persisted"):
+        value = reading_mode.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.reading_mode.{field} must be a boolean."
+            )
+
+    shortcut = reading_mode.get("shortcut_key")
+    if shortcut is not None and (not isinstance(shortcut, str) or not shortcut.strip()):
+        raise ConfigurationError(
+            "theme.neoabs.reading_mode.shortcut_key must be a non-empty string."
+        )
+
+    sections = reading_mode.get("sections")
+    if isinstance(sections, dict):
+        for name in ("header", "sidebar", "toc", "footer", "progress"):
+            value = sections.get(name)
+            if value is not None and not isinstance(value, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.reading_mode.sections.{name} must be a boolean."
+                )
+    elif sections is not None:
+        raise ConfigurationError(
+            "theme.neoabs.reading_mode.sections must be a mapping."
+        )
+
+    notes = reading_mode.get("notes")
+    if isinstance(notes, dict):
+        for field in ("show", "open_on_enter"):
+            value = notes.get(field)
+            if value is not None and not isinstance(value, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.reading_mode.notes.{field} must be a boolean."
+                )
+    elif notes is not None:
+        raise ConfigurationError("theme.neoabs.reading_mode.notes must be a mapping.")
+
+    scheme = reading_mode.get("scheme")
+    if isinstance(scheme, dict):
+        enabled = scheme.get("enabled")
+        if enabled is not None and not isinstance(enabled, bool):
+            raise ConfigurationError(
+                "theme.neoabs.reading_mode.scheme.enabled must be a boolean."
+            )
+        name = scheme.get("name")
+        if name is not None and (not isinstance(name, str) or not name.strip()):
+            raise ConfigurationError(
+                "theme.neoabs.reading_mode.scheme.name must be a non-empty string."
+            )
+        colors = scheme.get("colors")
+        if colors is not None:
+            if not isinstance(colors, dict):
+                raise ConfigurationError(
+                    "theme.neoabs.reading_mode.scheme.colors must be a mapping."
+                )
+            for key in colors:
+                if key not in _VALID_READING_COLOR_KEYS:
+                    raise ConfigurationError(
+                        f"theme.neoabs.reading_mode.scheme.colors.{key} is not a "
+                        "valid color key; expected one of "
+                        f"{sorted(_VALID_READING_COLOR_KEYS)}."
+                    )
+    elif scheme is not None:
+        raise ConfigurationError("theme.neoabs.reading_mode.scheme must be a mapping.")
+
+    typography = reading_mode.get("typography")
+    if isinstance(typography, dict):
+        for field in ("font_size", "line_height", "measure"):
+            value = typography.get(field)
+            if value is not None and (not isinstance(value, str) or not value.strip()):
+                raise ConfigurationError(
+                    f"theme.neoabs.reading_mode.typography.{field} must be a "
+                    "non-empty string."
+                )
+    elif typography is not None:
+        raise ConfigurationError(
+            "theme.neoabs.reading_mode.typography must be a mapping."
+        )
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -465,6 +596,7 @@ class NeoAbsPlugin(BasePlugin):
         ("search", Type(dict)),
         ("keyboard", Type(dict)),
         ("content", Type(dict)),
+        ("reading_mode", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -541,6 +673,17 @@ class NeoAbsPlugin(BasePlugin):
         if "enabled" in provided_admonitions:
             components["admonitions"]["show"] = content["admonitions"]["enabled"]
 
+        # Phase 15: resolve reading-mode settings. Defaults are all-ON
+        # (distraction-free view + Ink palette); user overrides are deep-merged
+        # and validated, then the shortcut is seeded into the Phase 7 layer.
+        provided_reading = neoabs.get("reading_mode")
+        if not isinstance(provided_reading, dict):
+            provided_reading = {}
+        reading_mode = _deep_merge(_NEOABS_DEFAULT_READING_MODE, provided_reading)
+        _validate_reading_mode(reading_mode)
+        neoabs["reading_mode"] = reading_mode
+        theme["neoabs"] = neoabs
+
         # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
         # shortcut works out of the box); user overrides are deep-merged and
         # validated so a malformed key or custom action fails the build with a
@@ -548,7 +691,27 @@ class NeoAbsPlugin(BasePlugin):
         provided_keyboard = neoabs.get("keyboard")
         if not isinstance(provided_keyboard, dict):
             provided_keyboard = {}
-        keyboard = _deep_merge(_NEOABS_DEFAULT_KEYBOARD, provided_keyboard)
+
+        # Phase 15: seed the reading-mode shortcut from `reading_mode` before
+        # the Phase 7 deep-merge, so an explicit
+        # `keyboard.shortcuts.toggle_reading_mode` the author set still wins.
+        seeded_keyboard = dict(provided_keyboard)
+        if isinstance(provided_keyboard.get("shortcuts"), dict):
+            seeded_keyboard["shortcuts"] = dict(provided_keyboard["shortcuts"])
+        else:
+            seeded_keyboard.setdefault("shortcuts", {})
+        seeded_keyboard["shortcuts"].setdefault(
+            "toggle_reading_mode",
+            {
+                "key": reading_mode.get("shortcut_key")
+                or _NEOABS_DEFAULT_READING_MODE["shortcut_key"],
+                "label": "Toggle reading mode",
+                "enabled": reading_mode.get("enabled"),
+                "persisted": reading_mode.get("persisted"),
+            },
+        )
+
+        keyboard = _deep_merge(_NEOABS_DEFAULT_KEYBOARD, seeded_keyboard)
         _validate_keyboard(keyboard)
         neoabs["keyboard"] = keyboard
         theme["neoabs"] = neoabs
@@ -577,6 +740,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_components"] = components
         extra["neoabs_keyboard"] = keyboard
         extra["neoabs_content"] = content
+        extra["neoabs_reading_mode"] = reading_mode
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
