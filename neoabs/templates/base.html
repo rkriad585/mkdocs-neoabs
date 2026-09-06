@@ -25,7 +25,7 @@
 {% set _ct_tables_bordered = _ct_tables.bordered if (_ct_tables.bordered is defined) else false %}
 {% set _ct_task = _ct_cfg.task_lists if (_ct_cfg.task_lists is mapping) else {} %}
 {% set _ct_task_custom = _ct_task.custom_checkbox if (_ct_task.custom_checkbox is defined) else true %}
-{% set _ct_admonitions_enabled = _ct_cfg.admonitions.enabled if (_ct_cfg.admonitions is mapping and _ct_cfg.admonitions.enabled is defined) else true %}
+{% set _ct_admonitions_enabled = (((_ct_cfg.admonitions.enabled if (_ct_cfg.admonitions is mapping and _ct_cfg.admonitions.enabled is defined) else true)) and (_comp.admonitions.show | default(true))) %}
 {% set _all_css = (config.theme.extra_css if (config.theme.extra_css is defined and config.theme.extra_css) else []) + ((config.theme.neoabs.custom_css | default([])) if (config.theme.neoabs is mapping) else []) + (config.extra_css | default([])) %}
 {% set _all_js = (config.theme.extra_javascript if (config.theme.extra_javascript is defined and config.theme.extra_javascript) else []) + ((config.theme.neoabs.custom_js | default([])) if (config.theme.neoabs is mapping) else []) + (config.extra_javascript | default([])) %}
 {% set _sbr_cfg = config.theme.neoabs.sidebar if (config.theme.neoabs is mapping and config.theme.neoabs.sidebar is mapping) else {} %}
@@ -50,16 +50,26 @@
 {% set _toc_permalink = _toc_cfg.permalink if (_toc_cfg.permalink is defined) else true %}
 {% set _toc_permalink_symbol = _toc_cfg.permalink_symbol if (_toc_cfg.permalink_symbol is defined and _toc_cfg.permalink_symbol) else none %}
 {% set _toc_levels = _toc_cfg.levels if (_toc_cfg.levels is mapping) else none %}
-{% set _toc_levels_effective = _toc_levels if _toc_levels else {
+{% set _toc_levels_effective = {
+    "h2": _toc_levels.h2 | default(_comp.toc.show_level_h2 | default(true)),
+    "h3": _toc_levels.h3 | default(_comp.toc.show_level_h3 | default(true)),
+    "h4": _toc_levels.h4 | default(_comp.toc.show_level_h4 | default(true)),
+    "h5": _toc_levels.h5 | default(false),
+    "h6": _toc_levels.h6 | default(false)
+  } if (_toc_levels is mapping) else {
     "h2": _comp.toc.show_level_h2 | default(true),
     "h3": _comp.toc.show_level_h3 | default(true),
-    "h4": _comp.toc.show_level_h4 | default(true)
+    "h4": _comp.toc.show_level_h4 | default(true),
+    "h5": false,
+    "h6": false
   } %}
 {% if _pg.toc is mapping and _pg.toc.levels is mapping %}
 {% set _toc_levels_effective = {
     "h2": _pg.toc.levels.h2 | default(_toc_levels_effective.get("h2", true)),
     "h3": _pg.toc.levels.h3 | default(_toc_levels_effective.get("h3", true)),
-    "h4": _pg.toc.levels.h4 | default(_toc_levels_effective.get("h4", true))
+    "h4": _pg.toc.levels.h4 | default(_toc_levels_effective.get("h4", true)),
+    "h5": _pg.toc.levels.h5 | default(_toc_levels_effective.get("h5", false)),
+    "h6": _pg.toc.levels.h6 | default(_toc_levels_effective.get("h6", false))
   } %}
 {% endif %}
 {% set _toc_style = namespace(parts=[]) %}
@@ -185,7 +195,7 @@
       data-md-color-scheme="{{ _scheme }}"
       data-md-neoabs-glass="{{ _glass_intensity }}"
       data-md-neoabs-animation="{{ _anim_mode }}"
-      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-neoabs-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-neoabs-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-neoabs-search="false"{% endif %}{% if _ct_content_glass %} data-md-neoabs-content-glass="true"{% endif %}{% if _ct_tables_responsive == false %} data-md-neoabs-tables-responsive="false"{% endif %}{% if _ct_tables_striped %} data-md-neoabs-tables-striped="true"{% endif %}{% if _ct_tables_bordered %} data-md-neoabs-tables-bordered="true"{% endif %}{% if _ct_admonitions_enabled == false %} data-md-neoabs-admonitions="false"{% endif %}{% if _ct_task_custom == false %} data-md-neoabs-task-checkbox-native="true"{% endif %}{% if _pg_layout and _pg_layout != "default" %} data-md-neoabs-layout="{{ _pg_layout }}"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
+      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-neoabs-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-neoabs-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-neoabs-search="false"{% endif %}{% if _ct_content_glass %} data-md-neoabs-content-glass="true"{% endif %}{% if _ct_tables_responsive == false %} data-md-neoabs-tables-responsive="false"{% endif %}{% if _ct_tables_striped %} data-md-neoabs-tables-striped="true"{% endif %}{% if _ct_tables_bordered %} data-md-neoabs-tables-bordered="true"{% endif %}{% if _ct_admonitions_enabled == false %} data-md-neoabs-admonitions="false"{% endif %}{% if (_comp.tags.show | default(true)) == false %} data-md-neoabs-tags="false"{% endif %}{% if _ct_task_custom == false %} data-md-neoabs-task-checkbox-native="true"{% endif %}{% if _pg_layout and _pg_layout != "default" %} data-md-neoabs-layout="{{ _pg_layout }}"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
   <head>
     {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}

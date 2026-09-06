@@ -219,8 +219,6 @@ theme:
       # Sidebar (left navigation)
       sidebar:
         show: true                 # Show/hide entire sidebar
-        show_header: true          # Show sidebar header/brand
-        show_search: true          # Show search input in sidebar
 
       # Table of Contents (right sidebar)
       toc:
@@ -252,13 +250,10 @@ theme:
       # Notes / Annotations
       notes:
         show: true                 # Show/hide notes system
-        shortcut_key: "Ctrl+Shift+N"
 
       # Code blocks
       code:
         show_copy_button: true     # Copy-to-clipboard button
-        show_line_numbers: false   # Line numbers by default
-        highlight_lines: true      # Highlighted line support
 
       # Admonitions
       admonitions:
@@ -549,7 +544,6 @@ theme:
         indent_nested: true        # Indent nested items
         indent_size: "16px"        # Nesting indent per level
         max_depth: 4               # Maximum nesting depth
-        show_icons: false          # Show icons next to nav items (future)
 
       # Section headings (from nav YAML)
       sections:

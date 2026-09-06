@@ -81,8 +81,6 @@ _NEOABS_DEFAULT_COMPONENTS = {
     },
     "sidebar": {
         "show": True,
-        "show_header": True,
-        "show_search": True,
     },
     "toc": {
         "show": True,
@@ -109,12 +107,9 @@ _NEOABS_DEFAULT_COMPONENTS = {
     },
     "notes": {
         "show": True,
-        "shortcut_key": "Ctrl+Shift+N",
     },
     "code": {
         "show_copy_button": True,
-        "show_line_numbers": False,
-        "highlight_lines": True,
     },
     "admonitions": {
         "show": True,

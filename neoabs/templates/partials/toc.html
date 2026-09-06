@@ -2,13 +2,17 @@
 {% set _toc_levels_eff = _toc_levels_effective if (_toc_levels_effective is defined and _toc_levels_effective is mapping) else {
     "h2": _comp.toc.show_level_h2 | default(true),
     "h3": _comp.toc.show_level_h3 | default(true),
-    "h4": _comp.toc.show_level_h4 | default(true)
+    "h4": _comp.toc.show_level_h4 | default(true),
+    "h5": false,
+    "h6": false
   } %}
 {% if _pg_toc_levels %}
 {% set _toc_levels_eff = {
     "h2": _pg_toc_levels.h2 | default(_toc_levels_eff.get("h2", true)),
     "h3": _pg_toc_levels.h3 | default(_toc_levels_eff.get("h3", true)),
-    "h4": _pg_toc_levels.h4 | default(_toc_levels_eff.get("h4", true))
+    "h4": _pg_toc_levels.h4 | default(_toc_levels_eff.get("h4", true)),
+    "h5": _pg_toc_levels.h5 | default(_toc_levels_eff.get("h5", false)),
+    "h6": _pg_toc_levels.h6 | default(_toc_levels_eff.get("h6", false))
   } %}
 {% endif %}
 {% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else "On this page" %}
@@ -17,7 +21,8 @@
 
 {% macro render_toc_item(toc_item) %}
 {% set _level_key = "h" ~ toc_item.level %}
-{% if _toc_levels_eff.get(_level_key, true) %}
+{% set _level_default = false if (_level_key == "h5" or _level_key == "h6") else true %}
+{% if _toc_levels_eff.get(_level_key, _level_default) %}
 {% set active = "neoabs-toc__link--active" if toc_item.active %}
 <li class="neoabs-toc__item neoabs-toc__item--h{{ toc_item.level }}">
   <a href="{{ toc_item.url }}" class="neoabs-toc__link {{ active }}" title="{{ toc_item.title }}">
