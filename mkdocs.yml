@@ -339,6 +339,48 @@ theme:
     #   - assets/javascripts/custom.js
     #   - "https://cdn.example.com/widget.js"
 
+    # --- Phase 9: Advanced visual customization (optional) --------------------
+    # Fine-grained visual control beyond the design tokens: glass, dot matrix,
+    # animations, borders, shadows, scrollbar and text selection. These render
+    # as CSS custom properties / data attributes in the built page and override
+    # the compiled stylesheet. Every key defaults to the current theme behavior;
+    # `glass`, `dot_matrix`, `animation` and `border` also keep accepting their
+    # legacy scalar form (glass: "medium", dot_matrix: true, ...). The object
+    # form below is the full set of options.
+    # glass:
+    #   intensity: "medium"            # "light" | "medium" | "heavy" | "none"
+    #   blur: true                     # Backdrop filter blur
+    #   blur_amount: "12px"            # Custom blur radius (overrides intensity blur)
+    #   opacity: 0.8                   # Glass background opacity (dark & light schemes)
+    #   saturation: true               # Backdrop saturate filter
+    # dot_matrix:
+    #   enabled: true                  # Show the dot matrix overlay
+    #   color: ""                      # Dot color (default: text primary color)
+    #   size: "2px"                    # Dot size
+    #   gap: "24px"                    # Dot spacing
+    #   opacity: 0.3                   # Dot opacity
+    #   position: "fixed"              # "fixed" | "absolute"
+    # animation:
+    #   mode: "normal"                 # "normal" | "reduced" | "none"
+    #   page_transition: true          # Page load fade-in
+    #   hover_effects: true            # Hover scale/transform effects
+    #   scroll_animations: true        # Animate elements on scroll (progressive)
+    #   toast_animation: true          # Toast slide-in/out
+    # border:
+    #   width: "thin"                  # "none" | "thin" | "thick"
+    #   style: "solid"                 # "solid" | "dashed" | "dotted"
+    #   color: ""                      # Override border color (default: glass border)
+    # shadows:
+    #   enabled: true                  # Enable shadows
+    #   style: "default"               # "default" | "subtle" | "none"
+    # scrollbar:
+    #   show: true                     # Show scrollbars
+    #   style: "thin"                  # "thin" | "default" | "none"
+    #   color: ""                      # Custom scrollbar color
+    # selection:
+    #   background: ""                 # Text selection background color
+    #   color: ""                      # Text selection text color
+
 extra:
   neoabs_version: 10
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
