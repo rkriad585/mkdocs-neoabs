@@ -2699,7 +2699,7 @@ $neoabs-breakpoint-mobile: 768px;
 .neoabs-scrollable {
 	overflow-y: auto;
 	scrollbar-width: thin;
-	scrollbar-color: var(--neoabs-glass-border) transparent;
+	scrollbar-color: var(--neoabs-scrollbar-thumb, var(--neoabs-glass-border)) transparent;
 
 	&::-webkit-scrollbar {
 		width: 4px;
@@ -2710,7 +2710,7 @@ $neoabs-breakpoint-mobile: 768px;
 	}
 
 	&::-webkit-scrollbar-thumb {
-		background: var(--neoabs-glass-border);
+		background: var(--neoabs-scrollbar-thumb, var(--neoabs-glass-border));
 		border-radius: 2px;
 	}
 
@@ -4605,6 +4605,12 @@ pre:not(.highlight) code.language-tree .neoabs-tree-comment {
 	.neoabs-toast {
 		transition: none;
 	}
+}
+
+// Phase 9 toast toggle (neoabs.animation.toast_animation) - keep slide/snap
+// positioning but drop the transition entirely when disabled.
+html[data-md-neoabs-toast-animation="false"] .neoabs-toast {
+	transition: none !important;
 }
 
 // ============================================================================

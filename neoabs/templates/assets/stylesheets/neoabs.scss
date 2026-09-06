@@ -101,6 +101,11 @@
   // Border system (configurable via neoabs.border)
   --neoabs-border-width: 1px;
 
+  // Phase 9 visual system (overridable via theme.neoabs)
+  --neoabs-border-style: solid;
+  --neoabs-dot-color: var(--neoabs-text-primary);
+  --neoabs-scrollbar-thumb: var(--neoabs-glass-border);
+
   // Typography tokens (overridable via theme.neoabs.typography)
   --neoabs-font-size-base: 16px;
   --neoabs-font-size-sm: 14px;
@@ -232,6 +237,18 @@
   --neoabs-glass-saturation: 1.4;
 }
 
+// No glass effect (neoabs.glass.intensity = "none")
+[data-md-neoabs-glass="none"]:not([data-md-color-scheme="default"]),
+[data-md-neoabs-glass="none"][data-md-color-scheme="default"] {
+  --neoabs-glass-bg: transparent;
+  --neoabs-glass-bg-strong: transparent;
+  --neoabs-glass-border: transparent;
+  --neoabs-glass-border-strong: transparent;
+  --neoabs-glass-blur: 0px;
+  --neoabs-glass-blur-heavy: 0px;
+  --neoabs-glass-saturation: 1;
+}
+
 // ============================================================================
 // BASE RESETS
 // ============================================================================
@@ -281,6 +298,15 @@ body {
   transition: none !important;
 }
 
+// neoabs.animation.mode = reduced keeps motion events but drops most movement
+// (mirrors the prefers-reduced-motion handling above).
+[data-md-neoabs-animation="reduced"] *,
+[data-md-neoabs-animation="reduced"] *::before,
+[data-md-neoabs-animation="reduced"] *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+}
+
 // ============================================================================
 // THEME OPTION: BORDER
 // neoabs.border overrides the base border width used across components
@@ -294,6 +320,20 @@ body {
   --neoabs-border-width: 0px;
 }
 
+// neoabs.border.style overrides the border style used across the theme
+// (only affects borders that are actually rendered, i.e. with a width).
+[data-md-neoabs-border-style="dashed"] *,
+[data-md-neoabs-border-style="dashed"] *::before,
+[data-md-neoabs-border-style="dashed"] *::after {
+  border-style: dashed !important;
+}
+
+[data-md-neoabs-border-style="dotted"] *,
+[data-md-neoabs-border-style="dotted"] *::before,
+[data-md-neoabs-border-style="dotted"] *::after {
+  border-style: dotted !important;
+}
+
 // ============================================================================
 // DOT MATRIX OVERLAY
 // ============================================================================
@@ -305,11 +345,16 @@ body {
   z-index: 0;
   background-image: radial-gradient(
     circle,
-    var(--neoabs-text-primary) var(--neoabs-dot-size),
+    var(--neoabs-dot-color, var(--neoabs-text-primary)) var(--neoabs-dot-size),
     transparent var(--neoabs-dot-size)
   );
   background-size: var(--neoabs-dot-gap) var(--neoabs-dot-gap);
   opacity: var(--neoabs-dot-opacity);
+}
+
+// neoabs.dot_matrix.position = absolute (fixed is the default)
+.neoabs-dot-matrix[data-md-neoabs-dot-position="absolute"] {
+  position: absolute;
 }
 
 // ============================================================================
@@ -376,7 +421,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--neoabs-glass-border);
+  background: var(--neoabs-scrollbar-thumb, var(--neoabs-glass-border));
   border-radius: 3px;
 }
 
@@ -387,7 +432,27 @@ body {
 // Firefox scrollbar
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--neoabs-glass-border) transparent;
+  scrollbar-color: var(--neoabs-scrollbar-thumb, var(--neoabs-glass-border)) transparent;
+}
+
+// Phase 9 scrollbar customization (neoabs.scrollbar)
+html[data-md-neoabs-scrollbar="false"],
+html[data-md-neoabs-scrollbar-style="none"] {
+  scrollbar-width: none;
+}
+
+html[data-md-neoabs-scrollbar="false"] ::-webkit-scrollbar,
+html[data-md-neoabs-scrollbar-style="none"] ::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-md-neoabs-scrollbar-style="default"] {
+  scrollbar-width: auto;
+}
+
+html[data-md-neoabs-scrollbar-style="default"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
 }
 
 // ============================================================================
@@ -435,6 +500,42 @@ body {
 // Animation utilities
 .neoabs-animate-fade-in {
   animation: neoabs-fade-in 0.5s ease-out;
+}
+
+// Phase 9 scroll reveal (neoabs.animation.scroll_animations).
+// Progressive enhancement: only browsers with scroll-timeline support get the
+// reveal; everywhere else the element stays visible (no animation at all).
+@keyframes neoabs-scroll-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .neoabs-animate-reveal {
+    animation: neoabs-scroll-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 25%;
+  }
+}
+
+html[data-md-neoabs-scroll-animations="false"] .neoabs-animate-reveal {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+// Phase 9 hover toggle (neoabs.animation.hover_effects) - disables the theme's
+// hover lift transforms (footer nav links, pagination items, error page action).
+html[data-md-neoabs-hover-effects="false"] .neoabs-footer__link:hover,
+html[data-md-neoabs-hover-effects="false"] .neoabs-pagination__item:hover,
+html[data-md-neoabs-hover-effects="false"] .neoabs-error__action:hover {
+  transform: none !important;
 }
 
 .neoabs-animate-shimmer {

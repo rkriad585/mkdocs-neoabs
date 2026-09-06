@@ -32,6 +32,75 @@
 {% if _toc_width %}
 {% set _toc_style.parts = _toc_style.parts + ["--neoabs-toc-width: " ~ _toc_width] %}
 {% endif %}
+{# Phase 9: Advanced visual customization. Each group below accepts either the
+   legacy scalar form (glass: "medium", dot_matrix: true, animation: "normal",
+   border: "thin") or the enhanced object form. Everything defaults to the
+   current behavior / empty overrides. #}
+{% set _vis_cfg = config.theme.neoabs if (config.theme.neoabs is mapping) else {} %}
+{% set _glass_key = _vis_cfg.glass if (_vis_cfg.glass is defined) else (config.extra.neoabs_glass if (config.extra and config.extra.neoabs_glass is defined) else none) %}
+{% if _glass_key is mapping %}
+{% set _glass_intensity = _glass_key.intensity | default('medium', true) %}
+{% set _glass_blur_on = _glass_key.blur | default(true) %}
+{% set _glass_blur_amt = _glass_key.blur_amount | default(none) %}
+{% set _glass_opacity = _glass_key.opacity | default(none) %}
+{% set _glass_sat_on = _glass_key.saturation | default(true) %}
+{% else %}
+{% set _glass_intensity = _glass_key if (_glass_key is defined and _glass_key) else 'medium' %}
+{% set _glass_blur_on = true %}
+{% set _glass_blur_amt = none %}
+{% set _glass_opacity = none %}
+{% set _glass_sat_on = true %}
+{% endif %}
+{% set _dot_key = _vis_cfg.dot_matrix if (_vis_cfg.dot_matrix is defined) else (config.extra.neoabs_dot_matrix | default(true)) %}
+{% if _dot_key is mapping %}
+{% set _dot_enabled = _dot_key.enabled | default(true) %}
+{% set _dot_color = _dot_key.color | default(none) %}
+{% set _dot_size = _dot_key.size | default(none) %}
+{% set _dot_gap = _dot_key.gap | default(none) %}
+{% set _dot_opacity = _dot_key.opacity | default(none) %}
+{% set _dot_position = _dot_key.position | default('fixed', true) %}
+{% else %}
+{% set _dot_enabled = _dot_key | default(true) %}
+{% set _dot_color = none %}
+{% set _dot_size = none %}
+{% set _dot_gap = none %}
+{% set _dot_opacity = none %}
+{% set _dot_position = none %}
+{% endif %}
+{% set _anim_key = _vis_cfg.animation if (_vis_cfg.animation is defined) else (config.extra.neoabs_animation if (config.extra and config.extra.neoabs_animation is defined) else none) %}
+{% if _anim_key is mapping %}
+{% set _anim_mode = _anim_key.mode | default('normal', true) %}
+{% set _anim_page_transition = _anim_key.page_transition | default(true) %}
+{% set _anim_hover = _anim_key.hover_effects | default(true) %}
+{% set _anim_scroll = _anim_key.scroll_animations | default(true) %}
+{% set _anim_toast = _anim_key.toast_animation | default(true) %}
+{% else %}
+{% set _anim_mode = _anim_key if (_anim_key is defined and _anim_key) else 'normal' %}
+{% set _anim_page_transition = true %}
+{% set _anim_hover = true %}
+{% set _anim_scroll = true %}
+{% set _anim_toast = true %}
+{% endif %}
+{% set _border_key = _vis_cfg.border if (_vis_cfg.border is defined) else (config.extra.neoabs_border if (config.extra and config.extra.neoabs_border is defined) else none) %}
+{% if _border_key is mapping %}
+{% set _border_width = _border_key.width | default('thin', true) %}
+{% set _border_style = _border_key.style | default(none) %}
+{% set _border_color = _border_key.color | default(none) %}
+{% else %}
+{% set _border_width = _border_key if (_border_key is defined and _border_key) else 'thin' %}
+{% set _border_style = none %}
+{% set _border_color = none %}
+{% endif %}
+{% set _shadow_cfg = _vis_cfg.shadows if (_vis_cfg.shadows is mapping) else {} %}
+{% set _shadow_enabled = _shadow_cfg.enabled | default(true) %}
+{% set _shadow_style = _shadow_cfg.style | default('default', true) %}
+{% set _sb_cfg = _vis_cfg.scrollbar if (_vis_cfg.scrollbar is mapping) else {} %}
+{% set _sb_show = _sb_cfg.show | default(true) %}
+{% set _sb_style = _sb_cfg.style | default('thin', true) %}
+{% set _sb_color = _sb_cfg.color | default(none) %}
+{% set _sel_cfg = _vis_cfg.selection if (_vis_cfg.selection is mapping) else {} %}
+{% set _sel_bg = _sel_cfg.background | default(none) %}
+{% set _sel_color = _sel_cfg.color | default(none) %}
 <!doctype html>
 <html lang="{{ config.theme.language | default('en') }}"
       class="no-js"
@@ -46,9 +115,9 @@
         {% set _scheme = "slate" %}
       {% endif %}
       data-md-color-scheme="{{ _scheme }}"
-      data-md-neoabs-glass="{{ config.extra.neoabs_glass if config.extra and config.extra.neoabs_glass else 'medium' }}"
-      data-md-neoabs-animation="{{ config.extra.neoabs_animation if config.extra and config.extra.neoabs_animation else 'normal' }}"
-      data-md-neoabs-border="{{ config.extra.neoabs_border if config.extra and config.extra.neoabs_border else 'thin' }}"{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
+      data-md-neoabs-glass="{{ _glass_intensity }}"
+      data-md-neoabs-animation="{{ _anim_mode }}"
+      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
   <head>
     {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}
@@ -134,13 +203,83 @@
 
     {% block neoabs_tokens %}
     {% set _tokens = config.extra.neoabs_tokens if config.extra and config.extra.neoabs_tokens else [] %}
-    {% if _tokens %}
+    {% set _p9 = namespace(parts=[], dark=[], light=[]) %}
+    {% if _glass_blur_on == false %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-glass-blur: 0px", "--neoabs-glass-blur-heavy: 0px"] %}
+    {% endif %}
+    {% if _glass_blur_amt %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-glass-blur: " ~ _glass_blur_amt] %}
+    {% endif %}
+    {% if _glass_sat_on == false %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-glass-saturation: 1"] %}
+    {% endif %}
+    {% if _glass_opacity is defined and _glass_opacity %}
+    {% set _p9_dark_alphas = {"bg": 0.08, "bg-strong": 0.15, "border": 0.18, "border-strong": 0.35} %}
+    {% set _p9_light_alphas = {"bg": 0.05, "bg-strong": 0.10, "border": 0.12, "border-strong": 0.25} %}
+    {% for _k, _a in _p9_dark_alphas.items() %}
+    {% set _p9.dark = _p9.dark + ["--neoabs-glass-" ~ _k ~ ": rgba(255, 255, 255, " ~ ("%.4f" | format(_a * (_glass_opacity | float))) ~ ")"] %}
+    {% endfor %}
+    {% for _k, _a in _p9_light_alphas.items() %}
+    {% set _p9.light = _p9.light + ["--neoabs-glass-" ~ _k ~ ": rgba(0, 0, 0, " ~ ("%.4f" | format(_a * (_glass_opacity | float))) ~ ")"] %}
+    {% endfor %}
+    {% endif %}
+    {% if _dot_color %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-dot-color: " ~ _dot_color] %}
+    {% endif %}
+    {% if _dot_size %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-dot-size: " ~ _dot_size] %}
+    {% endif %}
+    {% if _dot_gap %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-dot-gap: " ~ _dot_gap] %}
+    {% endif %}
+    {% if _dot_opacity is defined and _dot_opacity %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-dot-opacity: " ~ _dot_opacity] %}
+    {% endif %}
+    {% if _border_color %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-glass-border: " ~ _border_color, "--neoabs-glass-border-strong: " ~ _border_color] %}
+    {% endif %}
+    {% if (_shadow_enabled == false) or (_shadow_style == "none") %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-shadow-sm: none", "--neoabs-shadow-md: none", "--neoabs-shadow-lg: none", "--neoabs-shadow-glass: none"] %}
+    {% elif _shadow_style == "subtle" %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12)", "--neoabs-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.18)", "--neoabs-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.22)", "--neoabs-shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08)"] %}
+    {% endif %}
+    {% if _sb_color %}
+    {% set _p9.parts = _p9.parts + ["--neoabs-scrollbar-thumb: " ~ _sb_color] %}
+    {% endif %}
+    {% if _tokens or _p9.parts or _p9.dark or _p9.light or _sel_bg or _sel_color %}
     <style id="neoabs-tokens">
       :root {
       {% for t in _tokens %}
         {{ t.var }}: {{ t.value }} !important;
       {% endfor %}
+      {% for p in _p9.parts %}
+        {{ p }} !important;
+      {% endfor %}
       }
+      {% if _p9.dark %}
+      :root {
+      {% for p in _p9.dark %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% endif %}
+      {% if _p9.light %}
+      [data-md-color-scheme="default"] {
+      {% for p in _p9.light %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% endif %}
+      {% if _sel_bg or _sel_color %}
+      ::selection {
+      {% if _sel_bg %}
+        background: {{ _sel_bg }};
+      {% endif %}
+      {% if _sel_color %}
+        color: {{ _sel_color }};
+      {% endif %}
+      }
+      {% endif %}
     </style>
     {% endif %}
     {% endblock %}
@@ -161,14 +300,14 @@
     {% endif %}
   </head>
 
-  <body dir="{{ config.theme.direction | default('ltr') }}"{% if (_sbr_position == "right") or (_toc_position == "left") %} data-md-neoabs-sidebar-position="right"{% endif %}{% if _sbr_style.parts or _toc_style.parts %} style="{{ (_sbr_style.parts + _toc_style.parts) | join('; ') }}"{% endif %}>
+  <body{% if _anim_page_transition %} class="neoabs-animate-fade-in"{% endif %} dir="{{ config.theme.direction | default('ltr') }}"{% if (_sbr_position == "right") or (_toc_position == "left") %} data-md-neoabs-sidebar-position="right"{% endif %}{% if _sbr_style.parts or _toc_style.parts %} style="{{ (_sbr_style.parts + _toc_style.parts) | join('; ') }}"{% endif %}>
 
     {% block custom_body_start %}
     {% if config.extra and config.extra.neoabs_custom_body_start %}{{ config.extra.neoabs_custom_body_start | safe }}{% endif %}
     {% endblock %}
 
-    {% if config.extra.neoabs_dot_matrix %}
-    <div class="neoabs-dot-matrix" aria-hidden="true"></div>
+    {% if _dot_enabled %}
+    <div class="neoabs-dot-matrix" aria-hidden="true"{% if _dot_position %} data-md-neoabs-dot-position="{{ _dot_position }}"{% endif %}></div>
     {% endif %}
 
     {% block state_toggles %}
@@ -197,7 +336,7 @@
       {% endif %}
       {% endblock %}
 
-      <main class="neoabs-main" id="neoabs-content" tabindex="-1">
+      <main class="neoabs-main{% if _anim_scroll %} neoabs-animate-reveal{% endif %}" id="neoabs-content" tabindex="-1">
         <article class="neoabs-article">
           {% block content %}
           {% if _comp.content.show | default(true) %}
