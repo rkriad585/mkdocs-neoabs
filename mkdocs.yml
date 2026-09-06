@@ -381,8 +381,33 @@ theme:
     #   background: ""                 # Text selection background color
     #   color: ""                      # Text selection text color
 
+    # --- Phase 10: Search customization (optional) ----------------------------
+    # Full control over the search dialog behavior and appearance. Every key
+    # defaults to the current behavior and the built-in MkDocs search plugin is
+    # still driven by its own worker + lunr index. `enabled: false` removes the
+    # dialog; `style` currently only ships "modal" ("dropdown" is planned).
+    # search:
+    #   enabled: true                  # Render the search dialog
+    #   shortcut_key: "/"              # Keyboard shortcut that opens search
+    #   placeholder: "Search..."       # Input placeholder
+    #   min_chars: 2                   # Minimum characters before searching
+    #   max_results: 10                # Maximum results to display
+    #   show_context: true             # Show context snippet under each result
+    #   context_length: 120            # Characters of context per snippet
+    #   highlight_results: true        # Highlight search terms in results
+    #   suggest: true                  # Show recent-search suggestions
+    #   style: "modal"                 # "modal" | "dropdown" (future)
+    #   ui:
+    #     glass: true                  # Glass morphism on the search dialog
+    #     overlay_opacity: 0.5         # Backdrop overlay opacity
+    #     show_shortcuts: true         # Show keyboard shortcut hints in footer
+    #   result:
+    #     show_icon: true              # Show page icon in results
+    #     show_breadcrumb: true        # Show page path in results
+    #     show_highlights: true        # Highlight terms inside matched text
+
 extra:
-  neoabs_version: 10
+  neoabs_version: 11
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg
