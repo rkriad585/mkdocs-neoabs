@@ -106,6 +106,10 @@
   --neoabs-dot-color: var(--neoabs-text-primary);
   --neoabs-scrollbar-thumb: var(--neoabs-glass-border);
 
+  // Phase 10 search UI (overridable via theme.neoabs.search)
+  --neoabs-search-overlay-color: rgba(0, 0, 0, 0.8);
+  --neoabs-search-glass-bg: rgba(0, 0, 0, 0.9);
+
   // Typography tokens (overridable via theme.neoabs.typography)
   --neoabs-font-size-base: 16px;
   --neoabs-font-size-sm: 14px;
@@ -180,8 +184,11 @@
   
   --neoabs-footer-bg: rgba(255, 255, 255, 0.7);
 
-  --neoabs-sidebar-bg: rgba(255, 255, 255, 0.7);
-  
+--neoabs-sidebar-bg: rgba(255, 255, 255, 0.7);
+
+  --neoabs-search-overlay-color: rgba(255, 255, 255, 0.85);
+  --neoabs-search-glass-bg: rgba(255, 255, 255, 0.95);
+
   --neoabs-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --neoabs-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
   --neoabs-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);

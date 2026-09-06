@@ -101,6 +101,28 @@
 {% set _sel_cfg = _vis_cfg.selection if (_vis_cfg.selection is mapping) else {} %}
 {% set _sel_bg = _sel_cfg.background | default(none) %}
 {% set _sel_color = _sel_cfg.color | default(none) %}
+{% set _search_cfg = config.theme.neoabs.search if (config.theme.neoabs is mapping and config.theme.neoabs.search is mapping) else {} %}
+{% set _search_enabled = _search_cfg.enabled | default(true) %}
+{% set _search_shortcut = _search_cfg.shortcut_key | default(none) %}
+{% set _search_placeholder = _search_cfg.placeholder | default(_comp.search.placeholder | default('Search...')) %}
+{% set _search_min_chars = _search_cfg.min_chars | default(none) %}
+{% set _search_max_results = _search_cfg.max_results | default(10) %}
+{% set _search_show_context = _search_cfg.show_context | default(true) %}
+{% set _search_context_length = _search_cfg.context_length | default(120) %}
+{% set _search_highlight = _search_cfg.highlight_results | default(true) %}
+{% set _search_suggest = _search_cfg.suggest | default(true) %}
+{% set _search_style = _search_cfg.style | default('modal', true) %}
+{% set _search_ui_cfg = _search_cfg.ui if (_search_cfg.ui is mapping) else {} %}
+{% set _search_ui_glass = _search_ui_cfg.glass | default(true) %}
+{% set _search_overlay_opacity = none %}
+{% if _search_ui_cfg.overlay_opacity is defined and _search_ui_cfg.overlay_opacity %}
+{% set _search_overlay_opacity = _search_ui_cfg.overlay_opacity %}
+{% endif %}
+{% set _search_show_shortcuts = _search_ui_cfg.show_shortcuts | default(true) %}
+{% set _search_res_cfg = _search_cfg.result if (_search_cfg.result is mapping) else {} %}
+{% set _search_show_icon = _search_res_cfg.show_icon | default(true) %}
+{% set _search_show_breadcrumb = _search_res_cfg.show_breadcrumb | default(true) %}
+{% set _search_show_highlights = _search_res_cfg.show_highlights | default(true) %}
 <!doctype html>
 <html lang="{{ config.theme.language | default('en') }}"
       class="no-js"
@@ -117,7 +139,7 @@
       data-md-color-scheme="{{ _scheme }}"
       data-md-neoabs-glass="{{ _glass_intensity }}"
       data-md-neoabs-animation="{{ _anim_mode }}"
-      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
+      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-neoabs-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-neoabs-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-neoabs-search="false"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
   <head>
     {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}
@@ -204,6 +226,12 @@
     {% block neoabs_tokens %}
     {% set _tokens = config.extra.neoabs_tokens if config.extra and config.extra.neoabs_tokens else [] %}
     {% set _p9 = namespace(parts=[], dark=[], light=[]) %}
+    {% set _p10 = namespace(parts=[], light=[]) %}
+    {% if _search_overlay_opacity is defined and _search_overlay_opacity %}
+    {% set _overlay_alpha = "%.2f" | format(_search_overlay_opacity | float) %}
+    {% set _p10.parts = _p10.parts + ["--neoabs-search-overlay-color: rgba(0, 0, 0, " ~ _overlay_alpha ~ ")"] %}
+    {% set _p10.light = _p10.light + ["--neoabs-search-overlay-color: rgba(255, 255, 255, " ~ _overlay_alpha ~ ")"] %}
+    {% endif %}
     {% if _glass_blur_on == false %}
     {% set _p9.parts = _p9.parts + ["--neoabs-glass-blur: 0px", "--neoabs-glass-blur-heavy: 0px"] %}
     {% endif %}
@@ -246,7 +274,7 @@
     {% if _sb_color %}
     {% set _p9.parts = _p9.parts + ["--neoabs-scrollbar-thumb: " ~ _sb_color] %}
     {% endif %}
-    {% if _tokens or _p9.parts or _p9.dark or _p9.light or _sel_bg or _sel_color %}
+    {% if _tokens or _p9.parts or _p9.dark or _p9.light or _sel_bg or _sel_color or _p10.parts or _p10.light %}
     <style id="neoabs-tokens">
       :root {
       {% for t in _tokens %}
@@ -255,17 +283,26 @@
       {% for p in _p9.parts %}
         {{ p }} !important;
       {% endfor %}
+      {% for p in _p10.parts %}
+        {{ p }} !important;
+      {% endfor %}
       }
-      {% if _p9.dark %}
+      {% if _p9.dark or _p10.dark %}
       :root {
       {% for p in _p9.dark %}
         {{ p }} !important;
       {% endfor %}
+      {% for p in _p10.dark %}
+        {{ p }} !important;
+      {% endfor %}
       }
       {% endif %}
-      {% if _p9.light %}
+      {% if _p9.light or _p10.light %}
       [data-md-color-scheme="default"] {
       {% for p in _p9.light %}
+        {{ p }} !important;
+      {% endfor %}
+      {% for p in _p10.light %}
         {{ p }} !important;
       {% endfor %}
       }
@@ -364,7 +401,7 @@
     {% endblock %}
 
     {% block search %}
-    {% if "search" in config.plugins and (_comp.search.show | default(true)) %}
+    {% if "search" in config.plugins and (_comp.search.show | default(true)) and _search_enabled %}
     {% include "partials/search.html" %}
     {% endif %}
     {% endblock %}
@@ -419,6 +456,23 @@
           }
         },
         "search": "{{ 'search/search_index.json' | url }}",
+        "neoabs_search": {
+          "enabled": {{ _search_enabled | tojson }},
+          "shortcut_key": {% if _search_shortcut %}{{ _search_shortcut | tojson }}{% else %}null{% endif %},
+          "placeholder": {{ _search_placeholder | tojson }},
+          "min_chars": {% if _search_min_chars is not none %}{{ _search_min_chars | tojson }}{% else %}null{% endif %},
+          "max_results": {{ _search_max_results | tojson }},
+          "show_context": {{ _search_show_context | tojson }},
+          "context_length": {{ _search_context_length | tojson }},
+          "highlight_results": {{ _search_highlight | tojson }},
+          "suggest": {{ _search_suggest | tojson }},
+          "style": {{ _search_style | tojson }},
+          "result": {
+            "show_icon": {{ _search_show_icon | tojson }},
+            "show_breadcrumb": {{ _search_show_breadcrumb | tojson }},
+            "show_highlights": {{ _search_show_highlights | tojson }}
+          }
+        },
         "version": null
       }
     </script>

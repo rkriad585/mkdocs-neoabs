@@ -1584,14 +1584,14 @@ $neoabs-breakpoint-mobile: 768px;
 .neoabs-search__overlay {
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.8);
+	background: var(--neoabs-search-overlay-color, rgba(0, 0, 0, 0.8));
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
 	cursor: pointer;
 }
 
 [data-md-color-scheme="default"] .neoabs-search__overlay {
-	background: rgba(255, 255, 255, 0.85);
+	background: var(--neoabs-search-overlay-color, rgba(255, 255, 255, 0.85));
 }
 
 // Search inner wrapper
@@ -1615,7 +1615,7 @@ $neoabs-breakpoint-mobile: 768px;
 
 // Search glass dialog
 .neoabs-search__glass {
-	background: rgba(0, 0, 0, 0.9);
+	background: var(--neoabs-search-glass-bg, rgba(0, 0, 0, 0.9));
 	backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
 	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
 	border: 1px solid var(--neoabs-glass-border-strong);
@@ -1626,7 +1626,21 @@ $neoabs-breakpoint-mobile: 768px;
 }
 
 [data-md-color-scheme="default"] .neoabs-search__glass {
-	background: rgba(255, 255, 255, 0.95);
+	background: var(--neoabs-search-glass-bg, rgba(255, 255, 255, 0.95));
+}
+
+// Phase 10: glass off (theme.neoabs.search.ui.glass: false) — solid panel using
+// the page canvas color instead of a blurred translucent surface.
+html[data-md-neoabs-search-glass="false"] .neoabs-search__glass {
+	--neoabs-search-glass-bg: var(--neoabs-ink);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+// Phase 10: search disabled (theme.neoabs.search.enabled: false) — hide the
+// header entry point so no search controls are offered.
+html[data-md-neoabs-search="false"] .neoabs-header__search {
+	display: none;
 }
 
 // Search input wrapper
@@ -1728,7 +1742,9 @@ $neoabs-breakpoint-mobile: 768px;
 
 // Search result item
 .neoabs-search__result {
-	display: block;
+	display: flex;
+	align-items: flex-start;
+	gap: var(--neoabs-space-3);
 	padding: var(--neoabs-space-3) var(--neoabs-space-4);
 	text-decoration: none;
 	border-radius: var(--neoabs-radius-md);
@@ -1747,6 +1763,21 @@ $neoabs-breakpoint-mobile: 768px;
 	}
 }
 
+// Phase 10: result icon (theme.neoabs.search.result.show_icon)
+.neoabs-search__result-icon {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	margin-top: 2px;
+	color: var(--neoabs-text-muted);
+}
+
+// Phase 10: result text body (title / context / path)
+.neoabs-search__result-body {
+	flex: 1;
+	min-width: 0;
+}
+
 .neoabs-search__result-title {
 	font-family: var(--neoabs-font-display);
 	font-size: 15px;
@@ -1754,6 +1785,13 @@ $neoabs-breakpoint-mobile: 768px;
 	color: var(--neoabs-text-primary);
 	margin-bottom: 2px;
 	transition: color var(--neoabs-transition-fast);
+}
+
+// Phase 10: highlighted terms in result titles
+.neoabs-search__result-title mark {
+	color: var(--neoabs-accent);
+	background: transparent;
+	font-weight: 600;
 }
 
 .neoabs-search__result-context {
@@ -1819,6 +1857,37 @@ $neoabs-breakpoint-mobile: 768px;
 		background: var(--neoabs-glass-bg);
 		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
 		border-radius: var(--neoabs-radius-sm);
+	}
+}
+
+// Phase 10: search suggestions (theme.neoabs.search.suggest) — recent queries
+// shown while the typed query is still below the minimum length.
+.neoabs-search__suggestions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--neoabs-space-1);
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+}
+
+.neoabs-search__suggestion {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+	font-family: var(--neoabs-font-body);
+	font-size: 14px;
+	text-align: left;
+	color: var(--neoabs-text-secondary);
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--neoabs-radius-md);
+	cursor: pointer;
+	transition: color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast);
+
+	&:hover {
+		color: var(--neoabs-text-primary);
+		background: var(--neoabs-ghost);
 	}
 }
 

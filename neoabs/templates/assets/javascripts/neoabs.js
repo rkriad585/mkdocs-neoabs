@@ -328,6 +328,11 @@
 
   function initSearch(config) {
     if (!componentShow("search", "show")) return
+
+    // Phase 10: `theme.neoabs.search` — full control over search behavior.
+    const sc = (config && config.neoabs_search) || {}
+    if (sc.enabled === false) return
+
     const checkbox = document.getElementById("neoabs-search")
     const searchEl = $(".neoabs-search")
     const input = $(".neoabs-search__input")
@@ -340,14 +345,27 @@
     const remembered = sessionGet().search
     if (remembered) input.value = remembered
 
+    const resCfg = sc.result || {}
+    const sExplicitMin = typeof sc.min_chars === "number" || typeof sc.min_chars === "string"
+    const sMinChars = Math.max(1, parseInt(sc.min_chars, 10) || 2)
+    const sMaxResults = Math.max(1, parseInt(sc.max_results, 10) || 10)
+    const sShowContext = sc.show_context !== false
+    const sContextLen = Math.max(0, parseInt(sc.context_length, 10) || 120)
+    const sHighlight = sc.highlight_results !== false && resCfg.show_highlights !== false
+    const sSuggest = sc.suggest !== false
+    const sShowIcon = resCfg.show_icon !== false
+    const sShowPath = resCfg.show_breadcrumb !== false
+
     let searchTrigger = null
-    let minSearchLength = 2
+    let minSearchLength = sMinChars
     let searchReady = false
     let searchWorker = null
     let activeIndex = -1
     let currentResults = []
     let searchToken = 0
     let pendingQuery = 0
+    let lastTerms = []
+    let suggestionsEl = null
 
     const base = (config && config.base) || "."
 
@@ -359,6 +377,7 @@
     }
 
     const showStatus = (msg) => {
+      clearSuggestions()
       statusEl.style.display = ""
       const p = statusEl.querySelector("p")
       if (p) p.textContent = msg
@@ -370,12 +389,101 @@
     }
 
     const showResults = () => {
+      clearSuggestions()
       statusEl.style.display = "none"
       listEl.style.display = ""
     }
 
+    // Phase 10 helpers ---------------------------------------------------------
+
+    const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+    const splitTerms = (q) =>
+      String(q || "").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+
+    // Wrap every occurrence of `terms` in <mark>, escaping all other text.
+    const wrapTerms = (text, terms) => {
+      const str = String(text || "")
+      if (!terms.length) return escapeHtml(str)
+      const re = new RegExp("(" + terms.map(escapeRe).join("|") + ")", "gi")
+      const out = []
+      let last = 0
+      let m
+      while ((m = re.exec(str)) !== null) {
+        if (!m[0].length) { re.lastIndex++ ; continue }
+        out.push(escapeHtml(str.slice(last, m.index)))
+        out.push("<mark>" + escapeHtml(m[0]) + "</mark>")
+        last = m.index + m[0].length
+        re.lastIndex = last
+      }
+      out.push(escapeHtml(str.slice(last)))
+      return out.join("")
+    }
+
+    // Build the context snippet, centered on the first matching term.
+    const snippetOf = (text, terms, len, highlight) => {
+      const str = String(text || "").replace(/\s+/g, " ").trim()
+      if (!len) return highlight ? wrapTerms(str, terms) : escapeHtml(str)
+      let start = 0
+      const lower = str.toLowerCase()
+      for (let k = 0; k < terms.length; k++) {
+        const idx = lower.indexOf(terms[k])
+        if (idx !== -1) { start = Math.max(0, idx - Math.floor(len / 3)); break }
+      }
+      const slice = str.slice(start, start + len)
+      const prefix = start > 0 ? "\u2026" : ""
+      const suffix = start + len < str.length ? "\u2026" : ""
+      return escapeHtml(prefix) + (highlight ? wrapTerms(slice, terms) : escapeHtml(slice)) + escapeHtml(suffix)
+    }
+
+    // Human-readable path, e.g. "getting-started/installation/" -> "getting-started / installation"
+    const breadcrumbOf = (location) => {
+      const parts = String(location || "")
+        .replace(/^\.?\//, "")
+        .replace(/\/+$/, "")
+        .split("/")
+        .filter(Boolean)
+      if (parts[parts.length - 1] === "index") parts.pop()
+      return parts.join(" / ")
+    }
+
+    const RESULT_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L17.5 8H13V3.5zM12 12v1.5h5V15h-5v1.5h-1.5V15h-5v-1.5h5V12h1.5zm0 3v3H7v-3h5z"/></svg>'
+
+    const clearSuggestions = () => {
+      if (suggestionsEl && suggestionsEl.parentNode) suggestionsEl.parentNode.removeChild(suggestionsEl)
+    }
+
+    const renderSuggestions = (recent) => {
+      if (!suggestionsEl) {
+        suggestionsEl = document.createElement("div")
+        suggestionsEl.className = "neoabs-search__suggestions"
+        suggestionsEl.setAttribute("aria-label", "Search suggestions")
+      }
+      suggestionsEl.innerHTML = ""
+      recent.forEach((q) => {
+        const btn = document.createElement("button")
+        btn.type = "button"
+        btn.className = "neoabs-search__suggestion"
+        btn.textContent = q
+        btn.addEventListener("click", () => {
+          input.value = q
+          sessionMutate((s) => { s.search = q })
+          input.focus()
+          runSearch(q)
+        })
+        suggestionsEl.appendChild(btn)
+      })
+      statusEl.style.display = "none"
+      listEl.style.display = "none"
+      const resultsWrap = $(".neoabs-search__results", searchEl)
+      if (resultsWrap && !suggestionsEl.parentNode) resultsWrap.appendChild(suggestionsEl)
+      activeIndex = -1
+      input.setAttribute("aria-activedescendant", "")
+    }
+
     function buildResults(results) {
       const list = []
+      const terms = lastTerms
       for (let i = 0; i < results.length; i++) {
         const doc = results[i]
         const href = joinUrl(base, doc.location || "")
@@ -385,29 +493,51 @@
         el.setAttribute("role", "option")
         el.id = "neoabs-search-result-" + i
 
+        if (sShowIcon) {
+          const icon = document.createElement("div")
+          icon.className = "neoabs-search__result-icon"
+          icon.innerHTML = RESULT_ICON_SVG
+          el.appendChild(icon)
+        }
+
+        const body = document.createElement("div")
+        body.className = "neoabs-search__result-body"
+
         const title = document.createElement("div")
         title.className = "neoabs-search__result-title"
-        title.textContent = doc.title || "Untitled"
+        title.innerHTML = sHighlight ? wrapTerms(doc.title || "Untitled", terms) : escapeHtml(doc.title || "Untitled")
+        body.appendChild(title)
 
-        const context = document.createElement("div")
-        context.className = "neoabs-search__result-context"
-        context.textContent = (doc.text || "").slice(0, 180)
+        if (sShowContext) {
+          const context = document.createElement("div")
+          context.className = "neoabs-search__result-context"
+          context.innerHTML = snippetOf(doc.text || "", terms, sContextLen, sHighlight)
+          body.appendChild(context)
+        }
 
-        el.appendChild(title)
-        el.appendChild(context)
+        if (sShowPath && doc.location) {
+          const path = document.createElement("div")
+          path.className = "neoabs-search__result-path"
+          path.textContent = breadcrumbOf(doc.location) || doc.location
+          body.appendChild(path)
+        }
+
+        el.appendChild(body)
         list.push(el)
       }
       return list
     }
 
     function renderResults(results) {
+      clearSuggestions()
       currentResults = results
       listEl.innerHTML = ""
       if (!results.length) {
         showStatus("No results found")
         return
       }
-      const items = buildResults(results)
+      const capped = results.length > sMaxResults ? results.slice(0, sMaxResults) : results
+      const items = buildResults(capped)
       items.forEach((item, i) => {
         item.addEventListener("click", () => {
           if (searchTrigger && typeof searchTrigger.focus === "function") searchTrigger.focus()
@@ -415,6 +545,13 @@
         item.addEventListener("mousemove", () => setActive(i))
         listEl.appendChild(item)
       })
+      const q = (input.value || "").trim()
+      if (q) {
+        sessionMutate((s) => {
+          const hist = Array.isArray(s.search_history) ? s.search_history.slice() : []
+          s.search_history = [q].concat(hist.filter((x) => x !== q)).slice(0, 5)
+        })
+      }
       showResults()
     }
 
@@ -462,7 +599,15 @@
 
     function runSearch(query) {
       const token = ++searchToken
-      if (!query || query.trim().length < minSearchLength) {
+      const q = (query || "").trim()
+      if (!q || q.length < minSearchLength) {
+        if (sSuggest && q) {
+          const recent = sessionGet().search_history || []
+          if (Array.isArray(recent) && recent.length) {
+            renderSuggestions(recent.slice(0, 5))
+            return
+          }
+        }
         showStatus("Start typing to search...")
         return
       }
@@ -471,12 +616,14 @@
         return
       }
       pendingQuery = token
+      lastTerms = splitTerms(q)
+      clearSuggestions()
       listEl.innerHTML = ""
       listEl.style.display = ""
       statusEl.style.display = "none"
       activeIndex = -1
       currentResults = []
-      searchWorker.postMessage({ query: query.trim() })
+      searchWorker.postMessage({ query: q })
     }
 
     searchWorker = new Worker(joinUrl(base, "search/worker.js"))
@@ -484,7 +631,9 @@
       const data = e.data
       if (!data) return
       if (data.config) {
-        if (typeof data.config.min_search_length === "number") {
+        // The built-in search plugin's `min_search_length` only applies when the
+        // theme's `theme.neoabs.search.min_chars` was not explicitly configured.
+        if (typeof data.config.min_search_length === "number" && !sExplicitMin) {
           minSearchLength = Math.max(1, data.config.min_search_length - 1)
         }
       } else if (data.allowSearch) {
@@ -1252,11 +1401,15 @@
 
       if (searchOpen || drawerOpen) return
 
-      // / — Open search (preventDefault blocks Firefox quick find). Reads the
-      // Phase 7 keyboard config, falling back to the Phase 2 component key.
-      const searchKey = kbdKey("search",
-        (_config.components && _config.components.search &&
-          _config.components.search.shortcut_key) || "/")
+      // / — Open search (preventDefault blocks Firefox quick find). An explicit
+      // Phase 10 `search.shortcut_key` wins; otherwise the Phase 7 keyboard
+      // config applies, falling back to the Phase 2 component key.
+      const scShortcut = _config.neoabs_search && _config.neoabs_search.shortcut_key
+      const searchKey = (typeof scShortcut === "string" && scShortcut.trim())
+        ? scShortcut.trim()
+        : kbdKey("search",
+            (_config.components && _config.components.search &&
+              _config.components.search.shortcut_key) || "/")
       if (kbdEnabled("search") && matchesKeyCombo(e, searchKey)) {
         e.preventDefault()
         e.stopPropagation()
@@ -1282,8 +1435,11 @@
 
   function keyboardHelpRows() {
     const rows = []
-    const searchFallback = (_config.components && _config.components.search &&
-      _config.components.search.shortcut_key) || "/"
+    const scShortcut = _config.neoabs_search && _config.neoabs_search.shortcut_key
+    const searchFallback = (typeof scShortcut === "string" && scShortcut.trim())
+      ? scShortcut.trim()
+      : (_config.components && _config.components.search &&
+        _config.components.search.shortcut_key) || "/"
     const sidebarCfg = (_config && _config.sidebar) || {}
     const tocCfg = (_config && _config.toc) || {}
 
