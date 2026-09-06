@@ -1,4 +1,7 @@
 {% set _ftr_cfg = config.theme.neoabs.footer if (config.theme.neoabs is mapping and config.theme.neoabs.footer is mapping) else {} %}
+{# Phase 13: page-level front-matter override — whole-footer hide is applied by
+   base.html; keep the flag consistent if this partial is included standalone. #}
+{% set _pg_footer_hide = _pg_footer_hide if (_pg_footer_hide is defined) else ((page.meta.neoabs is mapping and page.meta.neoabs.footer is mapping and page.meta.neoabs.footer.show == false) if (page and page.meta and page.meta.neoabs is mapping) else false) %}
 {% set _ftr_position = _ftr_cfg.position if (_ftr_cfg.position is defined) else "relative" %}
 {% set _ftr_layout = _ftr_cfg.layout if (_ftr_cfg.layout is defined) else "default" %}
 {% set _ftr_prev_next_cfg = _ftr_cfg.get("prev_next") if (_ftr_cfg.get("prev_next") is mapping) else {} %}

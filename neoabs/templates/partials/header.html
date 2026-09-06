@@ -1,4 +1,7 @@
 {% set _hdr_cfg = config.theme.neoabs.header if (config.theme.neoabs is mapping and config.theme.neoabs.header is mapping) else {} %}
+{# Phase 13: page-level front-matter override — whole-header hide is applied by
+   base.html; keep the flag consistent if this partial is included standalone. #}
+{% set _pg_header_hide = _pg_header_hide if (_pg_header_hide is defined) else ((page.meta.neoabs is mapping and page.meta.neoabs.header is mapping and page.meta.neoabs.header.show == false) if (page and page.meta and page.meta.neoabs is mapping) else false) %}
 {% set _hdr_position = _hdr_cfg.position if (_hdr_cfg.position is defined) else "sticky" %}
 {% set _hdr_height = _hdr_cfg.height if (_hdr_cfg.height is defined) else "56px" %}
 {% set _hdr_z_index = _hdr_cfg.z_index if (_hdr_cfg.z_index is defined) else none %}

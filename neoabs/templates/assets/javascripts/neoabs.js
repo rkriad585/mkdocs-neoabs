@@ -161,6 +161,55 @@
     return ""
   }
 
+  // Phase 13: page-level front-matter overrides. The page's `neoabs:` front
+  // matter is serialized into `#__config` under `config.page.neoabs`; fold the
+  // `components`/`content` groups into the runtime config so every initializer
+  // reads the page-effective values. Anything the page does not set is left
+  // untouched.
+  function applyPageOverrides(target) {
+    if (!target || typeof target !== "object") return
+    const over = target.page && typeof target.page.neoabs === "object" ? target.page.neoabs : null
+    if (!over) return
+    const groups = ["components", "content"]
+    for (let g = 0; g < groups.length; g++) {
+      const group = groups[g]
+      const src = over[group]
+      if (!src || typeof src !== "object" || Array.isArray(src)) continue
+      if (!target[group] || typeof target[group] !== "object") target[group] = {}
+      Object.keys(src).forEach(function (key) {
+        const val = src[key]
+        if (val && typeof val === "object" && !Array.isArray(val)) {
+          const base = target[group][key]
+          target[group][key] = base && typeof base === "object" && !Array.isArray(base)
+            ? Object.assign({}, base, val)
+            : Object.assign({}, val)
+        } else if (val !== undefined) {
+          target[group][key] = val
+        }
+      })
+    }
+    // Mirror the site-level Phase 11 propagation (`content` -> `components`) for
+    // the runtime duplicates so page overrides match what the JS initializers
+    // gate on (progress bar, back-to-top button, code copy/numbers/lines).
+    if (over.content && typeof over.content === "object" && target.components) {
+      const compContent = target.components.content
+      if (compContent && typeof compContent === "object") {
+        const topKeys = ["show_progress_bar", "show_back_to_top"]
+        topKeys.forEach(function (k) {
+          if (over.content[k] !== undefined) compContent[k] = over.content[k]
+        })
+      }
+      const overCode = over.content.code
+      const compCode = target.components.code
+      if (overCode && typeof overCode === "object" && compCode && typeof compCode === "object") {
+        const codeKeys = ["show_copy_button", "show_line_numbers", "highlight_lines"]
+        codeKeys.forEach(function (k) {
+          if (overCode[k] !== undefined) compCode[k] = overCode[k]
+        })
+      }
+    }
+  }
+
   // Phase 7 keyboard helpers. `_config.keyboard` is injected by the theme
   // plugin (all shortcuts enabled by default); every built-in shortcut can be
   // re-keyed, relabeled, or disabled via `theme.neoabs.keyboard`.
@@ -3029,6 +3078,7 @@
 
   onReady(function () {
     const config = readConfig()
+    applyPageOverrides(config)
     _config = config
 
     if (window.console && console.info) {

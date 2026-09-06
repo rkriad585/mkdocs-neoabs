@@ -1,8 +1,16 @@
+{% set _pg_toc_levels = (page.meta.neoabs.toc.levels if (page and page.meta and page.meta.neoabs is mapping and page.meta.neoabs.toc is mapping and page.meta.neoabs.toc.levels is mapping) else none) %}
 {% set _toc_levels_eff = _toc_levels_effective if (_toc_levels_effective is defined and _toc_levels_effective is mapping) else {
     "h2": _comp.toc.show_level_h2 | default(true),
     "h3": _comp.toc.show_level_h3 | default(true),
     "h4": _comp.toc.show_level_h4 | default(true)
   } %}
+{% if _pg_toc_levels %}
+{% set _toc_levels_eff = {
+    "h2": _pg_toc_levels.h2 | default(_toc_levels_eff.get("h2", true)),
+    "h3": _pg_toc_levels.h3 | default(_toc_levels_eff.get("h3", true)),
+    "h4": _pg_toc_levels.h4 | default(_toc_levels_eff.get("h4", true))
+  } %}
+{% endif %}
 {% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else "On this page" %}
 {% set _toc_ttl_style = _toc_title_style if (_toc_title_style is defined) else "uppercase" %}
 {% set _toc_gls = _toc_glass if (_toc_glass is defined) else true %}
