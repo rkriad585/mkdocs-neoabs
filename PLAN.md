@@ -1010,7 +1010,7 @@ theme:
 
 ## Phase 11: Content Area Customization
 
-**Goal:** Full control over content rendering and features.
+**Goal:** Full control over content rendering, also add more build-in icon, and features.
 
 ### Config additions
 
@@ -1097,10 +1097,13 @@ theme:
 ### Implementation
 
 **Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py` — resolve the new `theme.neoabs.content` surface into `extra.neoabs_content` (deep-merged defaults) and propagate explicitly-set keys onto the legacy `components` toggles so existing template/JS reads keep working
+- `neoabs/templates/base.html` — emit content data attributes, serialize the `content` config into `#__config`, and render the inline content-token override block
 - `neoabs/templates/partials/progress.html` — apply custom color
-- `neoabs/templates/assets/stylesheets/components.scss` — update content max-width, padding, progress bar color, admonition colors
+- `neoabs/templates/assets/stylesheets/components.scss` — update content max-width, padding, progress bar color, admonition colors, line-number color, tables, task lists, content glass
 - `neoabs/templates/assets/stylesheets/neoabs.scss` — update content CSS variables
-- `neoabs/templates/assets/javascripts/neoabs.js` — respect code.copy_label, back_to_top config, task list persistence
+- `neoabs/templates/assets/javascripts/neoabs.js` — respect code.copy_label, back_to_top config, task list persistence, typography behaviors, code line numbers
+- `mkdocs.yml` — Phase 11 reference block + `neoabs_version` bump
 
 ---
 

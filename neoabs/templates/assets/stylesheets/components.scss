@@ -2090,65 +2090,76 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 
 // Admonition types
 
-// Note - default accent
+// Note - default accent (Phase 11: theme.neoabs.content.admonitions.types.note)
 .neoabs-admonition--note {
 	&::before {
-		background: var(--neoabs-accent);
+		background: var(--neoabs-admonition-note, var(--neoabs-accent));
 	}
 
 	.neoabs-admonition__icon {
-		color: var(--neoabs-accent);
+		color: var(--neoabs-admonition-note, var(--neoabs-accent));
 	}
 }
 
-// Abstract / Tip
+// Abstract / Tip / Success (types.tip / types.success)
 .neoabs-admonition--tip,
-.neoabs-admonition--abstract,
 .neoabs-admonition--success {
 	&::before {
-		background: #00cc6a;
+		background: var(--neoabs-admonition-success, var(--neoabs-admonition-tip, #00cc6a));
 	}
 
 	.neoabs-admonition__icon,
 	.neoabs-admonition__title {
-		color: #00cc6a;
+		color: var(--neoabs-admonition-success, var(--neoabs-admonition-tip, #00cc6a));
 	}
 }
 
-// Warning
+// Abstract stays violet
+.neoabs-admonition--abstract {
+	&::before {
+		background: #a78bfa;
+	}
+
+	.neoabs-admonition__icon,
+	.neoabs-admonition__title {
+		color: #a78bfa;
+	}
+}
+
+// Warning (types.warning)
 .neoabs-admonition--warning {
 	&::before {
-		background: #ffaa00;
+		background: var(--neoabs-admonition-warning, #ffaa00);
 	}
 
 	.neoabs-admonition__icon,
 	.neoabs-admonition__title {
-		color: #ffaa00;
+		color: var(--neoabs-admonition-warning, #ffaa00);
 	}
 }
 
-// Danger / Failure
+// Danger / Failure (types.danger)
 .neoabs-admonition--danger,
 .neoabs-admonition--failure {
 	&::before {
-		background: #ff3030;
+		background: var(--neoabs-admonition-danger, var(--neoabs-accent));
 	}
 
 	.neoabs-admonition__icon,
 	.neoabs-admonition__title {
-		color: #ff3030;
+		color: var(--neoabs-admonition-danger, var(--neoabs-accent));
 	}
 }
 
-// Info
+// Info (types.info)
 .neoabs-admonition--info {
 	&::before {
-		background: #4488ff;
+		background: var(--neoabs-admonition-info, #4488ff);
 	}
 
 	.neoabs-admonition__icon,
 	.neoabs-admonition__title {
-		color: #4488ff;
+		color: var(--neoabs-admonition-info, #4488ff);
 	}
 }
 
@@ -2330,7 +2341,7 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 	padding-right: var(--neoabs-space-4);
 	margin-right: var(--neoabs-space-4);
 	border-right: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
-	color: var(--neoabs-text-muted);
+	color: var(--neoabs-code-line-number-color, var(--neoabs-text-muted));
 	user-select: none;
 	font-variant-numeric: tabular-nums;
 }
@@ -2489,13 +2500,13 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 		width: 0%;
 		background: linear-gradient(
 			90deg,
-			var(--neoabs-accent),
-			#ff6060
+			var(--neoabs-progress-color-1, var(--neoabs-accent)),
+			var(--neoabs-progress-color-2, #ff6060)
 		);
 		border-radius: 0 1px 1px 0;
 		transition: width 100ms linear;
-		box-shadow: 0 0 8px var(--neoabs-accent-glow),
-		            0 0 2px var(--neoabs-accent);
+		box-shadow: 0 0 8px var(--neoabs-progress-color-1, var(--neoabs-accent-glow)),
+		            0 0 2px var(--neoabs-progress-color-1, var(--neoabs-accent));
 	}
 }
 
@@ -2926,12 +2937,17 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 		transition: none;
 	}
 
-	// .note / .info / .example -> blue-ish accent
+	// .note / .example -> blue-ish accent (Phase 11: theme.neoabs.content.admonitions.types.note)
 	&.note,
-	&.info,
 	&.example {
-		&::before { background: #4488ff; }
-		.admonition-title { color: #4488ff; }
+		&::before { background: var(--neoabs-admonition-note, #4488ff); }
+		.admonition-title { color: var(--neoabs-admonition-note, #4488ff); }
+	}
+
+	// .info -> blue-ish accent (phase 11 overrideable via types.info)
+	&.info {
+		&::before { background: var(--neoabs-admonition-info, #4488ff); }
+		.admonition-title { color: var(--neoabs-admonition-info, #4488ff); }
 	}
 
 	// Abstract / summary / tldr -> violet
@@ -2942,28 +2958,33 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 		.admonition-title { color: #a78bfa; }
 	}
 
-	// Tip / hint / success / check / done / question / help / faq -> green
+	// Tip / hint -> green (phase 11 overrideable via types.tip)
 	&.tip,
-	&.hint,
+	&.hint {
+		&::before { background: var(--neoabs-admonition-tip, #00cc6a); }
+		.admonition-title { color: var(--neoabs-admonition-tip, #00cc6a); }
+	}
+
+	// Success / check / done / question / help / faq -> green (types.success)
 	&.success,
 	&.check,
 	&.done,
 	&.question,
 	&.help,
 	&.faq {
-		&::before { background: #00cc6a; }
-		.admonition-title { color: #00cc6a; }
+		&::before { background: var(--neoabs-admonition-success, #00cc6a); }
+		.admonition-title { color: var(--neoabs-admonition-success, #00cc6a); }
 	}
 
-	// Warning / caution / attention
+	// Warning / caution / attention (types.warning)
 	&.warning,
 	&.caution,
 	&.attention {
-		&::before { background: #ffaa00; }
-		.admonition-title { color: #ffaa00; }
+		&::before { background: var(--neoabs-admonition-warning, #ffaa00); }
+		.admonition-title { color: var(--neoabs-admonition-warning, #ffaa00); }
 	}
 
-	// Danger / error / failure / fail / missing / bug / important -> red accent
+	// Danger / error / failure / fail / missing / bug / important -> red accent (types.danger)
 	&.danger,
 	&.error,
 	&.failure,
@@ -2971,8 +2992,8 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 	&.missing,
 	&.bug,
 	&.important {
-		&::before { background: var(--neoabs-accent); }
-		.admonition-title { color: var(--neoabs-accent); }
+		&::before { background: var(--neoabs-admonition-danger, var(--neoabs-accent)); }
+		.admonition-title { color: var(--neoabs-admonition-danger, var(--neoabs-accent)); }
 	}
 
 	// Quote -> warm gray, readable on both schemes
@@ -3006,17 +3027,20 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 }
 
 .admonition.note > .admonition-title::before,
-.admonition.info > .admonition-title::before,
-.admonition.example > .admonition-title::before,
 .admonition.abstract > .admonition-title::before,
 .admonition.summary > .admonition-title::before,
 .admonition.tldr > .admonition-title::before {
-	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+	--neoabs-icon: var(--neoabs-admonition-note-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E"));
+}
+
+.admonition.info > .admonition-title::before,
+.admonition.example > .admonition-title::before {
+	--neoabs-icon: var(--neoabs-admonition-info-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E"));
 }
 
 .admonition.tip > .admonition-title::before,
 .admonition.hint > .admonition-title::before {
-	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.42 1 1.11 1 1.92V17a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-.34c0-.81.4-1.5 1-1.92A7 7 0 0 0 12 2zm-1 19a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-1H9v1a1 1 0 0 0 1 1h1z'/%3E%3C/svg%3E");
+	--neoabs-icon: var(--neoabs-admonition-tip-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.42 1 1.11 1 1.92V17a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-.34c0-.81.4-1.5 1-1.92A7 7 0 0 0 12 2zm-1 19a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-1H9v1a1 1 0 0 0 1 1h1z'/%3E%3C/svg%3E"));
 }
 
 .admonition.success > .admonition-title::before,
@@ -3025,13 +3049,13 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 .admonition.question > .admonition-title::before,
 .admonition.help > .admonition-title::before,
 .admonition.faq > .admonition-title::before {
-	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E");
+	--neoabs-icon: var(--neoabs-admonition-success-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E"));
 }
 
 .admonition.warning > .admonition-title::before,
 .admonition.caution > .admonition-title::before,
 .admonition.attention > .admonition-title::before {
-	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+	--neoabs-icon: var(--neoabs-admonition-warning-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E"));
 }
 
 .admonition.danger > .admonition-title::before,
@@ -3041,7 +3065,7 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 .admonition.missing > .admonition-title::before,
 .admonition.bug > .admonition-title::before,
 .admonition.important > .admonition-title::before {
-	--neoabs-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z'/%3E%3C/svg%3E");
+	--neoabs-icon: var(--neoabs-admonition-danger-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z'/%3E%3C/svg%3E"));
 }
 
 .admonition.quote > .admonition-title::before,
@@ -3177,7 +3201,7 @@ pre.neoabs-code {
 
 // Code line anchors (pymdownx.highlight)
 a[id^="__codelineno"] {
-	color: var(--neoabs-text-muted);
+	color: var(--neoabs-code-line-number-color, var(--neoabs-text-muted));
 	text-decoration: none;
 }
 
@@ -3499,6 +3523,115 @@ tbody tr {
 	}
 }
 
+// ============================================================================
+// Phase 11 - Content area customization (theme.neoabs.content)
+// ============================================================================
+
+// Glass surface on the content panel
+html[data-md-neoabs-content-glass="true"] .neoabs-content {
+	background: var(--neoabs-content-glass-bg);
+	backdrop-filter: blur(var(--neoabs-content-glass-blur));
+	-webkit-backdrop-filter: blur(var(--neoabs-content-glass-blur));
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-xl);
+	box-shadow: var(--neoabs-shadow-sm);
+	margin-top: var(--neoabs-space-4);
+	margin-bottom: var(--neoabs-space-4);
+}
+
+// Responsive tables: JS wraps markdown <table> in .table-wrapper
+.table-wrapper > table {
+	margin: 0;
+}
+
+// Striped rows
+html[data-md-neoabs-tables-striped="true"] tbody tr:nth-child(even) {
+	background: var(--neoabs-table-striped-bg);
+}
+
+// Bordered cells
+html[data-md-neoabs-tables-bordered="true"] th,
+html[data-md-neoabs-tables-bordered="true"] td {
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-table-border-color);
+}
+
+html[data-md-neoabs-tables-bordered="true"] tbody tr:last-child td {
+	border-bottom: var(--neoabs-border-width, 1px) solid var(--neoabs-table-border-color);
+}
+
+// Disabled admonition chrome (markup stays, glass panel removed)
+html[data-md-neoabs-admonitions="false"] .admonition,
+html[data-md-neoabs-admonitions="false"] .neoabs-admonition {
+	background: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	box-shadow: none;
+}
+
+// Native (non-custom) task-list checkboxes
+html[data-md-neoabs-task-checkbox-native="true"] .task-list input[type="checkbox"] {
+	appearance: auto;
+	-webkit-appearance: auto;
+	width: auto;
+	height: auto;
+	margin-top: 3px;
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	border-radius: 0;
+	cursor: pointer;
+
+	&:checked {
+		background: none;
+		border-color: none;
+		background-image: none;
+	}
+}
+
+// Responsive embedded media (theme.neoabs.content.typography.video_behavior)
+.neoabs-typeset iframe.neoabs-video--responsive,
+.neoabs-typeset video.neoabs-video--responsive {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+}
+
+// Numbered code blocks (JS adds the gutter + .neoabs-code--numbered)
+pre.neoabs-code--numbered {
+	position: relative;
+}
+
+pre.neoabs-code--numbered code {
+	display: block;
+	padding-left: var(--neoabs-space-12);
+}
+
+pre.neoabs-code--numbered > .neoabs-code__line-numbers {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	height: auto;
+	left: 0;
+	width: var(--neoabs-space-8);
+	padding: var(--neoabs-space-4);
+	margin: 0;
+	text-align: right;
+	border-right: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	color: var(--neoabs-code-line-number-color, var(--neoabs-text-muted));
+	user-select: none;
+	pointer-events: none;
+	white-space: pre;
+	font-variant-numeric: tabular-nums;
+}
+
+// Disable pymdownx hl_lines emphasis (theme.neoabs.content.code.highlight_lines = false)
+body.neoabs-no-line-highlight .hll,
+body.neoabs-no-line-highlight .highlight .hll {
+	background: none;
+	box-shadow: none;
+}
+
 // --- Task lists ---
 .task-list {
 	list-style: none;
@@ -3512,8 +3645,9 @@ tbody tr {
 	}
 
 	// Checked state (pymdownx.tasklist with custom_checkbox wraps the input in
-	// a .task-list-control label; the item text is a direct child of the <li>).
-	li.task-list-item:has(> label > input:checked) {
+	// a .task-list-control label; without it the input is a direct child of the
+	// <li>).
+	li.task-list-item:has(input:checked) {
 		color: var(--neoabs-text-muted);
 		text-decoration: line-through;
 		text-decoration-color: var(--neoabs-text-muted);

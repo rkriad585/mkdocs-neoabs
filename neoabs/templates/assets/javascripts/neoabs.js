@@ -139,6 +139,21 @@
     return comp.show !== false
   }
 
+  // Phase 11 content-area settings (`theme.neoabs.content`, injected as
+  // `_config.content`). Absent keys fall back to the provided default, keeping
+  // sites that never opt in stable. Nested sections (typography, code, ...) are
+  // looked up as `_config.content.<section>.<key>`; top-level keys such as
+  // `back_to_top_threshold` are read directly off `_config.content`.
+  function contentSetting(section, key, fallback) {
+    const conf = _config.content || {}
+    const holder = conf[section]
+    if (holder && typeof holder === "object" && holder[key] !== undefined && holder[key] !== "") {
+      return holder[key]
+    }
+    if (conf[key] !== undefined && conf[key] !== "") return conf[key]
+    return fallback
+  }
+
   // Optional CDN override per component (`theme.neoabs.components.<name>.cdn_url`).
   function cdnUrlFor(name) {
     const comp = _config.components ? _config.components[name] : null
@@ -842,7 +857,8 @@
         // Back to top — query each time since button is dynamically created
         const backToTop = $(".neoabs-back-to-top")
         if (backToTop) {
-          backToTop.classList.toggle("neoabs-back-to-top--visible", y > 500)
+          const threshold = contentSetting("content", "back_to_top_threshold", 500)
+          backToTop.classList.toggle("neoabs-back-to-top--visible", y > threshold)
         }
 
         ticking = false
@@ -863,7 +879,7 @@
     if (!btn) {
       btn = document.createElement("button")
       btn.className = "neoabs-back-to-top"
-      btn.setAttribute("aria-label", "Back to top")
+      btn.setAttribute("aria-label", contentSetting("content", "back_to_top_label", "Back to top"))
       btn.setAttribute("type", "button")
       btn.innerHTML =
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -941,15 +957,19 @@
   // Makes checkbox task lists interactive (the extension ships them `disabled`)
   // and persists checked state per page URL + item in localStorage.
   function initTaskLists() {
+    if (!contentSetting("task_lists", "enabled", true)) return
+    const persist = contentSetting("task_lists", "persist_state", true)
     const base = location.pathname
     let index = 0
 
-    $$(".task-list-item > label > input[type='checkbox']").forEach(function (input, i) {
+    $$(".task-list-item input[type='checkbox']").forEach(function (input, i) {
       index++
       const key = "task." + base + "." + index
 
       // Re-enable so the user can toggle it.
       input.disabled = false
+
+      if (!persist) return
 
       // Restore saved state.
       const saved = storageGet(key)
@@ -1150,8 +1170,8 @@
   function initCopyButtons(config) {
     if (!componentShow("code", "show_copy_button")) return
     const t = (config && config.translations && config.translations.clipboard) || {}
-    const tCopy = t.copy || "Copy to clipboard"
-    const tCopied = t.copied || "Copied to clipboard"
+    const tCopy = contentSetting("code", "copy_label", "") || t.copy || "Copy to clipboard"
+    const tCopied = contentSetting("code", "copied_label", "") || t.copied || "Copied to clipboard"
 
     // Match both Pygments markup forms:
     //   newer: <div class="highlight"><pre>...    -> ".highlight pre"
@@ -1218,6 +1238,8 @@
   // ---------------------------------------------------------------------------
 
   function initAnchorLinks() {
+    const smooth = contentSetting("typography", "link_behavior", "smooth") === "smooth"
+    const behavior = smooth ? "smooth" : "auto"
     document.addEventListener("click", (e) => {
       const anchor = e.target.closest('a[href^="#"]')
       if (!anchor) return
@@ -1226,7 +1248,7 @@
       const target = document.getElementById(decodeURIComponent(href.slice(1)))
       if (!target) return
       e.preventDefault()
-      target.scrollIntoView({ behavior: "smooth", block: "start" })
+      target.scrollIntoView({ behavior: behavior, block: "start" })
       history.pushState(null, "", href)
     })
 
@@ -1249,13 +1271,101 @@
   // content gets them reapplied on every page).
   function initPermalinks() {
     const tocCfg = (_config && _config.toc) || {}
-    if (tocCfg.permalink === false) {
+    const typeset = (_config.content && _config.content.typography) || {}
+    if (tocCfg.permalink === false || typeset.heading_anchor === false) {
       document.body.classList.add("neoabs-no-permalink")
     }
-    const symbol = tocCfg.permalink_symbol
+    const symbol = typeset.anchor_symbol || tocCfg.permalink_symbol
     if (symbol) {
       $$(".headerlink").forEach((link) => { link.textContent = symbol })
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 11. Content Media & Line Numbers (theme.neoabs.content)
+  // ---------------------------------------------------------------------------
+
+  // Responsive embeds/videos and lazy images driven by typography behavior
+  // settings. Video width/height attributes (when present) win over the 16/9
+  // fallback so YouTube/iframe embeds keep their authored aspect ratio.
+  function initContentMedia() {
+    if (contentSetting("typography", "video_behavior", "responsive") === "responsive") {
+      $$("article iframe, article video").forEach(function (el) {
+        if (el.classList.contains("neoabs-video--responsive")) return
+        const w = el.getAttribute("width")
+        const h = el.getAttribute("height")
+        if (w && h && parseInt(w, 10) > 0 && parseInt(h, 10) > 0) {
+          el.style.aspectRatio = parseInt(w, 10) + " / " + parseInt(h, 10)
+        }
+        el.classList.add("neoabs-video--responsive")
+      })
+    }
+    if (contentSetting("typography", "image_behavior", "normal") === "lazy") {
+      $$("article img").forEach(function (img) {
+        if (img.getAttribute("loading")) return
+        img.loading = "lazy"
+        img.decoding = "async"
+      })
+    }
+  }
+
+  // Responsive tables: wraps markdown <table> in a horizontally scrollable
+  // `.table-wrapper`. Opt out via theme.neoabs.content.tables.responsive = false.
+  function initContentTables() {
+    if (document.documentElement.getAttribute("data-md-neoabs-tables-responsive") === "false") return
+    $$("article table").forEach(function (table) {
+      if (table.closest(".table-wrapper")) return
+      const wrap = document.createElement("div")
+      wrap.className = "table-wrapper"
+      table.parentNode.insertBefore(wrap, table)
+      wrap.appendChild(table)
+    })
+  }
+
+  // Numbered code blocks: injects an absolute line-number gutter into every
+  // multi-line <pre> and marks the block as `neoabs-code--numbered`. Respects
+  // the authored `data-line-numbers` attribute and the start offset. Runs after
+  // initHighlighting so highlight.js cannot move the injected gutter.
+  function initCodeLineNumbers() {
+    if (!contentSetting("code", "show_line_numbers", false)) return
+    const cfg = (_config.content && _config.content.code) || {}
+    const startNum = Number(cfg.line_number_start) > 0 ? Number(cfg.line_number_start) : 1
+
+    if (!contentSetting("code", "highlight_lines", true)) {
+      document.body.classList.add("neoabs-no-line-highlight")
+    }
+
+    $$(".highlight pre, .codehilite pre, pre.highlight, pre.codehilite, pre.neoabs-code")
+      .forEach(function (pre) {
+        if (pre.classList.contains("neoabs-code--numbered")) return
+        const code = pre.querySelector("code") || pre
+        const text = (code.textContent || "").replace(/\s+$/, "")
+        const count = text ? (text.match(/\n/g) || []).length + 1 : 0
+        const hasAnchors = !!pre.querySelector('a[id^="__codelineno"]')
+        if (count < 2 && !hasAnchors && !pre.hasAttribute("data-line-numbers")) return
+
+        const digits = String(count - 1 + startNum).length
+        let nums = ""
+        for (let i = 0; i < count; i++) nums += (i + startNum) + "\n"
+
+        const gutter = document.createElement("span")
+        gutter.className = "neoabs-code__line-numbers"
+        gutter.setAttribute("aria-hidden", "true")
+        gutter.textContent = nums
+
+        const codeStyle = getComputedStyle(code)
+        const preStyle = getComputedStyle(pre)
+        const lh = parseFloat(codeStyle.lineHeight) > 0 ? codeStyle.lineHeight : codeStyle.fontSize
+        gutter.style.fontSize = codeStyle.fontSize
+        gutter.style.lineHeight = lh
+        gutter.style.paddingTop = preStyle.paddingTop || "13px"
+        gutter.style.paddingBottom = preStyle.paddingBottom || "13px"
+        gutter.style.width = (digits + 1) + "ch"
+
+        pre.classList.add("neoabs-code--numbered")
+        code.style.paddingLeft = (digits + 2) + "ch"
+        pre.insertBefore(gutter, pre.firstChild)
+      })
   }
 
   // ---------------------------------------------------------------------------
@@ -2672,7 +2782,8 @@
 
     function reinitPageScoped() {
       const inits = [
-        initTocTracking, initHighlighting, initMermaid,
+        initTocTracking, initHighlighting, initCodeLineNumbers, initContentMedia,
+        initContentTables, initMermaid,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
         initUIExamples, () => initMath(_navConfig), initNavToggle,
         initPermalinks
@@ -2928,7 +3039,8 @@
     // older browser or missing optional dependency) cannot take down the theme.
     const init = [initTheme, initColorScheme, initMobileNav,
       () => initSearch(config), initTocTracking, initBackToTop,
-      initScrollBehavior, initHighlighting, initMermaid,
+      initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
+      initContentTables, initMermaid,
       () => initCopyButtons(config), initTabs, initTaskLists,
       () => initNotes(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,

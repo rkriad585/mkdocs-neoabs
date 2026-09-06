@@ -145,6 +145,50 @@ theme:
     #     show: true                 # Enable toast notification system
     #   keyboard_help:
     #     show: true                 # Enable the "?" keyboard-shortcuts help
+    # --- Phase 11: Content area customization (optional) ------------------------
+    # Full control over content rendering. Every option defaults to the theme's
+    # current look; set only the keys you want to change. `content.max_width` and
+    # `content.padding` accept any CSS length and override the layout variables.
+    # content:
+    #   max_width: ""                  # Content column width, e.g. "960px"
+    #   padding: ""                    # Content area padding, e.g. "32px 24px"
+    #   glass: false                   # Glass surface around the content panel
+    #   show_progress_bar: true        # Reading progress bar (top of the page)
+    #   progress_bar_color: ""         # Progress bar color, e.g. "#0f0f23"
+    #   show_back_to_top: true         # Floating back-to-top button
+    #   back_to_top_threshold: 500     # px of scroll before it appears
+    #   back_to_top_label: "Back to top"  # aria-label for the button
+    #   typography:
+    #     heading_anchor: true         # TOC permalink anchors on headings
+    #     anchor_symbol: ""            # Custom permalink symbol ("" = theme default)
+    #     link_behavior: smooth        # smooth | instant, anchor scroll style
+    #     image_behavior: normal       # normal | lazy (lazy-load images)
+    #     video_behavior: responsive   # normal | responsive embeds/videos
+    #   code:
+    #     show_copy_button: true       # Copy button on code blocks
+    #     copy_label: ""               # "Copy" button label ("" = default)
+    #     copied_label: ""             # "Copied" feedback label ("" = default)
+    #     show_line_numbers: false     # Line-number gutter on code blocks
+    #     line_number_start: 1         # First displayed line number
+    #     highlight_lines: true        # Show pymdownx hl_lines emphasis
+    #     line_number_color: ""        # Gutter color, e.g. "#8a8f98"
+    #   admonitions:
+    #     enabled: true                # Admonition glass panel styling
+    #     types:
+    #       note:     { color: "", icon: "" }
+    #       tip:      { color: "", icon: "" }
+    #       warning:  { color: "", icon: "" }
+    #       danger:   { color: "", icon: "" }
+    #       info:     { color: "", icon: "" }
+    #       success:  { color: "", icon: "" }
+    #   tables:
+    #     responsive: true             # Wrap tables in a scrollable container
+    #     striped: false               # Zebra striping on rows
+    #     bordered: false              # Full cell borders
+    #   task_lists:
+    #     enabled: true                # Task-list checkbox handling
+    #     custom_checkbox: true        # false = native browser checkboxes
+    #     persist_state: true          # Remember checked state per page
     # --- Phase 3: Header & navbar customization (optional) ---------------------
     # Customize the header bar. Every option defaults to the theme's current
     # look; uncomment only the keys you want to change. `position`, `height`
@@ -407,7 +451,7 @@ theme:
     #     show_highlights: true        # Highlight terms inside matched text
 
 extra:
-  neoabs_version: 12
+  neoabs_version: 13
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

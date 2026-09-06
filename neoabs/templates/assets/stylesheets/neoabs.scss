@@ -126,6 +126,21 @@
   --neoabs-content-padding: 40px 32px;
   --neoabs-section-gap: 40px;
 
+  // Phase 11 content area (overridable via theme.neoabs.content)
+  --neoabs-content-glass-bg: var(--neoabs-glass-bg);
+  --neoabs-content-glass-blur: var(--neoabs-glass-blur);
+  --neoabs-progress-color-1: var(--neoabs-accent);
+  --neoabs-progress-color-2: #ff6060;
+  --neoabs-code-line-number-color: var(--neoabs-text-muted);
+  --neoabs-table-striped-bg: var(--neoabs-ghost);
+  --neoabs-table-border-color: var(--neoabs-glass-border);
+  --neoabs-admonition-note: #4488ff;
+  --neoabs-admonition-tip: #00cc6a;
+  --neoabs-admonition-warning: #ffaa00;
+  --neoabs-admonition-danger: var(--neoabs-accent);
+  --neoabs-admonition-info: #4488ff;
+  --neoabs-admonition-success: #00cc6a;
+
   // Header tokens (overridable via theme.neoabs.header)
   --neoabs-header-position: sticky;
   --neoabs-header-z: var(--neoabs-z-header);

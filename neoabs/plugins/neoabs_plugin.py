@@ -202,6 +202,61 @@ _NEOABS_DEFAULT_KEYBOARD = {
     "custom": [],
 }
 
+# Phase 11 - Content area customization.
+#
+# `theme.neoabs.content` gives full control over content rendering. Empty
+# string values mean "keep the theme default"; absent booleans keep the
+# previous behavior. Explicitly-set keys that overlap the legacy `components`
+# surface (show_progress_bar, show_back_to_top, code.*, admonitions.enabled)
+# are propagated so both layers stay in sync.
+_NEOABS_DEFAULT_CONTENT = {
+    "max_width": "",
+    "padding": "",
+    "glass": False,
+    "show_progress_bar": True,
+    "progress_bar_color": "",
+    "show_back_to_top": True,
+    "back_to_top_threshold": 500,
+    "back_to_top_label": "Back to top",
+    "typography": {
+        "heading_anchor": True,
+        "anchor_symbol": "",
+        "link_behavior": "smooth",
+        "image_behavior": "normal",
+        "video_behavior": "responsive",
+    },
+    "code": {
+        "show_copy_button": True,
+        "copy_label": "",
+        "copied_label": "",
+        "show_line_numbers": False,
+        "line_number_start": 1,
+        "highlight_lines": True,
+        "line_number_color": "",
+    },
+    "admonitions": {
+        "enabled": True,
+        "types": {
+            "note": {"color": "", "icon": ""},
+            "tip": {"color": "", "icon": ""},
+            "warning": {"color": "", "icon": ""},
+            "danger": {"color": "", "icon": ""},
+            "info": {"color": "", "icon": ""},
+            "success": {"color": "", "icon": ""},
+        },
+    },
+    "tables": {
+        "responsive": True,
+        "striped": False,
+        "bordered": False,
+    },
+    "task_lists": {
+        "enabled": True,
+        "custom_checkbox": True,
+        "persist_state": True,
+    },
+}
+
 
 def _deep_merge(defaults, user):
     """Merge user config over defaults; nested dicts merge recursively."""
@@ -213,6 +268,33 @@ def _deep_merge(defaults, user):
             else:
                 merged[key] = value
     return merged
+
+
+def _css_safe_url(value):
+    """Wrap an admonition icon's CSS url() so it survives the CSS tokenizer."""
+    if value.startswith(('url("', "url('")):
+        return value
+    if value.startswith("url(") and value.endswith(")"):
+        inner = value[4:-1].strip()
+        safe = inner.replace("\\", "\\\\").replace('"', '\\"')
+        return 'url("' + safe + '")'
+    return value
+
+
+def _normalize_admonition_icons(content):
+    """Keep author-supplied admonition icons valid when inlined into the
+    `neoabs-content-tokens` <style>. A raw `url(...)` fails CSS tokenization
+    when the data URI contains unescaped quotes or spaces, so rewrite it into
+    a double-quoted url string with inner quotes/backslashes escaped."""
+    types = content.get("admonitions", {}).get("types")
+    if not isinstance(types, dict):
+        return
+    for entry in types.values():
+        if not isinstance(entry, dict):
+            continue
+        icon = entry.get("icon")
+        if isinstance(icon, str) and icon.strip():
+            entry["icon"] = _css_safe_url(icon.strip())
 
 
 def _validate_shortcut_entry(name, entry):
@@ -306,6 +388,34 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["components"] = components
         theme["neoabs"] = neoabs
 
+        # Phase 11: resolve content-area customization. Defaults are kept (empty
+        # strings / existing booleans); keys the author explicitly set are
+        # exposed as `extra.neoabs_content` for templates and JS, and propagated
+        # onto the matching legacy `components` toggles so existing reads stay
+        # in sync (only when the author supplied them here).
+        provided_content = neoabs.get("content")
+        if not isinstance(provided_content, dict):
+            provided_content = {}
+        content = _deep_merge(_NEOABS_DEFAULT_CONTENT, provided_content)
+        _normalize_admonition_icons(content)
+        neoabs["content"] = content
+        theme["neoabs"] = neoabs
+
+        provided_code = provided_content.get("code")
+        provided_code = provided_code if isinstance(provided_code, dict) else {}
+        provided_admonitions = provided_content.get("admonitions")
+        provided_admonitions = (
+            provided_admonitions if isinstance(provided_admonitions, dict) else {}
+        )
+        for key in ("show_progress_bar", "show_back_to_top"):
+            if key in provided_content:
+                components["content"][key] = content[key]
+        for key in ("show_copy_button", "show_line_numbers", "highlight_lines"):
+            if key in provided_code:
+                components["code"][key] = content["code"][key]
+        if "enabled" in provided_admonitions:
+            components["admonitions"]["show"] = content["admonitions"]["enabled"]
+
         # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
         # shortcut works out of the box); user overrides are deep-merged and
         # validated so a malformed key or custom action fails the build with a
@@ -335,6 +445,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_notes_ttl"] = neoabs.get("notes_ttl")
         extra["neoabs_components"] = components
         extra["neoabs_keyboard"] = keyboard
+        extra["neoabs_content"] = content
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
