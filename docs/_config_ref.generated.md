@@ -260,6 +260,10 @@ sections:
       font_size: 1.125rem
       line_height: '1.75'
       measure: 100%
+  social_cards:
+    cards: true
+    enabled: true
+    jsonld: true
   timer:
     badge_in_cluster: true
     colors:

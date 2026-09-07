@@ -182,6 +182,42 @@ features:
 To change any single behavior, use the corresponding `theme.neoabs.*` switch
 instead.
 
+### `neoabs.social_cards`
+
+Phase 4 share + indexing surface. When on (default), every page emits an
+`Article` JSON-LD block in `<head>`, and — when `extra.neoabs_og_image` is set
+to the literal value `"__auto__"` — a per-page OG card image is generated at
+build time and published as the page's `og:image`.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for the whole social-cards/JSON-LD surface |
+| `jsonld` | `true` | Emit per-page `Article` JSON-LD structured data |
+| `cards` | `true` | Auto-generate per-page OG card images (`__auto__` mode) |
+
+```yaml
+neoabs:
+  social_cards:
+    enabled: true   # master on/off
+    jsonld: true    # Article JSON-LD in <head>
+    cards: true     # auto og:image cards when extra.neoabs_og_image = __auto__
+```
+
+Set `enabled: false` to strip the whole surface; keep `enabled` but flip
+`jsonld` or `cards` to disable one half independently. Card rendering needs
+Pillow for PNG files — install it with `pip install mkdocs-neoabs[social-cards]`
+— and falls back to a crisp standalone SVG when Pillow is absent.
+
+```yaml
+extra:
+  neoabs_og_image: __auto__   # generate per-page social cards at build time
+```
+
+!!! tip
+    A `page.meta.image` in a page's front matter overrides the auto-generated
+    card for that page. If no card exists for a page (e.g. 404 pages), the OG
+    block falls back to a summary Twitter card.
+
 ## Generated reference
 
 The canonical reference below is emitted from the plugin's own source tables

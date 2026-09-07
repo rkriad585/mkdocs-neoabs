@@ -26,6 +26,9 @@ classifiers = [
 ]
 dependencies = ["mkdocs>=1.5", "pymdown-extensions>=10.0", "Pygments>=2.18"]
 
+[project.optional-dependencies]
+social-cards = ["Pillow>=9.0"]
+
 [project.urls]
 Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
 Documentation = "https://rkriad585.github.io/mkdocs-neoabs"

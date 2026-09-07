@@ -249,6 +249,9 @@
     {% set _brand_manifest = config.extra.neoabs_manifest | default('') %}
     {% set _brand_og_image = config.extra.neoabs_og_image | default('') %}
     {% set _brand_twitter = config.extra.neoabs_twitter_handle | default('') %}
+    {% set _social_cfg = config.extra.neoabs_social_cards | default({}) %}
+    {% set _social_enabled = _social_cfg.enabled | default(true) %}
+    {% set _social_jsonld = _social_enabled and (_social_cfg.jsonld is not sameas false) %}
     {% if _brand_theme_color %}
     <meta name="theme-color" content="{{ _brand_theme_color }}">
     {% endif %}
@@ -264,9 +267,21 @@
     {% elif config.site_description %}<meta property="og:description" content="{{ config.site_description }}">{% endif %}
     {% if page.canonical_url %}<meta property="og:url" content="{{ page.canonical_url }}">{% endif %}
     {% if _brand_og_image %}
-    {% set _brand_og_image_url = _brand_og_image if _brand_og_image.startswith("http") else (_brand_og_image | url if _brand_og_image else '') %}
+    {% if _brand_og_image == "__auto__" and page and page.meta and page.meta.image %}
+    {% set _brand_og_image_url = page.meta.image | url %}
     <meta property="og:image" content="{{ _brand_og_image_url }}">
     <meta name="twitter:card" content="summary_large_image">
+    {% elif _brand_og_image == "__auto__" %}
+    <meta name="twitter:card" content="summary">
+    {% elif _brand_og_image.startswith("http") %}
+    {% set _brand_og_image_url = _brand_og_image %}
+    <meta property="og:image" content="{{ _brand_og_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% else %}
+    {% set _brand_og_image_url = _brand_og_image | url if _brand_og_image else '' %}
+    <meta property="og:image" content="{{ _brand_og_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% endif %}
     {% else %}
     <meta name="twitter:card" content="summary">
     {% endif %}
@@ -274,6 +289,20 @@
     <meta name="twitter:site" content="{{ _brand_twitter }}">
     <meta name="twitter:creator" content="{{ _brand_twitter }}">
     {% endif %}
+    {% endif %}
+    {% if _social_jsonld and page and page.title %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": {{ (page.title | default(config.site_name, true)) | tojson }},
+      {% if page.meta and page.meta.date %}"datePublished": {{ (page.meta.date | string) | tojson }},{% endif %}
+      {% if page.meta and page.meta.author %}"author": { "@type": "Person", "name": {{ (page.meta.author | string) | tojson }} },{% endif %}
+      "description": {{ (page.meta.description if (page.meta and page.meta.description) else (config.site_description | default(''))) | tojson }},
+      "url": {{ (page.canonical_url if page.canonical_url else (page.url | url)) | tojson }},
+      "publisher": { "@type": "Organization", "name": {{ (config.site_name | default('')) | tojson }} }
+    }
+    </script>
     {% endif %}
     {% endif %}
     {% endblock %}

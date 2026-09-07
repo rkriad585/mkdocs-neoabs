@@ -46,6 +46,14 @@ theme:
     dot_matrix: true
     animation: normal
     border: thin
+    # --- Phase 4: Social cards & structured data ------------------------------
+    # Per-page Article JSON-LD + auto-generated OG card images. Every key
+    # defaults ON; `cards` only fires when `extra.neoabs_og_image` is set to the
+    # literal value "__auto__" (see the Phase 12 extra block below).
+    social_cards:
+      enabled: true   # Master on/off: JSON-LD + auto card images (default true)
+      jsonld: true    # Article JSON-LD structured data in <head> (default true)
+      cards: true     # Build per-page og:image cards when og_image = __auto__ (default true)
     # --- Phase 1: Design token overrides (optional) -------------------------
     # Uncomment any value to override the theme's default design token. Values
     # map to CSS custom properties and win against the compiled stylesheet.
@@ -653,7 +661,10 @@ extra:
   # Site identity + social metadata. All keys default to empty (absent); set a
   # value to publish the corresponding tag. The tagline/badge render next to the
   # header site name; og/twitter/theme-color/manifest tags land in <head>.
-  # neoabs_og_image: "https://example.com/og-image.png"  # OpenGraph image (large summary card)
+  # "__auto__" generates a per-page social-card og:image at build time
+  # (theme.neoabs.social_cards.cards must be enabled; Pillow required for PNG,
+  # otherwise a crisp SVG fallback is emitted).
+  neoabs_og_image: __auto__                      # Per-page auto social-card OG image
   # neoabs_theme_color: "#000000"                        # Browser <meta name="theme-color">
   # neoabs_manifest: "/manifest.json"                    # PWA manifest <link rel="manifest">
   # neoabs_twitter_handle: "@username"                   # Twitter card @handle (also used for site/creator)

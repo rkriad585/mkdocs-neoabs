@@ -192,8 +192,8 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 |---|---|---|---|
 | 1 | Working `theme.font`, `theme.features` config | ✅ fonts drive link+tokens; `features` passthrough documented | done |
 | 2 | Complete screenshot gallery | ✅ 17 real captures (macOS/phone frames, Playwright) | done |
-| 3 | OG / Twitter / theme-color / structured data | 🟡 OG/Twitter/theme-color shipped; JSON-LD missing | P4 |
-| 4 | Social-card image per page (auto-generated) | ❌ | P4 |
+| 3 | OG / Twitter / theme-color / structured data | ✅ OG/Twitter/theme-color + Article JSON-LD shipped | P4 |
+| 4 | Social-card image per page (auto-generated) | ✅ `__auto__` per-page cards (PNG/SVG, site logo) | P4 |
 | 5 | AI/LLM-readiness (`llms.txt`, mirrors, FAQ/Article schema) | 🟡 `llms.txt`+`llms-full.txt`+mirrors shipped; schema pending | P4 |
 | 6 | Search config surface | ✅ fully wired (placeholder/shortcut/min/max/context/highlight/suggest) | done |
 | 7 | Search `?q=` deep link + share | ✅ `?q=` restore auto-opens search; per-result "copy link" | done |
@@ -438,7 +438,7 @@ boot, notes TTL ×2, deep-link auto-open, copy-link URL, copy-link origin);
 
 ### Phase 4 — Social cards
 
-**Goal.** Shared links look stunning and bots can index the site correctly.
+**Goal.** Shared links look stunning and bots can index the site correctly and also add config to on/off if needed only then.
 
 **Why it wins.** Material's auto-generated social cards are its most-copied
 feature; cards + `README`-quality OG make any shared link work *for* us.
@@ -449,11 +449,26 @@ feature; cards + `README`-quality OG make any shared link work *for* us.
 - **4c (AI-readiness):** `llms.txt`, `llms-full.txt`, per-page watermarked
   markdown mirrors, and sitemap extension — plugin hooks L1359–1542. Only
   **FAQ/Article JSON-LD schema** remains.
+- **Phase 4 core (DONE):** per-page **Article JSON-LD** structured data + **auto
+  social-card images** (see `extra.neoabs_og_image: __auto__`) behind the new
+  `theme.neoabs.social_cards` on/off config (`enabled`/`jsonld`/`cards`), all in
+  `base.html`, `neoabs_plugin.py` (`on_page_context` + extended `on_post_build`),
+  `neoabs/social_card.py`, `tools/social_card.py`, `pyproject.toml[optional]
+  social-cards`, and `mkdocs.yml`. Cards are redesigned to a clean, professional
+  layout (near-black canvas, top-left brand row with the site logo, white wrapped
+  headline, one muted description line, thin accent rule) with PNG (Pillow) / SVG
+  (standalone) output.
 
-#### 4a. JSON-LD structured data
+#### 4a. JSON-LD structured data ✅ (done)
+
+Shipped in `base.html`: a per-page `Article` `application/ld+json` block inside
+`branding_meta` (gated by `theme.neoabs.social_cards.jsonld`), with
+`@context`/`@type`, `headline` (page title), optional `datePublished`/`author`,
+`description` (page meta → site description), canonical `url`, and `publisher`
+(site name). Emits unique JSON-LD for every page:
 
 ```jinja
-{# base.html — inside {% block branding_meta %} add: #}
+{# base.html — inside {% block branding_meta %}, gated by social_cards.jsonld #}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -466,33 +481,35 @@ feature; cards + `README`-quality OG make any shared link work *for* us.
 </script>
 ```
 
-#### 4b. Automatic social-card image
+#### 4b. Automatic social-card image ✅ (done)
 
-`tools/social_card.py` — optional `pillow`, renders the theme's signature card
-(black canvas, dot-matrix, Nothing-Red headline) per page at build time; falls
-back to a crisp SVG `og:image`:
+Shipped in `neoabs/social_card.py` (new module) + `tools/social_card.py` CLI.
+Optional `pillow`; clean, professional 1200×630 card per page at build time:
+near-black canvas (`#111114`), top-left brand row (site logo + name), white
+wrapped headline vertically centered, one muted description line, thin
+Nothing-Red accent rule at the bottom. Falls back to a standalone SVG when
+Pillow isn't installed. The site logo is embedded when it resolves to a local
+file (`theme.logo` / local `neoabs_logo_*`); remote `neoabs_logo_*` URLs are
+skipped (no network at build). Without a logo a monogram accent is drawn.
+
+Hook via `on_page_context` (stamps `page.meta.image`) + an extended
+`on_post_build` when `config.extra.neoabs_og_image == "__auto__"` and
+`theme.neoabs.social_cards.cards == true`.
 
 ```python
-# tools/social_card.py (new, optional dependency)
-def render(title, site_name, out=".cache/cards"):
-    try:
-        from PIL import Image, ImageDraw
-    except ImportError:
-        return emit_svg(title, site_name, out + ".svg")
-    img = Image.new("RGB", (1200, 630), "#000000")
-    d = ImageDraw.Draw(img)
-    d.rectangle([24, 24, 1176, 606], outline="#ff3030", width=4)
-    d.text((64, 300), title or site_name, fill="#ffffff")
-    img.save(out)
+# neoabs/social_card.py (new module, optional Pillow)
+def render_card(title, site_name, out_stem, *, description=None, logo_path=None):
+    # PNG via Pillow, else standalone SVG — same clean layout either way
+    ...
 ```
 
-Hook via `on_post_build` when `config.extra.neoabs_og_image == "__auto__"`.
-
-**Files.** `base.html`, `neoabs_plugin.py`, `tools/social_card.py`, `pyproject.toml` (optional extra), `mkdocs.yml`.
+**Files.** `base.html`, `neoabs_plugin.py`, `neoabs/social_card.py`, `tools/social_card.py`, `pyproject.toml` (optional extra), `mkdocs.yml`, `docs/getting-started/configuration.md`, `docs/plugins/neoabs.md`, `CHANGELOG.md`.
 
 **Acceptance.** Every page emits unique JSON-LD; `site/llms.txt` still generated;
 `theme-color` follows palette; `__auto__` card ends up as `og:image`; harness for
-meta-block passes.
+meta-block passes. All verified: strict build passes, 35 PNG cards under
+`site/assets/social-cards/`, per-page `og:image` + Article JSON-LD in every page,
+`npm test` 7/7, `ruff check neoabs/ tools/` clean, `npm run build` clean.
 
 ---
 

@@ -7,7 +7,7 @@ import logging
 import os
 import posixpath
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 from datetime import datetime, timezone
 from typing import ClassVar
 
@@ -18,6 +18,7 @@ from mkdocs.plugins import BasePlugin
 
 # Theme version for the Phase 19 mirror watermark (`watermark.include_version`).
 from .. import __version__ as _NEOABS_THEME_VERSION
+from .. import social_card as _social_card
 
 _AI_LOGGER = logging.getLogger("mkdocs.plugins.neoabs")
 
@@ -462,6 +463,19 @@ _NEOABS_DEFAULT_AI_READER = {
         "include_version": True,
     },
 }
+
+# Phase 4: social cards & structured data. `extra.neoabs_og_image` set to the
+# literal `"__auto__"` switches per-page card generation on; these keys gate the
+# whole surface and its two halves (Article JSON-LD, card images) independently.
+# Everything ships ON by default (working rule 5).
+_NEOABS_DEFAULT_SOCIAL_CARDS = {
+    "enabled": True,
+    "jsonld": True,
+    "cards": True,
+}
+
+# Allowed key sets for social cards so a typo fails the build loudly.
+_NEOABS_SOCIAL_CARDS_BOOLS = ("enabled", "jsonld", "cards")
 
 # Allowed enums / key sets for the AI reader so a typo fails the build loudly.
 _NEOABS_AI_READER_URL_STYLES = ("sidecar", "inline")
@@ -981,6 +995,21 @@ def _validate_ai_reader(ai_reader):
         raise ConfigurationError("theme.neoabs.ai_reader.watermark must be a mapping.")
 
 
+def _validate_social_cards(social_cards):
+    """Validate a merged `theme.neoabs.social_cards` mapping, raising a clear MkDocs
+    configuration error for malformed entries instead of silently degrading the
+    social-card / structured-data surface."""
+    if not isinstance(social_cards, dict):
+        raise ConfigurationError("theme.neoabs.social_cards must be a mapping.")
+
+    for field in _NEOABS_SOCIAL_CARDS_BOOLS:
+        value = social_cards.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.social_cards.{field} must be a boolean."
+            )
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -1096,6 +1125,7 @@ class NeoAbsPlugin(BasePlugin):
         ("action_cluster", Type(dict)),
         ("timer", Type(dict)),
         ("ai_reader", Type(dict)),
+        ("social_cards", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -1224,11 +1254,27 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["ai_reader"] = ai_reader
         theme["neoabs"] = neoabs
 
+        # Phase 4: resolve social cards & structured data. The whole surface
+        # (per-page Article JSON-LD + auto card images) ships ON by default;
+        # `cards` only fires when `extra.neoabs_og_image` is also `__auto__`.
+        provided_social_cards = neoabs.get("social_cards")
+        if not isinstance(provided_social_cards, dict):
+            provided_social_cards = {}
+        social_cards = _deep_merge(_NEOABS_DEFAULT_SOCIAL_CARDS, provided_social_cards)
+        _validate_social_cards(social_cards)
+        neoabs["social_cards"] = social_cards
+        theme["neoabs"] = neoabs
+
         # Mirror bookkeeping for the Phase 19 build hooks (a fresh build always
         # resets both so a plugin instance is never reused across builds).
         self._ai_mirrors = []
         self._ai_claimed = set()
         self._ai_warned_overwrite = False
+        # Phase 4 bookkeeping: per-page social cards resolved during the render;
+        # the image format is locked at config time so the stamped og:image URLs
+        # and the files written by on_post_build always agree.
+        self._social_pages = []
+        self._social_format = _social_card.available_format()
 
         # Phase 18: mirror `timer.start_with_reading` into the reading-mode
         # layer. `setdefault` keeps an explicit `reading_mode.start_with_reading`
@@ -1325,6 +1371,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_action_cluster"] = action_cluster
         extra["neoabs_timer"] = timer
         extra["neoabs_ai_reader"] = ai_reader
+        extra["neoabs_social_cards"] = social_cards
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
@@ -1372,6 +1419,83 @@ class NeoAbsPlugin(BasePlugin):
             config["extra_javascript"] = [p for p in extra_js if p != "search/main.js"]
 
         return config
+
+    # -- Phase 4: social cards & structured data -------------------------------
+
+    def on_page_context(self, context, *, page, config, nav):
+        """In `__auto__` og-image mode, stamp the page's social-card URL onto
+        `page.meta.image` before the template renders, so base.html can publish
+        the per-page `og:image`. Cards are generated from the accumulated pages
+        in `on_post_build`. A `page.meta.image` the author set explicitly wins."""
+        extra = config.get("extra") or {}
+        social_cards = extra.get("neoabs_social_cards") or _NEOABS_DEFAULT_SOCIAL_CARDS
+        og_image = (extra.get("neoabs_og_image") or "").strip()
+        if not (social_cards.get("enabled") and social_cards.get("cards")):
+            return
+        if og_image != "__auto__":
+            return
+
+        meta = getattr(page, "meta", None)
+        if not isinstance(meta, MutableMapping):
+            meta = {}
+            page.meta = meta
+        if (meta.get("image") or "").strip():
+            return
+
+        rel = self._social_card_rel(page)
+        if not rel:
+            return
+        meta["image"] = rel
+        self._social_pages.append(
+            {
+                "rel": rel,
+                "title": (page.title or config.get("site_name") or "NeoAbs").strip(),
+                "description": (meta.get("description") or "").strip(),
+            }
+        )
+        return
+
+    @staticmethod
+    def _social_card_rel(page):
+        """Site-relative og:image path for a page's auto card, mirroring the card
+        file the build writes: `assets/social-cards/<src_stem>.<format>`."""
+        src = ((getattr(page, "file", None) and page.file.src_path) or "").replace(
+            "\\", "/"
+        )
+        stem = posixpath.splitext(src)[0]
+        if not stem:
+            return ""
+        return f"assets/social-cards/{stem}.{_social_card.available_format()}"
+
+    def _social_logo_path(self, config):
+        """Resolve a local site logo file for card branding, or ``None``.
+
+        Priority: ``extra.neoabs_logo_light``, then ``extra.neoabs_logo_dark``,
+        then ``theme.logo``. Remote (http(s):// or data:) values are skipped —
+        no network access at build time — and the resolved value is looked up
+        relative to the site dir first (theme assets are copied there), then the
+        docs dir. Returns ``None`` when nothing usable is found.
+        """
+        docs_dir = config.get("docs_dir") or ""
+        site_dir = config.get("site_dir") or ""
+        theme = config.get("theme") or {}
+        extra = config.get("extra") or {}
+        candidates = [
+            extra.get("neoabs_logo_light"),
+            extra.get("neoabs_logo_dark"),
+            theme.get("logo"),
+        ]
+        for candidate in candidates:
+            if not candidate:
+                continue
+            candidate = str(candidate)
+            if re.match(r"^(https?://|data:)", candidate):
+                continue
+            for directory in (site_dir, docs_dir):
+                path = os.path.join(directory, candidate)
+                if os.path.isfile(path):
+                    return path
+        return None
 
     # -- Phase 19: AI-readable content mode -----------------------------------
 
@@ -1426,8 +1550,28 @@ class NeoAbsPlugin(BasePlugin):
         return self._ai_decorate_html(output, mirror_url)
 
     def on_post_build(self, *, config):
-        """Emit llms.txt / llms-full.txt at the site root and extend sitemap.xml
-        with the mirror URLs."""
+        """Render the Phase 4 auto social-card images and emit llms.txt /
+        llms-full.txt at the site root, plus extend sitemap.xml."""
+        extra = config.get("extra") or {}
+        social_cards = extra.get("neoabs_social_cards") or _NEOABS_DEFAULT_SOCIAL_CARDS
+        og_image = (extra.get("neoabs_og_image") or "").strip()
+        if (
+            social_cards.get("enabled")
+            and social_cards.get("cards")
+            and og_image == "__auto__"
+        ):
+            site_dir = config["site_dir"]
+            logo_path = self._social_logo_path(config)
+            for entry in self._social_pages:
+                dest = os.path.join(site_dir, *entry["rel"].split("/"))
+                _social_card.render_card(
+                    entry["title"],
+                    config.get("site_name") or "",
+                    os.path.splitext(dest)[0],
+                    description=entry["description"],
+                    logo_path=logo_path,
+                )
+
         extra = config.get("extra") or {}
         ai_reader = extra.get("neoabs_ai_reader") or _NEOABS_DEFAULT_AI_READER
         if not ai_reader.get("enabled"):

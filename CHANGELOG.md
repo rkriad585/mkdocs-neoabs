@@ -4,6 +4,16 @@ All notable changes to mkdocs-neoabs will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- Automatic per-page social preview cards (Phase 4): with `extra.neoabs_og_image: __auto__` the build renders a clean 1200×630 Open Graph card for every page in the theme palette, embedding the site logo (`theme.logo`, or `neoabs_logo_light`/`neoabs_logo_dark` when local). Cards are PNG when Pillow is installed, else standalone SVG; the site logo is drawn when available, otherwise a monogram accent is used.
+- Article JSON-LD structured data injected into each page's `<head>` alongside the per-page `og:image` and `summary_large_image` Twitter card
+- New `theme.neoabs.social_cards` config (`enabled` / `jsonld` / `cards`) to toggle the feature on and off; per-page `image:` front matter overrides the auto card
+- New `social-cards` optional dependency for Pillow-based PNG rendering, `pip install mkdocs-neoabs[social-cards]`
+- `tools/social_card.py` CLI (`--title`, `--site`, `--description`, `--logo`, `--out`) for generating cards without a full build
+
 ## [0.1.2] - 2026-09-04
 
 ### Added

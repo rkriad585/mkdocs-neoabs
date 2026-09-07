@@ -40,6 +40,7 @@ The plugin hooks into MkDocs' `on_config` event to set default values for theme 
 | `neoabs.dot_matrix` | `true` | Dot matrix pattern |
 | `neoabs.animation` | `"normal"` | Animation mode |
 | `neoabs.border` | `"thin"` | Border style |
+| `neoabs.social_cards` | `{"enabled": true, "jsonld": true, "cards": true}` | Social preview cards + JSON-LD |
 
 If you set these values in `mkdocs.yml`, the plugin will not override them.
 
@@ -86,6 +87,27 @@ theme:
 | `"thin"` | 1px semi-transparent borders (default) |
 | `"thick"` | 2px borders |
 | `"none"` | No borders |
+
+### `social_cards`
+
+Automatic per-page social preview cards and Article structured data. When enabled alongside `extra.neoabs_og_image: __auto__`, the build generates a 1200×630 Open Graph image for every page (drawn in the theme palette with the site logo) and injects matching `og:image` meta plus JSON-LD Article data into each page's `<head>`.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    social_cards:
+      enabled: true   # Master switch for social previews
+      jsonld: true    # Inject Article JSON-LD structured data
+      cards: true     # Generate + publish per-page og:image cards
+
+extra:
+  neoabs_og_image: __auto__  # Auto-generate one card per page
+```
+
+> To embed the site's own logo on the cards, set `theme.logo` to a local file (e.g. `assets/images/logo.svg`); it is used when the `neoabs_logo_light`/`neoabs_logo_dark` extras point at remote URLs, which are skipped at build time.
+>
+> Cards are rendered as PNG when [Pillow](https://python-pillow.org) is installed, otherwise as standalone SVG. Install the extra with `pip install mkdocs-neoabs[social-cards]`. An author can override the auto image for a single page with a `image:` entry in that page's front matter.
 
 ## Full Example
 
