@@ -2309,4 +2309,5 @@ extra:
   build (each snippet tested), screenshot regeneration.
 - Release → `CHANGELOG.md` → wiki `Release-Notes.md` alignment; translation
   readiness (`docs/translating.md`); sitemap/llms.txt wiring (`WHY_PLAN.md` P4).
+  The sitemap/llms.txt wiring item is delivered by Phase 19 (`ai_reader`).
 - **Acceptance:** push → CI proves docs health with zero manual steps.

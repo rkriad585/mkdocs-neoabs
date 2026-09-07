@@ -629,6 +629,7 @@
         "reading_mode": {{ config.extra.neoabs_reading_mode | default({}) | tojson }},
         "action_cluster": {{ config.extra.neoabs_action_cluster | default({}) | tojson }},
         "timer": {{ config.extra.neoabs_timer | default({}) | tojson }},
+        "ai_reader": {{ config.extra.neoabs_ai_reader | default({}) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {
