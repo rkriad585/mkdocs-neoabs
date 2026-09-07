@@ -125,9 +125,6 @@ styles `neoabs.scss` (630 lines) + `components.scss` (6,104 lines), CI under
 
 ### What is currently *broken or dead* (verified 2026-09)
 
-- `theme.font.text / font.code` are **ignored** — fonts hardcoded in `base.html`.
-- `theme.features` is **still dead** — emitted into `__config` (base.html L606)
-  but no consumer in JS.
 - No JSON-LD structured data (OG/Twitter/theme-color are present; JSON-LD is not).
 - No auto-generated social-card image (`tools/social_card.py` does not exist).
 - No `?q=` search deep-link (search share/resume not implemented).
@@ -193,7 +190,7 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 
 | # | Capability (what Material/base themes have) | NeoAbs today | Phase |
 |---|---|---|---|
-| 1 | Working `theme.font`, `theme.features` config | ❌ fonts hardcoded; `features` dead | P1 |
+| 1 | Working `theme.font`, `theme.features` config | ✅ fonts drive link+tokens; `features` passthrough documented | done |
 | 2 | Complete screenshot gallery | ✅ 17 real captures (macOS/phone frames, Playwright) | done |
 | 3 | OG / Twitter / theme-color / structured data | 🟡 OG/Twitter/theme-color shipped; JSON-LD missing | P4 |
 | 4 | Social-card image per page (auto-generated) | ❌ | P4 |
@@ -210,7 +207,7 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 15 | Prefetch on hover, lazy images, perf budget CI | 🟡 lazy images ✅; no prefetch/Lighthouse | P8 |
 | 16 | Asset bundling (cdn \| local \| bundle) / offline self-host | 🟡 per-component `cdn_url`; no vendoring recipe | P8 |
 | 17 | Plugin compat guide + recipes | ❌ | P9 |
-| 18 | `neoabs new` scaffolding + `doctor` | ❌ | P9 |
+| 18 | `neoabs new` scaffolding + `doctor` | 🟡 `neoabs new` ✅ (P2); `doctor` ❌ | P9 |
 | 19 | MkDocs 2.0 compat matrix + release automation | 🟡 GitHub Release ✅; no PyPI, no version matrix | P9 |
 | 20 | Showcase, benchmarks, funding, contributor path | 🟡 CONTRIBUTING+CHANGELOG ✅; no benchmarks/FUNDING/showcase | P10 |
 
@@ -298,21 +295,32 @@ rectangles remain.
 **Why it wins.** "Install → see it beat my expectations" is the acquisition
 channel.
 
-**Already shipped (verified).** Docs folders exist and are deep
-(`docs/getting-started/`, `docs/design/`, `docs/components/` ×16,
-`docs/plugins/`), plus CONTRIBUTING/CHANGELOG. **Not shipped:** the Why/Showcase
-narrative, the generated config reference, the CLI scaffolder.
+**Already shipped (verified).** All three items below are done.
 
-#### 2a. `Why NeoAbs` page + Showcase
+#### 2a. `Why NeoAbs` page + Showcase ✅ (done)
 
-Add `docs/why-neoabs.md` (Three Pillars, honest dated compare table, "Made by the
-anti-default" one-liner) and `docs/showcase.md` (embeds + the Screenshots gallery).
+`docs/why-neoabs.md` ships the Three Pillars (distinctive by default / fast +
+app-like / private by default), the North Star one-liner, an honest dated
+compare table vs Material for MkDocs (2026-09, incl. maintenance mode), and the
+"Made by the anti-default" hook. `docs/showcase.md` embeds the Screenshots
+gallery highlights (home, dark/light, search, mobile) with a "try it yourself"
+scaffold command and links to the full gallery. Both appear in `nav` (Why NeoAbs
++ Showcase right after Home).
 
-#### 2b. Config reference generated from the plugin
+**Files touched.** `docs/why-neoabs.md`, `docs/showcase.md`, `mkdocs.yml`.
 
-`docs/getting-started/configuration.md` exists but is hand-maintained. Pin it to
-the plugin's canonical tables with a generator + `pymdownx.snippets` include so
-doc/config can't drift:
+**Acceptance (verified).** Strict build renders both pages; showcase image URLs
+are raw GitHub paths that exist in `Screenshots/`; nav links resolve.
+
+#### 2b. Config reference generated from the plugin ✅ (done)
+
+`docs/getting-started/configuration.md` stays hand-maintained for prose, but a
+new `## Generated reference` section includes `docs/_config_ref.generated.md`
+via `pymdownx.snippets` (`base_path: docs`). The file is emitted by
+`tools/emit_config_reference.py`, which imports the plugin's own
+`_NEOABS_TOKEN_MAP`, `NeoAbsPlugin._neoabs_defaults`, and every
+`_NEOABS_DEFAULT_*` dict (`components`, `keyboard`, `reading_mode`,
+`action_cluster`, `timer`, `content`, `ai_reader`) so the reference can't drift:
 
 ```python
 # tools/emit_config_reference.py (new)
@@ -320,42 +328,49 @@ import yaml
 from neoabs.plugins.neoabs_plugin import _NEOABS_TOKEN_MAP, NeoAbsPlugin
 
 DOC = {
-    "tokens": {g: sorted(k) for g, k in _NEOABS_TOKEN_MAP.items()},
+    "tokens": {g: dict(m) for g, m in _NEOABS_TOKEN_MAP.items()},
     "defaults": NeoAbsPlugin._neoabs_defaults,
+    "sections": {name: getattr(plugin, name) for name in ...},
 }
-with open("docs/_config_ref.generated.md", "w") as f:
-    f.write("<!-- generated: do not edit -->\n```yaml\n")
-    f.write(yaml.safe_dump(DOC, sort_keys=True))
-    f.write("```\n")
 ```
 
-#### 2c. `neoabs new` project scaffolder
+Run `python tools/emit_config_reference.py` to regenerate.
+
+**Files touched.** `tools/emit_config_reference.py`, `docs/_config_ref.generated.md`,
+`docs/getting-started/configuration.md`, `mkdocs.yml` (`pymdownx.snippets`).
+
+**Acceptance (verified).** Strict build includes the generated YAML block in
+the config page; regenerating after a plugin change updates the file;
+`py_compile`/`ruff` green.
+
+#### 2c. `neoabs new` project scaffolder ✅ (done)
+
+`neoabs/cli.py` (new) exposes `neoabs new [TARGET]` via a `[project.scripts]`
+entry (`neoabs = "neoabs.cli:main"`): refuses to overwrite an existing project,
+writes `mkdocs.yml` (theme.neoabs defaults + `search`/`neoabs` plugins) and
+`docs/index.md`, then prints "Run: mkdocs serve".
 
 ```python
 # neoabs/cli.py (new entry point in pyproject.toml: neoabs = "neoabs.cli:main")
 import pathlib, sys
 
 TEMPLATE = {
-    "mkdocs.yml": 'site_name: New Docs\nsite_url: ""\ntheme:\n  name: neoabs\n\nplugins:\n  - search\n  - neoabs\n',
+    "mkdocs.yml": '... theme.neoabs defaults wired ...',
     "docs/index.md": "# Welcome\n\nBuilt with NeoAbs.\n",
 }
-
-def main(argv=None):
-    target = pathlib.Path((argv or sys.argv)[1] if len(argv or sys.argv) > 1 else ".")
-    if (target / "mkdocs.yml").exists():
-        sys.exit(f"refusing to overwrite existing project at {target}")
-    for name, body in TEMPLATE.items():
-        p = target / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(body)
-    print(f"NeoAbs project scaffolded at {target}. Run: mkdocs serve")
 ```
 
-**Files.** `docs/why-neoabs.md`, `docs/showcase.md`, `tools/emit_config_reference.py`, `mkdocs.yml`, `neoabs/cli.py`, `pyproject.toml`.
+**Files touched.** `neoabs/cli.py`, `pyproject.toml`.
 
-**Acceptance.** `pip install -e .` exposes `neoabs new my-docs`; `mkdocs serve`
-renders the scaffold with zero custom CSS; config page matches plugin tables;
-showcase links resolve.
+**Acceptance (verified).** `pip install -e .` exposes `neoabs`; `neoabs new
+my-docs` scaffolds; the scaffold builds and renders with the theme and default
+fonts (no `theme.font` → Space Grotesk/Space Mono defaults, no crash); running
+`neoabs new` again refuses to overwrite.
+
+**Phase 2 note (1a hardening).** Scaffolding with *no* `theme.font` exposed a
+Phase 1a gap — `config.theme.font.text` crashes when the key is absent. Fixed in
+`base.html` (safe `.get('font') or {}` lookup with the same defaults). Minimal
+`theme: {name: neoabs}` configs now render cleanly too.
 
 ---
 

@@ -182,6 +182,19 @@ features:
 To change any single behavior, use the corresponding `theme.neoabs.*` switch
 instead.
 
+## Generated reference
+
+The canonical reference below is emitted from the plugin's own source tables
+(`_NEOABS_TOKEN_MAP`, `_neoabs_defaults`, and the `_NEOABS_DEFAULT_*` dicts) by
+`tools/emit_config_reference.py`. Regenerate it any time the plugin changes so
+docs and config can never drift:
+
+```bash
+python tools/emit_config_reference.py
+```
+
+--8<-- "_config_ref.generated.md"
+
 ## Plugin configuration
 
 NeoAbs ships with an optional MkDocs plugin that sets theme defaults. See the [Plugin documentation](../plugins/neoabs.md) for details.

@@ -317,8 +317,9 @@
     {% endblock %}
 
     {% block fonts %}
-    {% set _ftext = config.theme.font.text | default('Space Grotesk') %}
-    {% set _fcode = config.theme.font.code | default('Space Mono') %}
+    {% set _theme_font = config.theme.get('font') or {} %}
+    {% set _ftext = _theme_font.get('text', 'Space Grotesk') %}
+    {% set _fcode = _theme_font.get('code', 'Space Mono') %}
     {% set _ftext_uri = _ftext | replace(' ', '+') %}
     {% set _fcode_uri = _fcode | replace(' ', '+') %}
     <link rel="preconnect" href="https://fonts.googleapis.com">

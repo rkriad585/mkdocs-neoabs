@@ -38,6 +38,9 @@ neoabs = "neoabs.templates"
 [project.entry-points."mkdocs.plugins"]
 neoabs = "neoabs.plugins.neoabs_plugin:NeoAbsPlugin"
 
+[project.scripts]
+neoabs = "neoabs.cli:main"
+
 [tool.hatch.build.targets.wheel]
 include = ["/neoabs"]
 exclude = ["neoabs/templates/assets/stylesheets/*.scss"]

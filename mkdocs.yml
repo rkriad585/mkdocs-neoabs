@@ -726,6 +726,8 @@ markdown_extensions:
   - md_in_html
   - def_list
   - tables
+  - pymdownx.snippets:
+      base_path: docs
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.arithmatex:
@@ -734,6 +736,8 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Why NeoAbs: why-neoabs.md
+  - Showcase: showcase.md
   - Getting Started:
     - Installation: getting-started/installation.md
     - Configuration: getting-started/configuration.md
