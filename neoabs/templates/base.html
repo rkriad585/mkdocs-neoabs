@@ -151,7 +151,7 @@
 {% set _shadow_enabled = _shadow_cfg.enabled | default(true) %}
 {% set _shadow_style = _shadow_cfg.style | default('default', true) %}
 {% set _sb_cfg = _vis_cfg.scrollbar if (_vis_cfg.scrollbar is mapping) else {} %}
-{% set _sb_show = _sb_cfg.show | default(true) %}
+{% set _sb_show = _sb_cfg.show | default(false) %}
 {% set _sb_style = _sb_cfg.style | default('thin', true) %}
 {% set _sb_color = _sb_cfg.color | default(none) %}
 {% set _sel_cfg = _vis_cfg.selection if (_vis_cfg.selection is mapping) else {} %}

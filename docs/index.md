@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="150">
+  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="120"
+       data-md-scheme-dark="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg"
+       data-md-scheme-light="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo-light.svg">
 </p>
 
 <h1 align="center">Welcome to NeoAbs</h1>

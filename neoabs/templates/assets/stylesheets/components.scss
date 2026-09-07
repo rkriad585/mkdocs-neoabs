@@ -3472,6 +3472,7 @@ h6:hover .headerlink {
 		max-width: 100%;
 		height: auto;
 		background: transparent !important;
+		transition: transform var(--neoabs-transition-fast);
 	}
 
 	.neoabs-diagram__frame {
@@ -3510,6 +3511,81 @@ h6:hover .headerlink {
 		border: 1px solid var(--neoabs-glass-border);
 		border-radius: var(--neoabs-radius-md);
 		color: var(--neoabs-text-secondary);
+	}
+
+	// Phase 20: diagram view controls (zoom / pan / fullscreen / reset).
+	// The toolbar is hidden until the diagram has rendered (the card gains the
+	// `neoabs-diagram--ready` class once the SVG is in place).
+	.neoabs-diagram__toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--neoabs-space-1);
+		padding: var(--neoabs-space-2) var(--neoabs-space-4) var(--neoabs-space-4);
+	}
+
+	.neoabs-diagram__mark:not(.neoabs-diagram--ready) .neoabs-diagram__toolbar {
+		display: none;
+	}
+
+	.neoabs-diagram__ctl {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: 1px solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-md);
+		background: transparent;
+		color: var(--neoabs-text-secondary);
+		cursor: pointer;
+		transition: border-color var(--neoabs-transition-fast), color var(--neoabs-transition-fast), background var(--neoabs-transition-fast);
+
+		&:hover,
+		&:focus-visible {
+			border-color: var(--neoabs-glass-border-strong);
+			color: var(--neoabs-text-primary);
+			background: var(--neoabs-ghost);
+		}
+
+		&[aria-pressed="true"] {
+			color: var(--neoabs-accent);
+			border-color: var(--neoabs-accent-dim);
+			background: var(--neoabs-accent-dim);
+		}
+	}
+
+	// Zeroed-in view: page scrollbars, not frame scrollbars, do the scrolling.
+	.neoabs-diagram--zoomed .neoabs-diagram__frame {
+		overflow: hidden;
+		cursor: grab;
+		touch-action: none;
+		-webkit-user-select: none;
+		user-select: none;
+
+		&:active {
+			cursor: grabbing;
+		}
+	}
+
+	// Fullscreen targets the mark itself so the toolbar stays reachable.
+	.neoabs-diagram__mark:fullscreen,
+	.neoabs-diagram__mark:-webkit-full-screen {
+		display: flex;
+		flex-direction: column;
+		width: 100vw;
+		height: 100vh;
+		max-width: none;
+		max-height: none;
+		background: var(--neoabs-glass-bg);
+		overflow: auto;
+	}
+
+	.neoabs-diagram__mark:fullscreen .neoabs-diagram__frame,
+	.neoabs-diagram__mark:-webkit-full-screen .neoabs-diagram__frame {
+		flex: 1 1 auto;
+		overflow: auto;
 	}
 }
 
@@ -4030,9 +4106,13 @@ body.neoabs-no-line-highlight .highlight .hll {
 
 .neoabs-keyboard-help__panel {
 	position: relative;
+	display: flex;
+	flex-direction: column;
 	width: 100%;
 	max-width: 420px;
-	margin: 0 var(--neoabs-space-4);
+	max-height: calc(100vh - var(--neoabs-space-8));
+	margin: var(--neoabs-space-4);
+	overflow: hidden;
 	background: rgba(0, 0, 0, 0.9);
 	backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
 	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
@@ -4091,6 +4171,9 @@ body.neoabs-no-line-highlight .highlight .hll {
 }
 
 .neoabs-keyboard-help__body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	padding: var(--neoabs-space-4) var(--neoabs-space-6);
 }
 

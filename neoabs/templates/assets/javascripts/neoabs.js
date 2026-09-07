@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "10"
+  var NEOABS_VERSION = "11"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -301,9 +301,34 @@
       radio.checked = radioScheme === scheme
     })
     updatePaletteIconVisibility()
+    syncSchemeImages(scheme)
     syncHighlightTheme(scheme)
     syncFavicon(scheme)
     if (typeof _mermaidGenericInit === "function") _mermaidGenericInit()
+  }
+
+  // Swap to the next configured palette scheme (dark/light toggle). It cycles
+  // the `.neoabs-palette__input` radios exactly like a manual palette click,
+  // including the persisted preference and primary/accent attributes. Requires
+  // at least two schemes; a single-scheme site simply ignores the shortcut.
+  function toggleScheme() {
+    const radios = Array.prototype.slice.call(document.querySelectorAll(".neoabs-palette__input"))
+    if (radios.length < 2) return false
+    const current = document.documentElement.getAttribute("data-md-color-scheme")
+    let index = radios.findIndex(function (r) {
+      return (r.getAttribute("data-md-color-scheme") || r.value) === current
+    })
+    if (index < 0) index = 0
+    const next = radios[(index + 1) % radios.length]
+    if (!next) return false
+    const scheme = next.getAttribute("data-md-color-scheme") || next.value
+    applyColorScheme(scheme)
+    storageSet("color-scheme", scheme)
+    const primary = next.getAttribute("data-md-color-primary")
+    const accent = next.getAttribute("data-md-color-accent")
+    if (primary) document.documentElement.setAttribute("data-md-color-primary", primary)
+    if (accent) document.documentElement.setAttribute("data-md-color-accent", accent)
+    return true
   }
 
   // Swap the active favicon to match the current color scheme.
@@ -319,6 +344,18 @@
     if (target && link.getAttribute("href") !== target) {
       link.setAttribute("href", target)
     }
+  }
+
+  function syncSchemeImages(scheme) {
+    const isLight = scheme === "default" || scheme === "light"
+    $$("img[data-md-scheme-dark][data-md-scheme-light]").forEach((img) => {
+      const target = isLight
+        ? img.getAttribute("data-md-scheme-light")
+        : img.getAttribute("data-md-scheme-dark")
+      if (target && img.getAttribute("src") !== target) {
+        img.setAttribute("src", target)
+      }
+    })
   }
 
   // Toggle the active highlight.js theme stylesheet to match the scheme.
@@ -1139,6 +1176,222 @@
     // Converts every `.mermaid` block into a themed card and renders its SVG via
     // mermaid.render(text). Uses a stored source so scheme changes can re-render.
 
+    // --- Phase 20: diagram view controls (zoom / pan / fullscreen / reset) ---
+
+    function diagramTransformString(view) {
+      return "translate(" + view.tx + "px," + view.ty + "px) scale(" + view.scale + ")"
+    }
+
+    function diagramCurrentView(mark) {
+      if (!mark._view) mark._view = { tx: 0, ty: 0, scale: 1 }
+      return mark._view
+    }
+
+    function diagramApplyTransform(mark) {
+      const svg = mark.querySelector(".neoabs-diagram__frame svg")
+      if (!svg) return
+      const view = diagramCurrentView(mark)
+      svg.style.transformOrigin = "center center"
+      svg.style.transform = diagramTransformString(view)
+      mark.classList.toggle("neoabs-diagram--zoomed",
+        view.scale !== 1 || view.tx !== 0 || view.ty !== 0)
+    }
+
+    function diagramZoom(mark, factor) {
+      const view = diagramCurrentView(mark)
+      view.scale = Math.max(0.25, Math.min(view.scale * factor, 8))
+      diagramApplyTransform(mark)
+    }
+
+    function diagramPan(mark, dx, dy) {
+      const view = diagramCurrentView(mark)
+      view.tx += dx
+      view.ty += dy
+      diagramApplyTransform(mark)
+    }
+
+    function diagramResetView(mark) {
+      mark._view = { tx: 0, ty: 0, scale: 1 }
+      diagramApplyTransform(mark)
+    }
+
+    function diagramToggleFullscreen(mark) {
+      const doc = document
+      if (doc.fullscreenElement === mark || doc.webkitFullscreenElement === mark) {
+        if (doc.exitFullscreen) doc.exitFullscreen()
+        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen()
+      } else if (mark.requestFullscreen) {
+        mark.requestFullscreen()
+      } else if (mark.webkitRequestFullscreen) {
+        mark.webkitRequestFullscreen()
+      }
+    }
+
+    function diagramSyncFullscreenButtons() {
+      const doc = document
+      const fsEl = doc.fullscreenElement || doc.webkitFullscreenElement || null
+      $$(".neoabs-diagram__mark").forEach(function (mark) {
+        const btn = mark.querySelector('.neoabs-diagram__ctl[data-action="fullscreen"]')
+        if (btn) btn.setAttribute("aria-pressed", mark === fsEl ? "true" : "false")
+      })
+    }
+
+    // A single fullscreenchange hook for the whole document; initMermaid may
+    // re-run after a SPA content swap, so bind only once per page.
+    if (!initMermaid._diagramFsBound) {
+      initMermaid._diagramFsBound = true
+      document.addEventListener("fullscreenchange", diagramSyncFullscreenButtons)
+      document.addEventListener("webkitfullscreenchange", diagramSyncFullscreenButtons)
+    }
+
+    const DIAGRAM_CTL_ICONS = {
+      zoom_in: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>',
+      zoom_out: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M19 13H5v-2h14v2z"/></svg>',
+      reset: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>',
+      pan_up: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>',
+      pan_down: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>',
+      pan_left: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>',
+      pan_right: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"/></svg>',
+      fullscreen: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>'
+    }
+
+    const DIAGRAM_CTL_ACTIONS = {
+      zoom_in: function (mark) { diagramZoom(mark, 1.25) },
+      zoom_out: function (mark) { diagramZoom(mark, 0.8) },
+      reset: function (mark) { diagramResetView(mark) },
+      pan_up: function (mark) { diagramPan(mark, 0, 48) },
+      pan_down: function (mark) { diagramPan(mark, 0, -48) },
+      pan_left: function (mark) { diagramPan(mark, 48, 0) },
+      pan_right: function (mark) { diagramPan(mark, -48, 0) },
+      fullscreen: function (mark) { diagramToggleFullscreen(mark) }
+    }
+
+    const DIAGRAM_CTL_LABELS = {
+      zoom_in: "Zoom in",
+      zoom_out: "Zoom out",
+      reset: "Reset view",
+      pan_up: "Pan up",
+      pan_down: "Pan down",
+      pan_left: "Pan left",
+      pan_right: "Pan right",
+      fullscreen: "Enter fullscreen"
+    }
+
+    // Zoom so the given content point (cx, cy, relative to the frame) stays put.
+    function diagramZoomAt(mark, factor, cx, cy) {
+      const view = diagramCurrentView(mark)
+      const clamped = Math.max(0.25, Math.min(view.scale * factor, 8))
+      const applied = clamped / view.scale
+      view.tx = cx - (cx - view.tx) * applied
+      view.ty = cy - (cy - view.ty) * applied
+      view.scale = clamped
+      diagramApplyTransform(mark)
+    }
+
+    function diagramZoomed(view) {
+      return view.scale !== 1 || view.tx !== 0 || view.ty !== 0
+    }
+
+    // --- Phase 20: mouse wheel, trackpad pinch and touch gestures, drag pan. ---
+    // Delegated listeners live on the frame (not the SVG) so they survive every
+    // scheme-change re-render. Drag/pinch only engage after the viewer is used
+    // (zoomed or while a second finger joins), leaving untouched diagrams on the
+    // default native scroll/selection behaviour.
+    function setupDiagramInteraction(mark, frame) {
+      const pointers = new Map()
+
+      frame.addEventListener("wheel", function (e) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault()
+          const rect = frame.getBoundingClientRect()
+          const factor = Math.pow(1.08, -e.deltaY / 70)
+          diagramZoomAt(mark, factor, e.clientX - rect.left, e.clientY - rect.top)
+          return
+        }
+        if (diagramZoomed(diagramCurrentView(mark))) {
+          e.preventDefault()
+          const dx = typeof e.deltaX === "number" ? e.deltaX : 0
+          const dy = typeof e.deltaY === "number" ? e.deltaY : 0
+          diagramPan(mark, -dx, -dy)
+        }
+      }, { passive: false })
+
+      frame.addEventListener("pointerdown", function (e) {
+        if (e.button !== 0 && e.pointerType !== "touch") return
+        if (e.target.closest && e.target.closest(".neoabs-diagram__toolbar, .neoabs-diagram__ctl")) return
+        if (!diagramZoomed(diagramCurrentView(mark)) && pointers.size === 0) return
+        try { frame.setPointerCapture(e.pointerId) } catch (err) {}
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        e.preventDefault()
+      })
+
+      frame.addEventListener("pointermove", function (e) {
+        const prev = pointers.get(e.pointerId)
+        if (!prev) return
+        if (pointers.size >= 2) {
+          const all = Array.from(pointers.values()).filter(function (p) { return p !== prev })
+          const other = all[0]
+          const prevDist = Math.hypot(prev.x - other.x, prev.y - other.y)
+          const prevMidX = (prev.x + other.x) / 2
+          const prevMidY = (prev.y + other.y) / 2
+          const curX = e.clientX
+          const curY = e.clientY
+          const curDist = Math.hypot(curX - other.x, curY - other.y)
+          if (prevDist > 0 && curDist > 0) {
+            const rect = frame.getBoundingClientRect()
+            const curMidX = (curX + other.x) / 2
+            const curMidY = (curY + other.y) / 2
+            diagramZoomAt(mark, curDist / prevDist, curMidX - rect.left, curMidY - rect.top)
+            const view = diagramCurrentView(mark)
+            view.tx += curMidX - prevMidX
+            view.ty += curMidY - prevMidY
+            diagramApplyTransform(mark)
+          }
+        } else if (diagramZoomed(diagramCurrentView(mark))) {
+          diagramPan(mark, e.clientX - prev.x, e.clientY - prev.y)
+        }
+        prev.x = e.clientX
+        prev.y = e.clientY
+      })
+
+      const endPointer = function (e) {
+        pointers.delete(e.pointerId)
+      }
+      frame.addEventListener("pointerup", endPointer)
+      frame.addEventListener("pointercancel", endPointer)
+
+      frame.addEventListener("touchstart", function (e) {
+        if (diagramZoomed(diagramCurrentView(mark))) e.preventDefault()
+      }, { passive: false })
+
+      frame.addEventListener("dblclick", function (e) {
+        if (e.target.closest && e.target.closest(".neoabs-diagram__toolbar, .neoabs-diagram__ctl")) return
+        const rect = frame.getBoundingClientRect()
+        diagramZoomAt(mark, 1.6, e.clientX - rect.left, e.clientY - rect.top)
+        e.preventDefault()
+      })
+
+      // Safari-specific trackpad pinch gestures.
+      frame.addEventListener("gesturestart", function (e) {
+        e.preventDefault()
+        frame._neoabsGesture = { scale: 1 }
+      })
+      frame.addEventListener("gesturechange", function (e) {
+        e.preventDefault()
+        const base = frame._neoabsGesture || (frame._neoabsGesture = { scale: 1 })
+        const factor = e.scale > 0 ? e.scale / base.scale : 1
+        if (factor === 1 || !isFinite(factor)) return
+        base.scale = e.scale
+        const rect = frame.getBoundingClientRect()
+        const cx = typeof e.clientX === "number" ? e.clientX - rect.left : rect.width / 2
+        const cy = typeof e.clientY === "number" ? e.clientY - rect.top : rect.height / 2
+        diagramZoomAt(mark, factor, cx, cy)
+      })
+      frame.addEventListener("gestureend", function () {
+        frame._neoabsGesture = null
+      })
+    }
+
     function mermaidRenderDiagram(mark) {
       const src = (mark.dataset.mermaidSource || "").trim()
       const frame = mark.querySelector(".neoabs-diagram__frame")
@@ -1157,6 +1410,7 @@
             try { result.bindFunctions(frame) } catch {}
           }
           mark.classList.add("neoabs-diagram--ready")
+          diagramApplyTransform(mark)
         })
         .catch(function (err) {
           // Never lose content: fall back to the raw source in the card.
@@ -1191,6 +1445,33 @@
       frame.className = "neoabs-diagram__frame"
       frame.innerHTML = '<span class="neoabs-diagram__loading">rendering…</span>'
       mark.appendChild(frame)
+
+      // Phase 20: control toolbar (zoom / pan / fullscreen / reset). Hidden by
+      // CSS until the diagram has rendered; skipped entirely when the
+      // `components.mermaid.controls` toggle is off.
+      if (componentShow("mermaid", "controls")) {
+        const toolbar = document.createElement("div")
+        toolbar.className = "neoabs-diagram__toolbar"
+        const controlIds = ["zoom_in", "zoom_out", "reset", "pan_up", "pan_down", "pan_left", "pan_right", "fullscreen"]
+        controlIds.forEach(function (id) {
+          const btn = document.createElement("button")
+          btn.type = "button"
+          btn.className = "neoabs-diagram__ctl"
+          btn.dataset.action = id
+          btn.title = DIAGRAM_CTL_LABELS[id]
+          btn.setAttribute("aria-label", DIAGRAM_CTL_LABELS[id])
+          if (id === "fullscreen") btn.setAttribute("aria-pressed", "false")
+          btn.innerHTML = DIAGRAM_CTL_ICONS[id]
+          btn.addEventListener("click", function (e) {
+            e.preventDefault()
+            e.stopPropagation()
+            DIAGRAM_CTL_ACTIONS[id](mark)
+          })
+          toolbar.appendChild(btn)
+        })
+        mark.appendChild(toolbar)
+        setupDiagramInteraction(mark, frame)
+      }
 
       const card = document.createElement("div")
       card.className = "neoabs-diagram"
@@ -1541,10 +1822,25 @@
     if (name === "toggle_reading_mode") {
       return toggleReadingMode
     }
+    if (name === "toggle_scheme") {
+      return toggleScheme
+    }
+    if (name === "toggle_repo_popover") {
+      return toggleRepoPopover
+    }
+    if (name === "open_repo") {
+      return openRepoLink
+    }
     return null
   }
 
   function initKeyboardNav() {
+    // Phase 20: expose the new actions so custom `keyboard.custom` entries can
+    // reference them by name.
+    keyboardActions.toggle_scheme = toggleScheme
+    keyboardActions.toggle_repo_popover = toggleRepoPopover
+    keyboardActions.open_repo = openRepoLink
+
     document.addEventListener("compositionstart", () => { isComposing = true })
     document.addEventListener("compositionend", () => { isComposing = false })
 
@@ -1662,6 +1958,27 @@
         toggleActionCluster()
         return
       }
+
+      // Ctrl/Cmd+Shift+L — Switch to the next color scheme (Phase 20).
+      // Requires at least two configured palette schemes; otherwise the key
+      // is ignored (toggleScheme returns false and no default is triggered).
+      if (kbdEnabled("toggle_scheme") &&
+          matchesKeyCombo(e, kbdKey("toggle_scheme", "Ctrl+Shift+L"))) {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleScheme()
+        return
+      }
+
+      // Ctrl/Cmd+Shift+G — Toggle the repo popover, or open the repository
+      // link when the popover is unavailable (Phase 20).
+      if (kbdEnabled("toggle_repo_popover") &&
+          matchesKeyCombo(e, kbdKey("toggle_repo_popover", "Ctrl+Shift+G"))) {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleRepoPopover()
+        return
+      }
     })
   }
 
@@ -1701,6 +2018,10 @@
       displayKey(kbdKey("toggle_reading_mode", "Alt+Shift+R")), kbdLabel("toggle_reading_mode", "Toggle reading mode"))
     push(kbdEnabled("toggle_action_cluster"),
       displayKey(kbdKey("toggle_action_cluster", "Alt+Shift+A")), kbdLabel("toggle_action_cluster", "Toggle action cluster"))
+    push($$(".neoabs-palette__input").length > 1 && kbdEnabled("toggle_scheme"),
+      displayKey(kbdKey("toggle_scheme", "Ctrl+Shift+L")), kbdLabel("toggle_scheme", "Toggle color scheme"))
+    push(componentShow("repo_popover", "show") && kbdEnabled("toggle_repo_popover"),
+      displayKey(kbdKey("toggle_repo_popover", "Ctrl+Shift+G")), kbdLabel("toggle_repo_popover", "Toggle repo popover"))
     push(kbdEnabled("timer_toggle"),
       displayKey(kbdKey("timer_toggle", "Alt+Shift+T")), kbdLabel("timer_toggle", "Toggle focus timer"))
     push(componentShow("keyboard_help", "show") && kbdEnabled("help"),
@@ -3635,6 +3956,39 @@ actionClusterEnsureUi(cfg)
     })
     pop.addEventListener("mouseenter", cancelClose)
     pop.addEventListener("mouseleave", scheduleClose)
+
+    // Phase 20: expose the popover open/close so the keyboard shortcut
+    // (`toggle_repo_popover`, default Ctrl/Cmd+Shift+G) can drive it without
+    // coupling the shortcut handler to the popover's internals.
+    pop._neoabsRepoShow = loadAndShow
+    pop._neoabsRepoHide = hide
+  }
+
+  // Phase 20: open the configured repository link in a new tab. Used as the
+  // fallback for `toggle_repo_popover` when the popover feature is off, when
+  // no GitHub repo is configured, or when the popover element is missing.
+  function openRepoLink() {
+    const link = document.querySelector(".neoabs-header__repo")
+    if (!link || !link.href) return false
+    window.open(link.href, "_blank", "noopener")
+    return true
+  }
+
+  // Phase 20: keyboard target for the repo. When the repo popover is available
+  // (feature on + GitHub repo configured) the shortcut toggles it on/off;
+  // otherwise it falls back to opening the repo link in a new tab.
+  function toggleRepoPopover() {
+    const link = document.querySelector(".neoabs-header__repo")
+    if (link) {
+      const wrap = link.parentElement
+      const pop = wrap ? wrap.querySelector(".neoabs-repo-pop") : null
+      if (pop && typeof pop._neoabsRepoShow === "function") {
+        if (pop.classList.contains("neoabs-repo-pop--show")) pop._neoabsRepoHide()
+        else pop._neoabsRepoShow()
+        return true
+      }
+    }
+    return openRepoLink()
   }
 
   // ---------------------------------------------------------------------------

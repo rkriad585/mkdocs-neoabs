@@ -1986,6 +1986,153 @@ theme:
 
 ---
 
+## Phase 20: Keyboard Scheme/Repo Shortcuts, Hidden Scrollbar Default & Mermaid Diagram Controls
+
+**Goal:** Three additive quality-of-life upgrades:
+(a) two new keyboard shortcuts — **toggle color scheme** and **toggle repo popover**;
+(b) hide the browser's native scrollbar **by default** (still configurable via
+`theme.neoabs.scrollbar.show`);
+(c) **per-diagram controls** (zoom in/out, pan up/down/left/right, fullscreen,
+reset) on every rendered mermaid diagram. All follow the Mandatory Working
+Rules: nothing existing is removed, everything stays configurable, and the new
+features are enabled by default (except the scrollbar, which the user
+explicitly asked to hide by default).
+
+### Config additions
+
+```yaml
+theme:
+  neoabs:
+    # ...existing keys...
+
+    keyboard:            # (extended from Phase 7 — two new shortcuts)
+      shortcuts:
+        toggle_scheme:           # Phase 20
+          key: "Ctrl+Shift+L"    # switch to the next palette scheme (default)
+          label: "Toggle color scheme"
+          enabled: true
+        toggle_repo_popover:     # Phase 20
+          key: "Ctrl+Shift+G"    # show/hide the repo popover (default)
+          label: "Toggle repo popover"
+          enabled: true
+        # custom actions newly available: toggle_scheme | toggle_repo_popover | open_repo
+
+    components:
+      mermaid:
+        show: true
+        controls: true           # Phase 20: per-diagram zoom/pan/fullscreen toolbar
+
+    scrollbar:                   # (extended from Phase 9 — DEFAULT FLIPPED)
+      show: false                # hide the native browser scrollbar (new default)
+                                 # set show: true to restore the native scrollbar
+      style: "thin"              # "thin" | "default" | "none"
+```
+
+> Phase 20 does not hide the ability to **scroll** — it only hides the visible
+> scrollbar chrome. Set `scrollbar.show: true` to bring the native scrollbar
+> back. Diagram fullscreen/zoom controls are built into `mermaidUpgrade` and
+> gated by `components.mermaid.controls` (default `true`).
+
+### Must follow (mandatory rules)
+
+> **Binding rules for this phase** (see the ⚠️ Mandatory Working Rules at the
+> top of the file). Violating any of these makes this phase a defect:
+>
+> - **Don't remove any element** — the two shortcuts, the scrollbar toggle, and
+>   the diagram toolbar are all purely additive. Existing markup, CSS, JS, and
+>   features are untouched.
+> - **Don't remove any feature** — all previously delivered behavior is intact;
+>   the scrollbar change only flips a *default hidden* state (the previous
+>   `style="thin"` custom scrollbar styling still applies when `show` is on).
+> - **Don't remove any function** — existing JS functions (`applyColorScheme`,
+>   `initRepoPopover`, `initMermaid`, `initKeyboardNav`, ...) are preserved; the
+>   phase adds new helpers beside them.
+> - **Don't make any typo** — every class name (`neoabs-diagram__toolbar`,
+>   `neoabs-diagram__ctl`, `neoabs-header__repo`, `neoabs-repo-pop`), attribute
+>   (`data-md-neoabs-scrollbar="false"`, `data-action`, `aria-pressed`), and
+>   shortcut combo (`Ctrl+Shift+L`, `Ctrl+Shift+G`) must match the actual
+>   emitted markup and config exactly.
+> - **Don't touch any code outside this phase's topic** — only the files
+>   listed in this phase may be edited.
+> - **Don't miss any feature in this phase** — implement **every** listed key,
+>   shortcut, and button; nothing may be skipped or left partially wired.
+> - **Everything stays enabled/active by default** — both shortcuts are on by
+>   default; diagram controls are on by default; the **only** default that
+>   changed on request is the scrollbar, which is now hidden by default but
+>   easily restored with `scrollbar.show: true`.
+> - **Verify before done** — `npm run build`, `mkdocs build --quiet`,
+>   `npm test`, and the relevant harnesses must pass at the end of this
+>   phase.
+
+### Implementation
+
+**Files to modify:**
+- `neoabs/plugins/neoabs_plugin.py`: add `toggle_scheme` (`Ctrl+Shift+L`,
+  "Toggle color scheme") and `toggle_repo_popover` (`Ctrl+Shift+G`,
+  "Toggle repo popover") to `_NEOABS_DEFAULT_KEYBOARD["shortcuts"]`; update the
+  shortcut-list comment. No new validation needed — these entries validate like
+  every other shortcut.
+- `neoabs/templates/base.html`:
+  - Flip the scrollbar default: `{% set _sb_show = _sb_cfg.show | default(false) %}`.
+    The `data-md-neoabs-scrollbar="false"` emission (L210) and the Phase 9 SCSS
+    that hides the native scrollbar for that state already exist — with the new
+    default, **every page now emits the hidden-scrollbar attribute unless
+    `scrollbar.show: true`**.
+  - Add `"keyboard"`-adjacent config passthrough is already present; no template
+    change is needed for the two new shortcuts (they ride the existing
+    `_config.keyboard` injection).
+- `neoabs/templates/assets/javascripts/neoabs.js`:
+  - `NEOABS_VERSION` `"10"` → `"11"`.
+  - `toggleScheme()`: cycle the `.neoabs-palette__input` radios
+    like a manual click, calling the existing `applyColorScheme`, persisting via
+    `storageSet("color-scheme", ...)`, and setting primary/accent attrs from the
+    next radio's `data-md-color-primary`/`data-md-color-accent`. Returns `false`
+    (ignored) when `< 2` radios exist. `toggleScheme` is also exposed so custom
+    `keyboard.custom` entries can reference `toggle_scheme`.
+  - Repo popover: in `initRepoPopover`, expose the existing `loadAndShow`/`hide`
+    closures as `pop._neoabsRepoShow`/`pop._neoabsRepoHide`. Add
+    `openRepoLink()` (open `.neoabs-header__repo` href in a new tab) and
+    `toggleRepoPopover()` (if a popover with a `_neoabsRepoShow`/`_neoabsRepoHide`
+    works, toggle `.neoabs-repo-pop--show`; otherwise fall back to
+    `openRepoLink()`).
+  - Keyboard wiring: register `keyboardActions.toggle_scheme` /
+    `toggle_repo_popover` / `open_repo`; add both combos to the `initKeyboardNav`
+    keydown handler (Ctrl/Cmd+Shift+L and Ctrl/Cmd+Shift+G); add two rows to the
+    "?" help modal (toggle-scheme row only shown when `>1` palette radio exists).
+  - Mermaid: in `mermaidUpgrade` build a `.neoabs-diagram__toolbar` of
+    `.neoabs-diagram__ctl[data-action=...]` buttons (zoom_in, zoom_out, reset,
+    pan_up, pan_down, pan_left, pan_right, fullscreen), gated by
+    `components.mermaid.controls`; wire them to `diagramZoom`/`diagramPan`/
+    `diagramResetView`/`diagramToggleFullscreen` operating on a `mark._view`
+    `{tx,ty,scale}`. Re-apply the persisted transform after every re-render
+    (`diagramApplyTransform` inside `mermaidRenderDiagram`'s `.then`), so a
+    scheme change that re-renders the SVG keeps the current pan/zoom.
+    `fullscreenchange`/`webkitfullscreenchange` sync the fullscreen button's
+    `aria-pressed`.
+- `neoabs/templates/assets/stylesheets/components.scss`: add `.neoabs-diagram__toolbar`,
+  `.neoabs-diagram__ctl` (with `:hover`/`:focus-visible` and `[aria-pressed="true"]`),
+  `:not(.neoabs-diagram--ready) .neoabs-diagram__toolbar { display: none }`,
+  `.neoabs-diagram--zoomed .neoabs-diagram__frame { overflow: hidden }`, and the
+  `:fullscreen`/`-webkit-full-screen` styles targeting `.neoabs-diagram__mark`;
+  add `transition: transform ...` to the diagram `svg`. **regenerate**
+  `neoabs/templates/assets/neoabs.css` via `npm run build`.
+- `mkdocs.yml`: `extra.neoabs_version: 16`; document the two new shortcuts
+  (L316+ keyboard block) and `open_repo` in the custom-action list; note
+  `components.mermaid.controls: true`; flip the `scrollbar.show` reference to
+  `false`.
+- `PLAN.md`: this Phase 20 section + implementation-order row.
+
+**JS variable & function index (reference):** `toggleScheme()` at L~257;
+`openRepoLink()`/`toggleRepoPopover()` after `initRepoPopover` L~3670;
+`diagramZoom/diagramPan/diagramResetView/diagramToggleFullscreen` +
+`diagramApplyTransform/diagramCurrentView/diagramSyncFullscreenButtons` in the
+mermaid section L~1126; `keyboardActions` registration + keydown combos +
+help-modal rows in the keyboard section L~1548–1850. Scrollbar: base.html
+L154 + SCSS neoabs.scss L473–489 already hide native scrollbars for
+`[data-md-neoabs-scrollbar="false"]`.
+
+---
+
 ## Implementation Order
 
 | Phase | Priority | Effort | Description |
@@ -2009,6 +2156,7 @@ theme:
 | 17 | Medium | Medium | Focus timer (TOC status, reading chip, settings popup) |
 | 18 | Low | Small | Action shortcuts & cluster customization ("and more") |
 | 19 | Medium | Medium | AI-readable content mode (markdown mirrors, llms.txt, watermark) |
+| 20 | Medium | Medium | Keyboard scheme/repo shortcuts, hidden scrollbar default, mermaid diagram controls |
 
 > **Per-phase checklist (rule 6):** each phase's config block above IS the
 > acceptance list. Implement every listed key and behavior; a phase is done only

@@ -157,8 +157,8 @@ _NEOABS_DEFAULT_COMPONENTS = {
 # Every built-in shortcut is configurable and ON by default. `custom` holds
 # user-defined shortcuts that dispatch to built-in action names; a built-in
 # set of actions (scroll_to_top, toggle_sidebar, toggle_toc, toggle_notes,
-# open_search, open_help, toggle_reading_mode, toggle_action_cluster) is
-# resolved in `neoabs.js`.
+# open_search, open_help, toggle_reading_mode, toggle_action_cluster,
+# toggle_scheme, toggle_repo_popover, open_repo) is resolved in `neoabs.js`.
 _NEOABS_DEFAULT_KEYBOARD = {
     "enabled": True,
     "shortcuts": {
@@ -212,6 +212,16 @@ _NEOABS_DEFAULT_KEYBOARD = {
             "label": "Toggle reading mode",
             "enabled": True,
             "persisted": True,
+        },
+        "toggle_scheme": {
+            "key": "Ctrl+Shift+L",
+            "label": "Toggle color scheme",
+            "enabled": True,
+        },
+        "toggle_repo_popover": {
+            "key": "Ctrl+Shift+G",
+            "label": "Toggle repo popover",
+            "enabled": True,
         },
     },
     "custom": [],

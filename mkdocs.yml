@@ -124,6 +124,7 @@ theme:
     #   mermaid:
     #     show: true                 # Enable mermaid diagram rendering
     #     cdn_url: ""                # Custom mermaid CDN URL
+    #     controls: true             # Show zoom/pan/fullscreen controls on diagrams (default true)
     #   math:
     #     show: true                 # Enable math (KaTeX) rendering
     #     cdn_url: ""                # Custom KaTeX CDN URL
@@ -365,10 +366,18 @@ theme:
     #       key: "Alt+Shift+T"         # Open focus timer settings (Phase 17; default Alt+Shift+T)
     #       label: "Toggle focus timer"
     #       enabled: true              # Set false to disable this shortcut
+    #     toggle_scheme:
+    #       key: "Ctrl+Shift+L"        # Switch to the next color scheme (Phase 20; default Ctrl+Shift+L)
+    #       label: "Toggle color scheme"
+    #       enabled: true              # Set false to disable this shortcut
+    #     toggle_repo_popover:
+    #       key: "Ctrl+Shift+G"        # Show/hide the repo popover (Phase 20; default Ctrl+Shift+G). Falls back to opening the repo link when unavailable.
+    #       label: "Toggle repo popover"
+    #       enabled: true              # Set false to disable this shortcut
     #   custom:                        # Your own shortcuts (list of entries)
     #     - key: "g"                   #   Press "g" to jump to the top
     #       label: "Go to top"
-    #       action: "scroll_to_top"    #     scroll_to_top | toggle_reading_mode | registered action name
+    #       action: "scroll_to_top"    #     scroll_to_top | toggle_reading_mode | toggle_scheme | toggle_repo_popover | open_repo | registered action name
     #     - key: "r"                   #   Press "r" to flip reading mode
     #       label: "Toggle reading mode"
     #       action: "toggle_reading_mode"
@@ -425,7 +434,7 @@ theme:
     #   enabled: true                  # Enable shadows
     #   style: "default"               # "default" | "subtle" | "none"
     # scrollbar:
-    #   show: true                     # Show scrollbars
+    #   show: false                    # Hide the native scrollbar (default false; set true to show it again)
     #   style: "thin"                  # "thin" | "default" | "none"
     #   color: ""                      # Custom scrollbar color
     # selection:
@@ -627,7 +636,7 @@ theme:
     #     include_version: true         #   theme version
 
 extra:
-  neoabs_version: 15
+  neoabs_version: 16
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg
