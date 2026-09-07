@@ -131,6 +131,11 @@
   --neoabs-reading-line-height: 1.75;
   --neoabs-reading-measure: 100%;
 
+  // Phase 16 action cluster (overridable via theme.neoabs.action_cluster)
+  --neoabs-action-cluster-bottom: 16px;
+  --neoabs-action-cluster-left: 16px;
+  --neoabs-action-cluster-size: 44px;
+
   // Phase 11 content area (overridable via theme.neoabs.content)
   --neoabs-content-glass-bg: var(--neoabs-glass-bg);
   --neoabs-content-glass-blur: var(--neoabs-glass-blur);

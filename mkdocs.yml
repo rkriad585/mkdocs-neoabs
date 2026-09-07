@@ -357,6 +357,10 @@ theme:
     #       label: "Toggle reading mode"
     #       enabled: true              # Set false to disable this shortcut
     #       persisted: true            # Remember reading mode across reloads (default true)
+    #     toggle_action_cluster:
+    #       key: "Alt+Shift+A"         # Expand/collapse the action cluster (Phase 16; default Alt+Shift+A)
+    #       label: "Toggle action cluster"
+    #       enabled: true              # Set false to disable this shortcut
     #   custom:                        # Your own shortcuts (list of entries)
     #     - key: "g"                   #   Press "g" to jump to the top
     #       label: "Go to top"
@@ -514,6 +518,37 @@ theme:
     #     font_size: "1.125rem"
     #     line_height: "1.75"
     #     measure: "100%"
+    # --- Phase 16: Action cluster (optional) ------------------------------------
+    # A floating "plus" hub (bottom-left by default) that expands into a stack
+    # of quick actions: keyboard shortcuts, notes, focus timer, reading mode.
+    # Every aspect is configurable; defaults keep the feature fully ON. When
+    # `replaces_notes_button` is true the standalone notes launcher is hidden
+    # (the notes feature, panel, and shortcut stay untouched). The shortcut is
+    # also exposed as `keyboard.shortcuts.toggle_action_cluster` (that key wins
+    # over the default Alt+Shift+A if both are set).
+    # action_cluster:
+    #   enabled: true                   # Master switch for the whole cluster
+    #   position: "bottom-left"         #  bottom-left | bottom-right
+    #   offset: { bottom: "16px", left: "16px" }
+    #   main:
+    #     icon: "plus"                  #  plus | menu | notes
+    #     size: "44px"
+    #     glass: true                   # Reuse the glass pill look
+    #     icon_transform: true          # plus morphs into x while open
+    #   behavior:
+    #     min_actions: 2                # Hide the cluster if fewer actions are enabled
+    #     close_on_select: true         # Collapse after an action is chosen
+    #     close_on_escape: true
+    #     close_on_outside: true
+    #     animation: "normal"           #  normal | reduced | none (Phase 9 tokens apply)
+    #     tooltips: true                # Show action labels on hover / focus
+    #     focus_trap: true              # Keep Tab cycling inside the open cluster
+    #   actions:                        # Each slot is independently configurable
+    #     - { id: keyboard_help, icon: "help",    label: "Keyboard shortcuts", enabled: true }
+    #     - { id: notes,          icon: "notes",   label: "Open notes panel",  enabled: true }
+    #     - { id: timer,          icon: "timer",   label: "Focus timer",        enabled: true }
+    #     - { id: reading_mode,   icon: "reading", label: "Reading mode",       enabled: true }
+    #   replaces_notes_button: true     # Hide the standalone notes launcher
 
 extra:
   neoabs_version: 13
@@ -562,11 +597,12 @@ plugins:
       # notes: true                  # Notes/annotations panel (default true)
       # notes_ttl: 259200000         # Notes TTL in ms (default 259200000 = 3 days)
       #
-      # The Phase 1-13 `theme.neoabs.*` keys are all accepted here as a
+      # The Phase 1-16 `theme.neoabs.*` keys are all accepted here as a
       # convenience and behave identically (and win over `theme.neoabs`):
       # glass, dot_matrix, animation, border, colors, typography, spacing,
       # border_radius, transitions, shadows, components, header, footer,
-      # sidebar, toc, search, keyboard, content, reading_mode, custom_css, custom_js.
+      # sidebar, toc, search, keyboard, content, reading_mode, action_cluster,
+      # custom_css, custom_js.
       # glass: "medium"              # "light" | "medium" | "heavy" | "none"
       # dot_matrix: true             # Show the dot matrix overlay
       # animation: "normal"          # "normal" | "reduced" | "none"

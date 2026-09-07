@@ -190,6 +190,7 @@
 {% endif %}
 {% set _reading_hide_list = _reading_hide | join(' ') %}
 {% set _reading_notes_show = _reading.notes.show | default(true) %}
+{% set _ac = config.extra.neoabs_action_cluster | default({}) %}
 <!doctype html>
 <html lang="{{ config.theme.language | default('en') }}"
       class="no-js"
@@ -206,7 +207,7 @@
       data-md-color-scheme="{{ _scheme }}"
       data-md-neoabs-glass="{{ _glass_intensity }}"
       data-md-neoabs-animation="{{ _anim_mode }}"
-      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-neoabs-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-neoabs-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-neoabs-search="false"{% endif %}{% if _ct_content_glass %} data-md-neoabs-content-glass="true"{% endif %}{% if _ct_tables_responsive == false %} data-md-neoabs-tables-responsive="false"{% endif %}{% if _ct_tables_striped %} data-md-neoabs-tables-striped="true"{% endif %}{% if _ct_tables_bordered %} data-md-neoabs-tables-bordered="true"{% endif %}{% if _ct_admonitions_enabled == false %} data-md-neoabs-admonitions="false"{% endif %}{% if (_comp.tags.show | default(true)) == false %} data-md-neoabs-tags="false"{% endif %}{% if _ct_task_custom == false %} data-md-neoabs-task-checkbox-native="true"{% endif %}{% if _pg_layout and _pg_layout != "default" %} data-md-neoabs-layout="{{ _pg_layout }}"{% endif %}{% if _reading_hide_list %} data-md-neoabs-reading-hide="{{ _reading_hide_list }}"{% endif %}{% if _reading_notes_show == false %} data-md-neoabs-reading-notes="false"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
+      data-md-neoabs-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-neoabs-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-neoabs-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-neoabs-toast-animation="false"{% endif %}{% if _border_style %} data-md-neoabs-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-neoabs-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-neoabs-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-neoabs-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-neoabs-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-neoabs-search="false"{% endif %}{% if _ct_content_glass %} data-md-neoabs-content-glass="true"{% endif %}{% if _ct_tables_responsive == false %} data-md-neoabs-tables-responsive="false"{% endif %}{% if _ct_tables_striped %} data-md-neoabs-tables-striped="true"{% endif %}{% if _ct_tables_bordered %} data-md-neoabs-tables-bordered="true"{% endif %}{% if _ct_admonitions_enabled == false %} data-md-neoabs-admonitions="false"{% endif %}{% if (_comp.tags.show | default(true)) == false %} data-md-neoabs-tags="false"{% endif %}{% if _ct_task_custom == false %} data-md-neoabs-task-checkbox-native="true"{% endif %}{% if _pg_layout and _pg_layout != "default" %} data-md-neoabs-layout="{{ _pg_layout }}"{% endif %}{% if _reading_hide_list %} data-md-neoabs-reading-hide="{{ _reading_hide_list }}"{% endif %}{% if _reading_notes_show == false %} data-md-neoabs-reading-notes="false"{% endif %}{% if _ac.enabled | default(true) and _ac.replaces_notes_button %} data-md-neoabs-action-cluster="replace-notes"{% endif %}{% if config.extra and config.extra.neoabs_custom_html_attrs %} {{ config.extra.neoabs_custom_html_attrs | safe }}{% endif %}>
   <head>
     {% set _asset_version = config.extra.neoabs_version | default('1') %}
     {% block site_meta %}
@@ -626,6 +627,7 @@
         },
         "keyboard": {{ config.extra.neoabs_keyboard | default({}) | tojson }},
         "reading_mode": {{ config.extra.neoabs_reading_mode | default({}) | tojson }},
+        "action_cluster": {{ config.extra.neoabs_action_cluster | default({}) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {

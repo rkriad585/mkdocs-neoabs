@@ -1575,8 +1575,17 @@
       const drawerCheckbox = document.getElementById("neoabs-drawer")
       const drawerOpen = drawerCheckbox && drawerCheckbox.checked
 
-      // Escape — Close active overlay (search, drawer, help modal)
+      // Escape — Close active overlay (action cluster, search, drawer, help modal)
       if (kbdEnabled("close") && matchesKeyCombo(e, kbdKey("close", "Escape"))) {
+        if (_actionClusterOpen) {
+          const acb = (_config.action_cluster && _config.action_cluster.behavior) || {}
+          if (acb.close_on_escape !== false) {
+            e.preventDefault()
+            e.stopPropagation()
+            actionClusterSetOpen(false)
+            return
+          }
+        }
         if (searchOpen && searchEl._neoabsClose) {
           e.preventDefault()
           e.stopPropagation()
@@ -1623,6 +1632,15 @@
         toggleKeyboardHelp()
         return
       }
+
+      // Alt+Shift+A — Expand/collapse the action cluster (Phase 16).
+      if (kbdEnabled("toggle_action_cluster") &&
+          matchesKeyCombo(e, kbdKey("toggle_action_cluster", "Alt+Shift+A"))) {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleActionCluster()
+        return
+      }
     })
   }
 
@@ -1660,6 +1678,8 @@
       displayKey(kbdKey("toggle_toc", "Ctrl+Shift+T")), kbdLabel("toggle_toc", "Toggle table of contents"))
     push(kbdEnabled("toggle_reading_mode"),
       displayKey(kbdKey("toggle_reading_mode", "Alt+Shift+R")), kbdLabel("toggle_reading_mode", "Toggle reading mode"))
+    push(kbdEnabled("toggle_action_cluster"),
+      displayKey(kbdKey("toggle_action_cluster", "Alt+Shift+A")), kbdLabel("toggle_action_cluster", "Toggle action cluster"))
     push(componentShow("keyboard_help", "show") && kbdEnabled("help"),
       displayKey(kbdKey("help", "?")), kbdLabel("help", "Show keyboard shortcuts"))
 
@@ -2297,6 +2317,186 @@
     }
 
     document.addEventListener("keydown", notesFocusTrap)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 16: Action cluster (plus menu)
+  // ---------------------------------------------------------------------------
+
+  // Per-icon inline SVG (stroke style, matching the back-to-top / copy icons).
+  // Keys are the `action_cluster.actions[].icon` ids plus the main button
+  // icons (`plus`, `menu`, `notes`).
+  const ACTION_CLUSTER_ICONS = {
+    plus: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
+    menu: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>',
+    help: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    notes: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>',
+    timer: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><line x1="12" y1="9" x2="12" y2="13"></line><line x1="14.5" y1="16.5" x2="17" y2="18.5"></line><line x1="9" y1="2" x2="15" y2="2"></line></svg>',
+    reading: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 4.5 7.5 4 4 4v13c3.5 0 6.5.5 8 2.5 1.5-2 4.5-2.5 8-2.5V4c-3.5 0-6.5.5-8 2.5z"></path><line x1="12" y1="6.5" x2="12" y2="19.5"></line></svg>'
+  }
+
+  let _actionClusterOpen = false
+
+  function toggleActionCluster() {
+    actionClusterSetOpen(!_actionClusterOpen)
+  }
+
+  // Apply/remove the open state. The state lives on the menu (class, aria,
+  // inert) and the main button's aria-expanded; nothing is removed from the
+  // DOM, mirroring the reading-mode attribute pattern.
+  function actionClusterSetOpen(open) {
+    _actionClusterOpen = open
+    const cluster = $(".neoabs-action-cluster")
+    if (!cluster) return
+    cluster.classList.toggle("neoabs-action-cluster--open", open)
+    const menu = cluster.querySelector(".neoabs-action-cluster__menu")
+    if (menu) {
+      menu.setAttribute("aria-hidden", open ? "false" : "true")
+      menu.inert = !open
+    }
+    const main = cluster.querySelector(".neoabs-action-cluster__main")
+    if (main) main.setAttribute("aria-expanded", String(open))
+  }
+
+  // Dispatch an action slot through the Phase 7 registry. The slot ids differ
+  // from the keyboard-action names (keyboard_help -> open_help, notes ->
+  // toggle_notes, reading_mode -> toggle_reading_mode); timer -> timer_toggle
+  // is an engine that lands in Phase 17 and is a no-op until then.
+  function actionClusterDispatch(id) {
+    const name = id === "keyboard_help" ? "open_help"
+      : id === "notes" ? "toggle_notes"
+      : id === "reading_mode" ? "toggle_reading_mode"
+      : id === "timer" ? "timer_toggle" : id
+    const fn = keyboardActions[name] || resolveKeyboardAction(name)
+    if (typeof fn === "function") fn()
+    const cfg = _config.action_cluster || {}
+    const behavior = cfg.behavior || {}
+    if (behavior.close_on_select !== false) actionClusterSetOpen(false)
+  }
+
+  // Keep Tab cycling inside the open cluster (`behavior.focus_trap`).
+  function actionClusterFocusTrap(e) {
+    if (!_actionClusterOpen) return
+    if (e.key !== "Tab") return
+    const cluster = $(".neoabs-action-cluster")
+    if (!cluster) return
+    const focusables = $$(".neoabs-action-cluster button", cluster)
+    if (!focusables.length) return
+    const first = focusables[0]
+    const last = focusables[focusables.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
+  // Build (once) the cluster DOM from the configured `actions` list.
+  function actionClusterEnsureUi(cfg) {
+    if (document.querySelector(".neoabs-action-cluster")) return
+
+    const actions = Array.isArray(cfg.actions)
+      ? cfg.actions.filter((a) => a && a.enabled !== false)
+      : []
+    const position = cfg.position === "bottom-right" ? "bottom-right" : "bottom-left"
+    const offset = cfg.offset || {}
+    const behavior = cfg.behavior || {}
+    const mainCfg = cfg.main || {}
+    const isRight = position === "bottom-right"
+
+    const cluster = document.createElement("div")
+    cluster.className = "neoabs-action-cluster"
+    cluster.setAttribute("data-md-neoabs-action-cluster-position", position)
+    if (behavior.tooltips === false) {
+      cluster.setAttribute("data-md-neoabs-action-cluster-tooltips", "false")
+    }
+    if (mainCfg.glass === false) {
+      cluster.setAttribute("data-md-neoabs-action-cluster-glass", "false")
+    }
+    if (mainCfg.icon_transform === false) {
+      cluster.setAttribute("data-md-neoabs-action-cluster-transform", "false")
+    }
+    if (behavior.animation && behavior.animation !== "normal") {
+      cluster.setAttribute("data-md-neoabs-action-cluster-animation", behavior.animation)
+    }
+
+    // Per-instance offsets / size from `action_cluster.offset` / `main.size`.
+    cluster.style.setProperty("--neoabs-action-cluster-bottom",
+      (typeof offset.bottom === "string" && offset.bottom) || "16px")
+    const sideOffset = isRight ? offset.right : offset.left
+    cluster.style.setProperty(isRight ? "--neoabs-action-cluster-right" : "--neoabs-action-cluster-left",
+      (typeof sideOffset === "string" && sideOffset) || "16px")
+    if (typeof mainCfg.size === "string" && mainCfg.size) {
+      cluster.style.setProperty("--neoabs-action-cluster-size", mainCfg.size)
+    }
+
+    // Stack of actions revealed above the main button. The closest slot to the
+    // main button is the last list item so the stagger reads bottom-up.
+    const menu = document.createElement("div")
+    menu.className = "neoabs-action-cluster__menu"
+    menu.id = "neoabs-action-cluster-menu"
+    menu.setAttribute("role", "group")
+    menu.setAttribute("aria-label", "Quick actions")
+    menu.setAttribute("aria-hidden", "true")
+    menu.inert = true
+
+    actions.forEach((action, index) => {
+      const btn = document.createElement("button")
+      btn.type = "button"
+      btn.className = "neoabs-action-cluster__action"
+      btn.setAttribute("aria-label", action.label || "")
+      btn.style.setProperty("--neoabs-action-cluster-index", String(index))
+      btn.innerHTML =
+        (ACTION_CLUSTER_ICONS[action.icon] || ACTION_CLUSTER_ICONS.plus) +
+        '<span class="neoabs-action-cluster__tooltip">' + escapeHtml(action.label || "") + "</span>"
+      btn.addEventListener("click", () => actionClusterDispatch(action.id))
+      menu.appendChild(btn)
+    })
+
+    const main = document.createElement("button")
+    main.type = "button"
+    main.className = "neoabs-action-cluster__main"
+    main.setAttribute("aria-haspopup", "menu")
+    main.setAttribute("aria-controls", "neoabs-action-cluster-menu")
+    main.setAttribute("aria-expanded", "false")
+    main.setAttribute("aria-label", "Quick actions")
+    main.innerHTML = ACTION_CLUSTER_ICONS[mainCfg.icon] || ACTION_CLUSTER_ICONS.plus
+    main.addEventListener("click", toggleActionCluster)
+
+    cluster.appendChild(menu)
+    cluster.appendChild(main)
+    document.body.appendChild(cluster)
+  }
+
+  function initActionCluster(config) {
+    const cfg = config.action_cluster || {}
+    if (cfg.enabled === false) return
+
+    const behavior = cfg.behavior || {}
+    const actions = Array.isArray(cfg.actions)
+      ? cfg.actions.filter((a) => a && a.enabled !== false)
+      : []
+    const minActions = typeof behavior.min_actions === "number" ? behavior.min_actions : 2
+    if (actions.length < minActions) return
+
+    actionClusterEnsureUi(cfg)
+
+    if (behavior.focus_trap !== false) {
+      document.addEventListener("keydown", actionClusterFocusTrap)
+    }
+
+    // Close when clicking outside the cluster (`behavior.close_on_outside`).
+    document.addEventListener("click", (e) => {
+      if (!_actionClusterOpen) return
+      const cluster = $(".neoabs-action-cluster")
+      if (cluster && cluster.contains(e.target)) return
+      if (behavior.close_on_outside === false) return
+      actionClusterSetOpen(false)
+    })
+
+    keyboardActions.toggle_action_cluster = toggleActionCluster
   }
 
   // ---------------------------------------------------------------------------
@@ -3132,7 +3332,7 @@
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
       initContentTables, initMermaid,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), () => initReadingMode(config), initAnchorLinks, initPermalinks, initKeyboardNav,
+      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

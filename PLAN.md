@@ -1499,7 +1499,7 @@ theme:
 
       main:
         icon: "plus"                  #  plus | menu | notes
-        size: "56px"
+        size: "44px"
         glass: true                   # Reuse the note-btn glass pill look
         icon_transform: true          # plus morphs into x while open
 
@@ -2126,8 +2126,8 @@ theme:
       enabled: true
       position: "bottom-left"
       offset: { bottom: "16px", left: "16px" }
-      main: { icon: "plus", size: "56px", glass: true, icon_transform: true }
-      behavior: { close_on_select: true, close_on_escape: true, close_on_outside: true, animation: "normal", tooltips: true }
+      main: { icon: "plus", size: "44px", glass: true, icon_transform: true }
+      behavior: { min_actions: 2, close_on_select: true, close_on_escape: true, close_on_outside: true, animation: "normal", tooltips: true, focus_trap: true }
       actions:
         - { id: keyboard_help, icon: "help", label: "Keyboard shortcuts", enabled: true }
         - { id: notes, icon: "notes", label: "Open notes panel", enabled: true }

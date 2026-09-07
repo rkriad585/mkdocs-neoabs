@@ -147,7 +147,8 @@ _NEOABS_DEFAULT_COMPONENTS = {
 # Every built-in shortcut is configurable and ON by default. `custom` holds
 # user-defined shortcuts that dispatch to built-in action names; a built-in
 # set of actions (scroll_to_top, toggle_sidebar, toggle_toc, toggle_notes,
-# open_search, open_help, toggle_reading_mode) is resolved in `neoabs.js`.
+# open_search, open_help, toggle_reading_mode, toggle_action_cluster) is
+# resolved in `neoabs.js`.
 _NEOABS_DEFAULT_KEYBOARD = {
     "enabled": True,
     "shortcuts": {
@@ -242,6 +243,66 @@ _NEOABS_DEFAULT_READING_MODE = {
 # keys are rejected so a typo cannot silently produce a dead config value.
 _VALID_READING_COLOR_KEYS = frozenset(
     ("background", "surface", "text", "text_secondary", "border", "accent")
+)
+
+# Phase 16 - Action cluster (plus menu).
+#
+# A floating "plus" button that expands into a cluster of quick actions
+# (keyboard help, notes, focus timer, reading mode). Every visible and
+# behavioral aspect is configurable via `theme.neoabs.action_cluster`; the
+# defaults keep the feature fully ON with all four action slots rendered. Each
+# action dispatches through the `keyboardActions` registry in the JS, so
+# features built later (the Phase 17 timer) light up automatically.
+_NEOABS_DEFAULT_ACTION_CLUSTER = {
+    "enabled": True,
+    "position": "bottom-left",
+    "offset": {"bottom": "16px", "left": "16px"},
+    "main": {
+        "icon": "plus",
+        "size": "44px",
+        "glass": True,
+        "icon_transform": True,
+    },
+    "behavior": {
+        "min_actions": 2,
+        "close_on_select": True,
+        "close_on_escape": True,
+        "close_on_outside": True,
+        "animation": "normal",
+        "tooltips": True,
+        "focus_trap": True,
+    },
+    "actions": [
+        {
+            "id": "keyboard_help",
+            "icon": "help",
+            "label": "Keyboard shortcuts",
+            "enabled": True,
+        },
+        {"id": "notes", "icon": "notes", "label": "Open notes panel", "enabled": True},
+        {"id": "timer", "icon": "timer", "label": "Focus timer", "enabled": True},
+        {
+            "id": "reading_mode",
+            "icon": "reading",
+            "label": "Reading mode",
+            "enabled": True,
+        },
+    ],
+    "replaces_notes_button": True,
+}
+
+# Allowed enums / keys for the action cluster so a typo fails the build loudly.
+_NEOABS_ACTION_CLUSTER_POSITIONS = ("bottom-left", "bottom-right")
+_NEOABS_ACTION_CLUSTER_ICONS = ("plus", "menu", "notes", "help", "timer", "reading")
+_NEOABS_ACTION_CLUSTER_ANIMATIONS = ("normal", "reduced", "none")
+_NEOABS_ACTION_CLUSTER_IDS = ("keyboard_help", "notes", "timer", "reading_mode")
+_NEOABS_ACTION_CLUSTER_OFFSET_KEYS = ("bottom", "left", "right")
+_NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
+    "close_on_select",
+    "close_on_escape",
+    "close_on_outside",
+    "tooltips",
+    "focus_trap",
 )
 
 # Phase 11 - Content area customization.
@@ -485,6 +546,147 @@ def _validate_reading_mode(reading_mode):
         )
 
 
+def _validate_action_cluster(action_cluster):
+    """Validate a merged `theme.neoabs.action_cluster` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently
+    degrading the plus menu."""
+    if not isinstance(action_cluster, dict):
+        raise ConfigurationError("theme.neoabs.action_cluster must be a mapping.")
+
+    enabled = action_cluster.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        raise ConfigurationError(
+            "theme.neoabs.action_cluster.enabled must be a boolean."
+        )
+
+    position = action_cluster.get("position")
+    if position is not None and position not in _NEOABS_ACTION_CLUSTER_POSITIONS:
+        raise ConfigurationError(
+            f"theme.neoabs.action_cluster.position must be one of "
+            f"{sorted(_NEOABS_ACTION_CLUSTER_POSITIONS)}; got {position!r}."
+        )
+
+    offset = action_cluster.get("offset")
+    if isinstance(offset, dict):
+        for key, value in offset.items():
+            if key not in _NEOABS_ACTION_CLUSTER_OFFSET_KEYS:
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.offset.{key} is not a valid "
+                    "offset key; expected one of "
+                    f"{sorted(_NEOABS_ACTION_CLUSTER_OFFSET_KEYS)}."
+                )
+            if not isinstance(value, str) or not value.strip():
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.offset.{key} must be a "
+                    "non-empty string."
+                )
+    elif offset is not None:
+        raise ConfigurationError(
+            "theme.neoabs.action_cluster.offset must be a mapping."
+        )
+
+    main = action_cluster.get("main")
+    if isinstance(main, dict):
+        icon = main.get("icon")
+        if icon is not None and icon not in _NEOABS_ACTION_CLUSTER_ICONS:
+            raise ConfigurationError(
+                f"theme.neoabs.action_cluster.main.icon must be one of "
+                f"{sorted(_NEOABS_ACTION_CLUSTER_ICONS)}; got {icon!r}."
+            )
+        size = main.get("size")
+        if size is not None and (not isinstance(size, str) or not size.strip()):
+            raise ConfigurationError(
+                "theme.neoabs.action_cluster.main.size must be a non-empty string."
+            )
+        for field in ("glass", "icon_transform"):
+            value = main.get(field)
+            if value is not None and not isinstance(value, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.main.{field} must be a boolean."
+                )
+    elif main is not None:
+        raise ConfigurationError("theme.neoabs.action_cluster.main must be a mapping.")
+
+    behavior = action_cluster.get("behavior")
+    if isinstance(behavior, dict):
+        min_actions = behavior.get("min_actions")
+        if min_actions is not None and (
+            isinstance(min_actions, bool) or not isinstance(min_actions, int)
+        ):
+            raise ConfigurationError(
+                "theme.neoabs.action_cluster.behavior.min_actions must be an integer."
+            )
+        animation = behavior.get("animation")
+        if animation is not None and animation not in _NEOABS_ACTION_CLUSTER_ANIMATIONS:
+            raise ConfigurationError(
+                f"theme.neoabs.action_cluster.behavior.animation must be one of "
+                f"{sorted(_NEOABS_ACTION_CLUSTER_ANIMATIONS)}; got {animation!r}."
+            )
+        for field in _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS:
+            value = behavior.get(field)
+            if value is not None and not isinstance(value, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.behavior.{field} must be a boolean."
+                )
+    elif behavior is not None:
+        raise ConfigurationError(
+            "theme.neoabs.action_cluster.behavior must be a mapping."
+        )
+
+    replaces = action_cluster.get("replaces_notes_button")
+    if replaces is not None and not isinstance(replaces, bool):
+        raise ConfigurationError(
+            "theme.neoabs.action_cluster.replaces_notes_button must be a boolean."
+        )
+
+    actions = action_cluster.get("actions")
+    if actions is not None:
+        if not isinstance(actions, list):
+            raise ConfigurationError(
+                "theme.neoabs.action_cluster.actions must be a list."
+            )
+        seen = set()
+        for index, entry in enumerate(actions):
+            if not isinstance(entry, dict):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}] must be a "
+                    "mapping with 'id', 'icon', 'label', and 'enabled'."
+                )
+            action_id = entry.get("id")
+            if action_id not in _NEOABS_ACTION_CLUSTER_IDS:
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].id is not a "
+                    "known action id; expected one of "
+                    f"{sorted(_NEOABS_ACTION_CLUSTER_IDS)}."
+                )
+            if action_id in seen:
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].id duplicates "
+                    f"action {action_id!r}."
+                )
+            seen.add(action_id)
+            icon = entry.get("icon")
+            if icon is not None and icon not in _NEOABS_ACTION_CLUSTER_ICONS:
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].icon must be "
+                    f"one of {sorted(_NEOABS_ACTION_CLUSTER_ICONS)}; got {icon!r}."
+                )
+            label_value = entry.get("label")
+            if label_value is not None and (
+                not isinstance(label_value, str) or not label_value.strip()
+            ):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].label must be "
+                    "a non-empty string."
+                )
+            action_enabled = entry.get("enabled")
+            if action_enabled is not None and not isinstance(action_enabled, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].enabled must "
+                    "be a boolean."
+                )
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -597,6 +799,7 @@ class NeoAbsPlugin(BasePlugin):
         ("keyboard", Type(dict)),
         ("content", Type(dict)),
         ("reading_mode", Type(dict)),
+        ("action_cluster", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -684,6 +887,22 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["reading_mode"] = reading_mode
         theme["neoabs"] = neoabs
 
+        # Phase 16: resolve the action cluster (plus menu). Defaults ship all
+        # four action slots ON (`keyboard_help`, `notes`, `timer`,
+        # `reading_mode`); user overrides are deep-merged and validated, then
+        # the toggle shortcut is seeded into the Phase 7 layer below so an
+        # explicit `keyboard.shortcuts.toggle_action_cluster` the author set
+        # still wins.
+        provided_action_cluster = neoabs.get("action_cluster")
+        if not isinstance(provided_action_cluster, dict):
+            provided_action_cluster = {}
+        action_cluster = _deep_merge(
+            _NEOABS_DEFAULT_ACTION_CLUSTER, provided_action_cluster
+        )
+        _validate_action_cluster(action_cluster)
+        neoabs["action_cluster"] = action_cluster
+        theme["neoabs"] = neoabs
+
         # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
         # shortcut works out of the box); user overrides are deep-merged and
         # validated so a malformed key or custom action fails the build with a
@@ -708,6 +927,18 @@ class NeoAbsPlugin(BasePlugin):
                 "label": "Toggle reading mode",
                 "enabled": reading_mode.get("enabled"),
                 "persisted": reading_mode.get("persisted"),
+            },
+        )
+
+        # Phase 16: seed the action-cluster shortcut from `action_cluster` so
+        # an explicit `keyboard.shortcuts.toggle_action_cluster` wins.
+        seeded_keyboard["shortcuts"].setdefault(
+            "toggle_action_cluster",
+            {
+                "key": "Alt+Shift+A",
+                "label": "Toggle action cluster",
+                "enabled": action_cluster.get("enabled"),
+                "persisted": False,
             },
         )
 
@@ -741,6 +972,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_keyboard"] = keyboard
         extra["neoabs_content"] = content
         extra["neoabs_reading_mode"] = reading_mode
+        extra["neoabs_action_cluster"] = action_cluster
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
