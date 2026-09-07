@@ -32,7 +32,7 @@ The plugin hooks into MkDocs' `on_config` event to set default values for theme 
 |--------|---------|-------------|
 | `language` | `"en"` | Site language |
 | `direction` | `"ltr"` | Text direction |
-| `features` | `[]` | Feature flags |
+| `features` | `[]` | Always-on passthrough list (does not gate behavior) |
 | `palette` | `[]` | Color schemes |
 | `font.text` | `"Space Grotesk"` | Display/body font |
 | `font.code` | `"Space Mono"` | Code font |

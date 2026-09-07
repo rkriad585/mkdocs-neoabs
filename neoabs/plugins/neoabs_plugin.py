@@ -1340,6 +1340,25 @@ class NeoAbsPlugin(BasePlugin):
                 if isinstance(value, str) and not value.strip():
                     continue
                 tokens.append({"var": var_name, "value": value})
+        # Phase 1: wire theme.font so a standard MkDocs theme.font block drives
+        # the body/code font stacks. Appended last so it wins over any matching
+        # neoabs.typography token the author set on the same vars.
+        theme_font = theme.get("font")
+        if isinstance(theme_font, dict):
+            if theme_font.get("text"):
+                tokens.append(
+                    {
+                        "var": "--neoabs-font-body",
+                        "value": theme_font["text"] + ", sans-serif",
+                    }
+                )
+            if theme_font.get("code"):
+                tokens.append(
+                    {
+                        "var": "--neoabs-font-mono",
+                        "value": theme_font["code"] + ", monospace",
+                    }
+                )
         extra["neoabs_tokens"] = tokens
 
         config["extra"] = extra

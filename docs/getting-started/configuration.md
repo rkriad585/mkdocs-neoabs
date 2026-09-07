@@ -143,7 +143,9 @@ neoabs:
 
 ### `font`
 
-Override the default typefaces.
+Override the default typefaces. The resolved families drive the Google Fonts
+`<link>` **and** the `--neoabs-font-body` / `--neoabs-font-mono` tokens, so the
+font stack updates automatically.
 
 ```yaml
 font:
@@ -151,19 +153,24 @@ font:
   code: Space Mono
 ```
 
+If you also set `theme.neoabs.typography.font_family` / `font_family_mono`, the
+`theme.font` values take precedence.
+
 !!! tip
     The fonts are loaded from Google Fonts automatically. You can self-host by overriding the CSS and providing your own `@font-face` rules.
 
 ### `features`
 
-MkDocs feature flags that NeoAbs supports:
+Recognized as a Material-compatible passthrough: NeoAbs ships every feature
+below **enabled by default**, so the list does not gate any behavior. Omit it
+or list these flags freely — the rendered site is identical:
 
-- `navigation.sections` — Group navigation items by section
-- `navigation.top` — Back-to-top button
-- `navigation.footer` — Previous/next navigation in footer
+- `navigation.sections` — Section-grouped sidebar navigation
+- `navigation.top` — Back-to-top button and reading progress bar
+- `navigation.footer` — Previous/next navigation in the footer
 - `content.code.copy` — Copy button on code blocks
-- `search.suggest` — Search suggestions
-- `search.highlight` — Highlight search terms on page
+- `search.suggest` — As-you-type search suggestions
+- `search.highlight` — Highlight matched terms in search results
 
 ```yaml
 features:
@@ -171,6 +178,9 @@ features:
   - navigation.top
   - content.code.copy
 ```
+
+To change any single behavior, use the corresponding `theme.neoabs.*` switch
+instead.
 
 ## Plugin configuration
 

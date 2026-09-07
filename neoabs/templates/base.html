@@ -317,9 +317,13 @@
     {% endblock %}
 
     {% block fonts %}
+    {% set _ftext = config.theme.font.text | default('Space Grotesk') %}
+    {% set _fcode = config.theme.font.code | default('Space Mono') %}
+    {% set _ftext_uri = _ftext | replace(' ', '+') %}
+    {% set _fcode_uri = _fcode | replace(' ', '+') %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family={{ _ftext_uri }}:wght@300;400;500;600;700&family={{ _fcode_uri }}:wght@400;700&display=swap" rel="stylesheet">
     {% endblock %}
 
     {% for path in _all_css %}
@@ -603,7 +607,6 @@
     <script id="__config" type="application/json">
       {
         "base": "{{ base_url }}",
-        "features": {{ config.theme.features | default([]) | tojson }},
         "notes": {
           "enabled": {{ config.extra.neoabs_notes | tojson }},
           "ttl_ms": {{ config.extra.neoabs_notes_ttl | default(259200000) | tojson }}

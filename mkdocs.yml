@@ -24,9 +24,16 @@ theme:
       accent: red
       toggle:
         name: Switch to dark mode
+  # --- Phase 1: theme.font (optional) ----------------------------------
+  # Drives the Google Fonts <link> AND the --neoabs-font-body / --neoabs-font-mono
+  # tokens, so the body/code stacks update automatically. Overrides any matching
+  # theme.neoabs.typography value; defaults are Space Grotesk / Space Mono.
   font:
     text: Space Grotesk
     code: Space Mono
+  # features: is a Material-compatible passthrough — every behavior below ships
+  # enabled by default, so the list does not gate anything. Keep it or drop it;
+  # to change a behavior use a theme.neoabs.* switch instead.
   features:
     - navigation.sections
     - navigation.top
@@ -53,7 +60,7 @@ theme:
     #   text_secondary: "#aaaaaa"     # --neoabs-text-secondary
     #   border: "rgba(255,255,255,0.18)"    # --neoabs-glass-border
     #   overlay: "rgba(0,0,0,0.5)"    # --neoabs-overlay-color
-    # typography:
+    # typography:                     # theme.font above wins over font_family/font_family_mono
     #   font_family: "Space Grotesk, sans-serif"
     #   font_family_display: "Space Grotesk, sans-serif"
     #   font_family_mono: "Space Mono, monospace"

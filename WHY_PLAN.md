@@ -234,51 +234,39 @@ and docs that contradict the code.
 **Why it wins.** A developer's first move is `theme.font: {...}` and `features:`.
 If nothing changes, they bounce.
 
-**Already shipped (verified).** — Nothing in this phase is done yet.
+**Already shipped (verified).** All three items below are done.
 
-#### 1a. Wire `theme.font`
+#### 1a. Wire `theme.font` ✅ (done)
 
-`base.html` currently hardcodes the Google Fonts `<link>`:
+`base.html` no longer hardcodes the Google Fonts `<link>`: it resolves
+`config.theme.font.text` / `.code` (defaults `Space Grotesk` / `Space Mono`)
+for both the `<link>` and, via `neoabs_plugin.py`, the `--neoabs-font-body` /
+`--neoabs-font-mono` tokens. Font tokens are appended after the token loop so
+`theme.font` wins over matching `neoabs.typography` values.
 
-```jinja
-{# base.html — replace the hardcoded fonts block #}
-{% set _ftext = config.theme.font.text | default('Space Grotesk') %}
-{% set _fcode = config.theme.font.code | default('Space Mono') %}
-{% set _ftext_uri = _ftext | replace(' ', '+') %}
-{% set _fcode_uri = _fcode | replace(' ', '+') %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family={{ _ftext_uri }}:wght@300;400;500;600;700&family={{ _fcode_uri }}:wght@400;700&display=swap" rel="stylesheet">
-```
+**Files touched.** `neoabs/templates/base.html`, `neoabs/plugins/neoabs_plugin.py`,
+`docs/getting-started/configuration.md`, `docs/plugins/neoabs.md`.
 
-Then in `neoabs_plugin.py`, mirror the resolved families into tokens:
+**Acceptance (verified).** Throwaway project with `font: {text: Inter, code:
+JetBrains Mono}` renders `family=Inter:wght@300` + `family=JetBrains+Mono` in
+the `<link>` and emits `Inter, sans-serif` / `JetBrains Mono, monospace`
+tokens; the default build stays strict-clean with the existing typefaces.
 
-```python
-# neoabs_plugin.py — add after token collection (Phase 1)
-theme_config = theme.get("font") or {}
-if isinstance(theme_config, dict):
-    if theme_config.get("text"):
-        extra["neoabs_tokens"].append({
-            "var": "--neoabs-font-body",
-            "value": theme_config["text"] + ", sans-serif",
-        })
-    if theme_config.get("code"):
-        extra["neoabs_tokens"].append({
-            "var": "--neoabs-font-mono",
-            "value": theme_config["code"] + ", monospace",
-        })
-```
+#### 1b. Make `features` real (or remove it) ✅ (done)
 
-#### 1b. Make `features` real (or remove it)
+`theme.features` is a Material-compatible **passthrough**: every documented flag
+ships enabled by default (section nav, back-to-top + progress, prev/next footer,
+code copy, search suggest, search-result highlights), so the list is accepted but
+does not gate behavior. The dead `"features"` key was removed from `#__config`,
+and docs (`mkdocs.yml`, `configuration.md`, `README.md`, `plugins/neoabs.md`)
+now state the passthrough contract instead of promising gating.
 
-`__config.features` is emitted (base.html L606) but nothing consumes it. Either
-implement a consumer or stop emitting it until one exists:
+**Files touched.** `neoabs/templates/base.html`, `mkdocs.yml`, `README.md`,
+`docs/getting-started/configuration.md`, `docs/plugins/neoabs.md`.
 
-```jinja
-{# base.html — surface supported flags as data attributes once consumed #}
-{% set _feats = config.theme.features | default([]) %}
-<html lang="..." class="no-js" data-md-extra-features='{{ _feats | tojson }}'>
-```
+**Acceptance (verified).** Built `site/*.html` contains no `"features"` key in
+`#__config`; `mkdocs build --strict` passes; a temp project listing
+`features:` renders identically.
 
 #### 1c. Fix the screenshot contract ✅ (done)
 

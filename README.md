@@ -149,7 +149,7 @@ theme:
   font:
     text: Space Grotesk
     code: Space Mono
-  features:
+  features:            # Material-compatible passthrough (always-on, no gating)
     - navigation.sections
     - navigation.top
     - navigation.footer
