@@ -1680,6 +1680,8 @@
       displayKey(kbdKey("toggle_reading_mode", "Alt+Shift+R")), kbdLabel("toggle_reading_mode", "Toggle reading mode"))
     push(kbdEnabled("toggle_action_cluster"),
       displayKey(kbdKey("toggle_action_cluster", "Alt+Shift+A")), kbdLabel("toggle_action_cluster", "Toggle action cluster"))
+    push(kbdEnabled("timer_toggle"),
+      displayKey(kbdKey("timer_toggle", "Alt+Shift+T")), kbdLabel("timer_toggle", "Toggle focus timer"))
     push(componentShow("keyboard_help", "show") && kbdEnabled("help"),
       displayKey(kbdKey("help", "?")), kbdLabel("help", "Show keyboard shortcuts"))
 
@@ -2500,6 +2502,509 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Phase 17: Focus timer (theme.neoabs.timer)
+  // ---------------------------------------------------------------------------
+
+  const FOCUS_TIMER_KEY = "focus-timer"
+  const FOCUS_TIMER_SETTINGS_KEY = "focus-timer-settings"
+
+  // Inline icons for the TOC widget controls (play/pause, restart, cancel),
+  // drawn in the same stroke idiom as ACTION_CLUSTER_ICONS but 14px-sized.
+  const TIMER_CTRL_ICONS = {
+    play: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>',
+    pause: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="5" x2="9" y2="19"></line><line x1="15" y1="5" x2="15" y2="19"></line></svg>',
+    restart: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>',
+    cancel: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
+  }
+
+  // Session state machine: "idle" | "running" | "paused". Time is accounted
+  // from `Date.now()` against an absolute `expiresAt` epoch while running, so
+  // browser throttling can never drift the countdown; the 1s interval only
+  // repaints surfaces from that model.
+  let _timerState = {
+    phase: "idle",
+    total: 25 * 60000,
+    remaining: 25 * 60000,
+    updatedAt: 0,
+    expiresAt: 0,
+  }
+  let _timerInterval = null
+
+  // Effective config: `theme.neoabs.timer` merged with the reader's local
+  // settings-popup overrides (`focus-timer-settings` in localStorage).
+  function timerConfig() {
+    const cfg = _config.timer || {}
+    const saved = timerSettingsRead()
+    const tocCfg = (cfg.toc && typeof cfg.toc === "object") ? cfg.toc : {}
+    const readingCfg = (cfg.reading && typeof cfg.reading === "object") ? cfg.reading : {}
+    const notifCfg = (cfg.notifications && typeof cfg.notifications === "object") ? cfg.notifications : {}
+    const colorsCfg = (cfg.colors && typeof cfg.colors === "object") ? cfg.colors : {}
+    const defaultMinutes = (typeof saved.default_minutes === "number")
+      ? saved.default_minutes
+      : (typeof cfg.default_minutes === "number" ? cfg.default_minutes : 25)
+    const minutes = Math.max(1, Math.floor(defaultMinutes))
+    return {
+      enabled: cfg.enabled !== false,
+      default_minutes: minutes,
+      toc: {
+        show: tocCfg.show !== false,
+        style: saved.toc_style || tocCfg.style || "ring",
+        position: saved.toc_position || tocCfg.position || "bottom",
+      },
+      reading: {
+        show: saved.reading_show !== undefined ? !!saved.reading_show : readingCfg.show !== false,
+      },
+      notifications: {
+        enabled: notifCfg.enabled !== false,
+        toast: saved.toast !== undefined ? !!saved.toast : notifCfg.toast !== false,
+        sound: saved.sound !== undefined ? !!saved.sound : notifCfg.sound !== false,
+      },
+      persist: cfg.persist !== false,
+      settings_popup: cfg.settings_popup !== false,
+      colors: {
+        progress: saved.progress || colorsCfg.progress || "#8a5a33",
+      },
+    }
+  }
+
+  function timerSettingsRead() {
+    const raw = storageGet(FOCUS_TIMER_SETTINGS_KEY)
+    if (!raw) return {}
+    try {
+      const value = JSON.parse(raw)
+      return (value && typeof value === "object") ? value : {}
+    } catch { return {} }
+  }
+
+  function timerSettingsWrite(obj) {
+    storageSet(FOCUS_TIMER_SETTINGS_KEY, JSON.stringify(obj))
+  }
+
+  function formatTimer(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds
+  }
+
+  function focusTimerPersist() {
+    if (!timerConfig().persist) return
+    storageSet(FOCUS_TIMER_KEY, JSON.stringify({
+      remaining: _timerState.remaining,
+      running: _timerState.phase === "running",
+      updatedAt: Date.now(),
+    }))
+  }
+
+  function focusTimerRestore() {
+    const raw = storageGet(FOCUS_TIMER_KEY)
+    if (!raw) return
+    let data = null
+    try { data = JSON.parse(raw) } catch { return }
+    if (!data || typeof data !== "object") return
+    const cfg = timerConfig()
+    const total = cfg.default_minutes * 60000
+    let remaining = (typeof data.remaining === "number" && data.remaining >= 0)
+      ? data.remaining
+      : total
+    if (data.running && typeof data.updatedAt === "number") {
+      // The persisted session was mid-flight; elapse the wall-clock gap now.
+      remaining -= Date.now() - data.updatedAt
+      if (remaining > 0) {
+        _timerState.phase = "running"
+        _timerState.expiresAt = Date.now() + remaining
+        _timerState.updatedAt = Date.now()
+        focusTimerStartInterval()
+      } else {
+        remaining = 0
+        _timerState.phase = "idle"
+        focusTimerStopInterval()
+      }
+    } else if (remaining > 0 && remaining < total) {
+      _timerState.phase = "paused"
+    } else {
+      _timerState.phase = "idle"
+    }
+    _timerState.total = total
+    _timerState.remaining = remaining
+    _timerState.updatedAt = Date.now()
+  }
+
+  function focusTimerStart(minutes) {
+    const cfg = timerConfig()
+    const effective = Math.max(1, Math.floor(Number(minutes) || cfg.default_minutes))
+    _timerState.total = effective * 60000
+    _timerState.remaining = effective * 60000
+    _timerState.phase = "running"
+    _timerState.expiresAt = Date.now() + _timerState.total
+    _timerState.updatedAt = Date.now()
+    focusTimerPersist()
+    focusTimerStartInterval()
+    focusTimerTick()
+  }
+
+  function focusTimerResume() {
+    if (_timerState.phase !== "paused" || _timerState.remaining <= 0) return
+    _timerState.expiresAt = Date.now() + _timerState.remaining
+    _timerState.updatedAt = Date.now()
+    _timerState.phase = "running"
+    focusTimerPersist()
+    focusTimerStartInterval()
+    focusTimerTick()
+  }
+
+  function focusTimerPause() {
+    if (_timerState.phase !== "running") return
+    _timerState.remaining = Math.max(0, _timerState.expiresAt - Date.now())
+    _timerState.phase = "paused"
+    _timerState.updatedAt = Date.now()
+    _timerState.expiresAt = 0
+    focusTimerPersist()
+    focusTimerStopInterval()
+    focusTimerTick()
+  }
+
+  function focusTimerReset() {
+    const cfg = timerConfig()
+    _timerState.total = cfg.default_minutes * 60000
+    _timerState.remaining = _timerState.total
+    _timerState.phase = "idle"
+    _timerState.updatedAt = Date.now()
+    _timerState.expiresAt = 0
+    focusTimerPersist()
+    focusTimerStopInterval()
+    focusTimerTick()
+  }
+
+  // TOC widget playback controls. Play on idle starts the default session
+  // (the reader can still pick a length via the settings popup shown by the
+  // cluster action / shortcut); cancel clears the session back to idle.
+  function focusTimerPlayPause() {
+    if (_timerState.phase === "running") {
+      focusTimerPause()
+    } else if (_timerState.phase === "paused") {
+      focusTimerResume()
+    } else {
+      focusTimerStart()
+    }
+  }
+
+  function focusTimerRestart() {
+    if (_timerState.phase === "idle") return
+    _timerState.remaining = _timerState.total
+    _timerState.phase = "running"
+    _timerState.expiresAt = Date.now() + _timerState.total
+    _timerState.updatedAt = Date.now()
+    focusTimerPersist()
+    focusTimerStartInterval()
+    focusTimerTick()
+  }
+
+  function focusTimerCancel() {
+    if (_timerState.phase === "idle") return
+    focusTimerReset()
+  }
+
+  // Cluster action + `timer_toggle` shortcut always surface the settings popup
+  // (when enabled), so a running session can be reconfigured without any
+  // destructive shortcut; play/pause/cancel/restart live on the TOC widget.
+  function focusTimerToggle() {
+    if (timerConfig().settings_popup) {
+      openTimerSettings()
+    } else if (_timerState.phase === "idle") {
+      focusTimerStart()
+    } else if (_timerState.phase === "running") {
+      focusTimerPause()
+    } else {
+      focusTimerResume()
+    }
+  }
+
+  function focusTimerStartInterval() {
+    if (_timerInterval) return
+    _timerInterval = window.setInterval(focusTimerTick, 1000)
+  }
+
+  function focusTimerStopInterval() {
+    if (_timerInterval) {
+      window.clearInterval(_timerInterval)
+      _timerInterval = null
+    }
+  }
+
+  function focusTimerTick() {
+    const cfg = timerConfig()
+    if (_timerState.phase === "running") {
+      _timerState.remaining = Math.max(0, _timerState.expiresAt - Date.now())
+      if (_timerState.remaining <= 0) {
+        focusTimerComplete(cfg)
+        return
+      }
+    }
+    focusTimerRender(cfg)
+  }
+
+  function focusTimerComplete(cfg) {
+    _timerState.phase = "idle"
+    _timerState.remaining = 0
+    _timerState.updatedAt = Date.now()
+    _timerState.expiresAt = 0
+    focusTimerPersist()
+    focusTimerStopInterval()
+    const notifications = cfg.notifications || {}
+    if (notifications.enabled) {
+      if (notifications.toast) neoabsToast("Focus session complete", "success")
+      if (notifications.sound) timerChime()
+    }
+    focusTimerRender(cfg)
+  }
+
+  function focusTimerRender(cfg) {
+    const accent = cfg.colors.progress || "#8a5a33"
+    document.documentElement.style.setProperty("--neoabs-timer-accent", accent)
+
+    const total = _timerState.total || cfg.default_minutes * 60000
+    const progress = total > 0
+      ? Math.max(0, Math.min(1, _timerState.remaining / total))
+      : 0
+    const label = formatTimer(_timerState.remaining)
+
+    const tocWidget = $(".neoabs-timer-toc")
+    if (tocWidget) {
+      tocWidget.style.setProperty("--neoabs-timer-progress", String(progress))
+      const digits = tocWidget.querySelector(".neoabs-timer-toc__digits")
+      if (digits) digits.textContent = label
+
+      const running = _timerState.phase === "running"
+      const idle = _timerState.phase === "idle"
+      const toggle = tocWidget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='toggle']")
+      if (toggle) {
+        toggle.innerHTML = TIMER_CTRL_ICONS[running ? "pause" : "play"]
+        toggle.setAttribute("aria-label",
+          running ? "Pause timer"
+          : _timerState.phase === "paused" ? "Resume timer"
+          : "Start timer")
+      }
+      const restart = tocWidget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='restart']")
+      if (restart) restart.disabled = idle
+      const cancel = tocWidget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='cancel']")
+      if (cancel) cancel.disabled = idle
+      tocWidget.setAttribute("data-md-neoabs-timer-running", String(running))
+    }
+
+    const chip = $(".neoabs-timer-reading")
+    if (chip) {
+      const digitEl = chip.querySelector(".neoabs-timer-reading__digits")
+      if (digitEl) digitEl.textContent = label
+    }
+  }
+
+  // Teardown the injected surfaces so a settings change (style/position/show)
+// can rebuild them fresh; nothing theme-shipped is touched.
+  function focusTimerTeardownUi() {
+    const widget = $(".neoabs-timer-toc")
+    if (widget && widget.parentNode) widget.parentNode.removeChild(widget)
+    const chip = $(".neoabs-timer-reading")
+    if (chip && chip.parentNode) chip.parentNode.removeChild(chip)
+  }
+
+  // Inject the TOC widget and reading chip exactly like notesEnsureUi: guard
+  // against duplicates, build from scratch, and never remove existing markup.
+  function focusTimerEnsureUi() {
+    const cfg = timerConfig()
+    const tocCfg = cfg.toc || {}
+    if (tocCfg.show && !$(".neoabs-timer-toc")) {
+      const inner = $(".neoabs-toc__inner")
+      if (inner) {
+        const widget = document.createElement("div")
+        widget.className = "neoabs-timer-toc neoabs-timer-toc--" + (tocCfg.position === "top" ? "top" : "bottom")
+        widget.setAttribute("data-md-neoabs-timer-style", tocCfg.style)
+        widget.style.setProperty("--neoabs-timer-progress", "0")
+        widget.innerHTML =
+          '<div class="neoabs-timer-toc__label">Focus</div>' +
+          (tocCfg.style === "ring"
+            ? '<svg class="neoabs-timer-toc__ring" viewBox="0 0 44 44" aria-hidden="true">' +
+              '<circle class="neoabs-timer-toc__ring-bg" cx="22" cy="22" r="20"></circle>' +
+              '<circle class="neoabs-timer-toc__ring-fg" cx="22" cy="22" r="20"></circle></svg>'
+            : "") +
+          (tocCfg.style === "bar"
+            ? '<div class="neoabs-timer-toc__bar" aria-hidden="true"><div class="neoabs-timer-toc__bar-fill"></div></div>'
+            : "") +
+          '<div class="neoabs-timer-toc__digits' + (tocCfg.style === "digits" ? " neoabs-timer-toc__digits--large" : "") + '">' +
+          formatTimer(cfg.default_minutes * 60000) + "</div>" +
+          '<div class="neoabs-timer-toc__controls" role="group" aria-label="Timer controls">' +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="toggle" aria-label="Start timer">' + TIMER_CTRL_ICONS.play + "</button>" +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="restart" aria-label="Restart timer" disabled>' + TIMER_CTRL_ICONS.restart + "</button>" +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="cancel" aria-label="Cancel timer" disabled>' + TIMER_CTRL_ICONS.cancel + "</button>" +
+          "</div>"
+        if (tocCfg.position === "top") inner.insertBefore(widget, inner.firstChild)
+        else inner.appendChild(widget)
+
+        widget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='toggle']").addEventListener("click", focusTimerPlayPause)
+        widget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='restart']").addEventListener("click", focusTimerRestart)
+        widget.querySelector(".neoabs-timer-toc__control[data-md-neoabs-timer-ctrl='cancel']").addEventListener("click", focusTimerCancel)
+      }
+    }
+
+    const readingCfg = cfg.reading || {}
+    if (readingCfg.show && !$(".neoabs-timer-reading")) {
+      const chip = document.createElement("div")
+      chip.className = "neoabs-timer-reading"
+      chip.setAttribute("role", "status")
+      chip.innerHTML =
+        '<span class="neoabs-timer-reading__dot" aria-hidden="true"></span>' +
+        '<span class="neoabs-timer-reading__digits">' + formatTimer(cfg.default_minutes * 60000) + "</span>"
+      document.body.appendChild(chip)
+    }
+
+    focusTimerRender(cfg)
+  }
+
+  // Settings popup (theme.neoabs.timer.settings_popup), mirroring the
+  // keyboard-help modal: overlay + panel + header + close, with the session
+  // form below. Submitting saves the reader's overrides locally and starts a
+  // fresh session of the chosen length.
+  function openTimerSettings() {
+    let modal = $(".neoabs-timer-settings")
+    if (modal) {
+      modal.classList.add("neoabs-timer-settings--visible")
+      return
+    }
+    const cfg = timerConfig()
+
+    modal = document.createElement("div")
+    modal.className = "neoabs-timer-settings neoabs-timer-settings--visible"
+    modal.setAttribute("role", "dialog")
+    modal.setAttribute("aria-label", "Focus timer settings")
+
+    const styles = { ring: "Ring", bar: "Bar", digits: "Digits" }
+    const positions = { top: "Top", bottom: "Bottom" }
+    const styleOptions = Object.keys(styles).map((value) =>
+      '<option value="' + value + '"' + (cfg.toc.style === value ? " selected" : "") + ">" + styles[value] + "</option>"
+    ).join("")
+    const positionOptions = Object.keys(positions).map((value) =>
+      '<option value="' + value + '"' + (cfg.toc.position === value ? " selected" : "") + ">" + positions[value] + "</option>"
+    ).join("")
+
+    modal.innerHTML =
+      '<div class="neoabs-timer-settings__overlay"></div>' +
+      '<div class="neoabs-timer-settings__panel">' +
+        '<div class="neoabs-timer-settings__header">' +
+          '<span class="neoabs-timer-settings__title">Focus Timer</span>' +
+          '<button class="neoabs-timer-settings__close" aria-label="Close">&times;</button>' +
+        "</div>" +
+        '<form class="neoabs-timer-settings__body">' +
+          '<div class="neoabs-timer-settings__row">' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-duration">Session length (minutes)</label>' +
+            '<input class="neoabs-timer-settings__control" type="number" id="neoabs-timer-duration" min="1" max="180" step="1" value="' + cfg.default_minutes + '" />' +
+          "</div>" +
+          '<div class="neoabs-timer-settings__row">' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-style">TOC timer style</label>' +
+            '<select class="neoabs-timer-settings__control" id="neoabs-timer-style">' + styleOptions + "</select>" +
+          "</div>" +
+          '<div class="neoabs-timer-settings__row">' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-position">TOC timer position</label>' +
+            '<select class="neoabs-timer-settings__control" id="neoabs-timer-position">' + positionOptions + "</select>" +
+          "</div>" +
+          '<div class="neoabs-timer-settings__check">' +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-reading" ' + (cfg.reading.show ? "checked" : "") + " />Reading-mode chip</label>" +
+          "</div>" +
+          '<div class="neoabs-timer-settings__check">' +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-toast" ' + (cfg.notifications.toast ? "checked" : "") + " />Toast on completion</label>" +
+          "</div>" +
+          '<div class="neoabs-timer-settings__check">' +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-sound" ' + (cfg.notifications.sound ? "checked" : "") + " />Chime on completion</label>" +
+          "</div>" +
+          '<div class="neoabs-timer-settings__actions">' +
+            '<button type="button" class="neoabs-timer-settings__cancel">Cancel</button>' +
+            '<button type="submit" class="neoabs-timer-settings__save">Start Session</button>' +
+          "</div>" +
+        "</form>" +
+      "</div>"
+
+    document.body.appendChild(modal)
+
+    const close = () => modal.classList.remove("neoabs-timer-settings--visible")
+    modal.querySelector(".neoabs-timer-settings__close").addEventListener("click", close)
+    modal.querySelector(".neoabs-timer-settings__overlay").addEventListener("click", close)
+    modal.querySelector(".neoabs-timer-settings__cancel").addEventListener("click", close)
+    modal.querySelector(".neoabs-timer-settings__body").addEventListener("submit", (e) => {
+      e.preventDefault()
+      focusTimerApplySettings(modal, true)
+    })
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("neoabs-timer-settings--visible")) close()
+    })
+  }
+
+  function focusTimerApplySettings(modal, startSession) {
+    const settings = timerSettingsRead()
+    const minutes = Math.max(1, Math.floor(Number(modal.querySelector("#neoabs-timer-duration").value) || 25))
+    settings.default_minutes = minutes
+    settings.toc_style = modal.querySelector("#neoabs-timer-style").value
+    settings.toc_position = modal.querySelector("#neoabs-timer-position").value
+    settings.reading_show = modal.querySelector("#neoabs-timer-reading").checked
+    settings.toast = modal.querySelector("#neoabs-timer-toast").checked
+    settings.sound = modal.querySelector("#neoabs-timer-sound").checked
+    timerSettingsWrite(settings)
+
+    const cfg = timerConfig()
+    if (_timerState.phase === "idle") {
+      _timerState.total = cfg.default_minutes * 60000
+      _timerState.remaining = _timerState.total
+      _timerState.updatedAt = Date.now()
+    }
+    modal.classList.remove("neoabs-timer-settings--visible")
+    focusTimerTeardownUi()
+    focusTimerEnsureUi()
+    if (startSession) focusTimerStart(minutes)
+    else focusTimerRender(cfg)
+  }
+
+  // Short WebAudio two-note chime (best-effort; never blocks the theme).
+  function timerChime() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      if (!AudioContextClass) return
+      const ctx = new AudioContextClass()
+      const notes = [880, 1174.66]
+      notes.forEach((freq, index) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = "sine"
+        osc.frequency.value = freq
+        const startAt = ctx.currentTime + index * 0.18
+        gain.gain.setValueAtTime(0.0001, startAt)
+        gain.gain.exponentialRampToValueAtTime(0.2, startAt + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.45)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(startAt)
+        osc.stop(startAt + 0.5)
+      })
+      window.setTimeout(function () { try { ctx.close() } catch (e) {} }, 1500)
+    } catch (e) { /* audio is best-effort */ }
+  }
+
+  function initFocusTimer(config) {
+    const cfg = timerConfig()
+    if (cfg.enabled === false) return
+
+    if (cfg.persist) focusTimerRestore()
+
+    focusTimerEnsureUi()
+
+    document.addEventListener("keydown", (e) => {
+      if (kbdEnabled("timer_toggle") &&
+          matchesKeyCombo(e, kbdKey("timer_toggle", "Alt+Shift+T"))) {
+        e.preventDefault()
+        focusTimerToggle()
+      }
+    })
+    keyboardActions.timer_toggle = focusTimerToggle
+  }
+
+  // ---------------------------------------------------------------------------
   // 13b. UI primitives (buttons & forms)
   // Provides inline behaviour for the documented .neoabs-btn / .neoabs-form
   // components: click feedback, form validation state toggles.
@@ -3075,7 +3580,8 @@
         initContentTables, initMermaid,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
         initUIExamples, () => initMath(_navConfig), initNavToggle,
-        initPermalinks
+        initPermalinks,
+        focusTimerEnsureUi
       ]
       inits.forEach(function (fn) {
         try { fn() } catch (e) {}
@@ -3332,7 +3838,7 @@
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
       initContentTables, initMermaid,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), initAnchorLinks, initPermalinks, initKeyboardNav,
+      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

@@ -361,6 +361,10 @@ theme:
     #       key: "Alt+Shift+A"         # Expand/collapse the action cluster (Phase 16; default Alt+Shift+A)
     #       label: "Toggle action cluster"
     #       enabled: true              # Set false to disable this shortcut
+    #     timer_toggle:
+    #       key: "Alt+Shift+T"         # Open focus timer settings (Phase 17; default Alt+Shift+T)
+    #       label: "Toggle focus timer"
+    #       enabled: true              # Set false to disable this shortcut
     #   custom:                        # Your own shortcuts (list of entries)
     #     - key: "g"                   #   Press "g" to jump to the top
     #       label: "Go to top"
@@ -549,6 +553,31 @@ theme:
     #     - { id: timer,          icon: "timer",   label: "Focus timer",        enabled: true }
     #     - { id: reading_mode,   icon: "reading", label: "Reading mode",       enabled: true }
     #   replaces_notes_button: true     # Hide the standalone notes launcher
+    # --- Phase 17: Focus timer (optional) ---------------------------------------
+    # A built-in focus timer (25-minute default session) shown in the TOC panel
+    # and as a chip while reading mode is active (the TOC is hidden there). The
+    # cluster's timer action or Alt+Shift+T always opens the settings popup, so
+    # a running session can be reconfigured without side effects; playback
+    # (play/pause, reset, cancel) lives on the TOC widget controls. The shortcut
+    # is also exposed as `keyboard.shortcuts.timer_toggle` (that key wins over
+    # the default Alt+Shift+T if both are set).
+    # timer:
+    #   enabled: true                   # Master switch for the whole timer
+    #   default_minutes: 25             # Duration used when starting fresh
+    #   toc:
+    #     show: true                    # Status widget inside the TOC panel
+    #     position: "bottom"            #  top | bottom of the .neoabs-toc column
+    #     style: "ring"                 #  ring | bar | digits
+    #   reading:
+    #     show: true                    # Chip visible while reading mode is active
+    #   notifications:
+    #     enabled: true
+    #     toast: true                   #  neoabsToast("session complete")
+    #     sound: true                   #  short WebAudio chime
+    #   persist: true                   # Keep elapsed/remaining across reloads + SPA nav
+    #   settings_popup: true            # Config popup opened from the timer action
+    #   colors:
+    #     progress: "#8a5a33"           # Ring/bar progress accent while running
 
 extra:
   neoabs_version: 13

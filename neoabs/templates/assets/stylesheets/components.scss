@@ -5539,3 +5539,447 @@ img.neoabs-repo-pop__avatar {
 		transition: none;
 	}
 }
+
+// ===========================================================================
+// PHASE 17: FOCUS TIMER (theme.neoabs.timer)
+// ===========================================================================
+
+// --- TOC panel widget (.neoabs-timer-toc) ----------------------------------
+// Compact status widget living inside `.neoabs-toc__inner`. It is injected by
+// the JS (`focusTimerEnsureUi`), so nothing here removes or rewires the TOC;
+// `position: top|bottom` decides whether the JS prepends or appends it and the
+// modifier class tunes the separator. The `style` knob selects the visual:
+// ring (SVG stroke-dashoffset from --neoabs-timer-progress), bar (gradient
+// fill width), or digits (large monospace mm:ss only).
+.neoabs-timer-toc {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--neoabs-space-2) var(--neoabs-space-3);
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+	margin: 0 0 var(--neoabs-space-4) 0;
+	min-width: 0;
+	min-height: 40px;
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-md);
+	background: var(--neoabs-glass-bg);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	cursor: default;
+	user-select: none;
+
+	&--top {
+		margin: 0 0 var(--neoabs-space-4) 0;
+	}
+
+	&--bottom {
+		margin: var(--neoabs-space-4) 0 0 0;
+	}
+
+	&__label {
+		flex: 1 1 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--neoabs-font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--neoabs-text-muted);
+	}
+
+	&__digits {
+		font-family: var(--neoabs-font-mono);
+		font-size: 14px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		color: var(--neoabs-text-primary);
+		white-space: nowrap;
+
+		&--large {
+			font-size: 18px;
+		}
+	}
+
+	&__ring {
+		width: 32px;
+		height: 32px;
+		flex-shrink: 0;
+
+		svg {
+			transform: rotate(-90deg);
+		}
+
+		circle {
+			fill: none;
+			stroke-width: 3;
+		}
+	}
+
+	&__ring-bg {
+		stroke: var(--neoabs-glass-border);
+	}
+
+	&__ring-fg {
+		stroke: var(--neoabs-timer-accent, #8a5a33);
+		stroke-linecap: round;
+		// Circumference of the r=20 ring (2 * pi * 20). The JS drives
+		// --neoabs-timer-progress (0..1) so the offset empties the ring as the
+		// session counts down.
+		stroke-dasharray: 125.66;
+		stroke-dashoffset: calc(125.66 * (1 - var(--neoabs-timer-progress, 0)));
+		transition: stroke-dashoffset var(--neoabs-transition-normal) linear;
+	}
+
+	&__bar {
+		position: relative;
+		flex: 1 1 80px;
+		height: 4px;
+		border-radius: var(--neoabs-radius-pill);
+		background: var(--neoabs-glass-border);
+		overflow: hidden;
+		min-width: 0;
+	}
+
+	&__bar-fill {
+		height: 100%;
+		width: calc(var(--neoabs-timer-progress, 0) * 100%);
+		border-radius: inherit;
+		background: linear-gradient(
+			90deg,
+			var(--neoabs-timer-accent, #8a5a33),
+			var(--neoabs-accent, #7a5af5)
+		);
+		transition: width var(--neoabs-transition-normal) linear;
+	}
+
+	// Play/pause + reset + cancel controls live on their own row below the
+	// timer readout. `flex-basis: 100%` forces the wrap so they never collide
+	// with the digits/ring/bar, and the top rule separates them visually.
+	&__controls {
+		display: flex;
+		flex: 1 1 100%;
+		align-items: center;
+		justify-content: center;
+		gap: var(--neoabs-space-2);
+		margin-top: var(--neoabs-space-1);
+		padding-top: var(--neoabs-space-2);
+		border-top: 1px solid var(--neoabs-glass-border);
+	}
+
+	&__control {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 28px;
+		padding: 0;
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-pill);
+		background: var(--neoabs-glass-bg-strong);
+		color: var(--neoabs-text-secondary);
+		cursor: pointer;
+		transition:
+			color var(--neoabs-transition-fast),
+			background var(--neoabs-transition-fast),
+			border-color var(--neoabs-transition-fast),
+			opacity var(--neoabs-transition-fast);
+
+		svg {
+			display: block;
+			width: 14px;
+			height: 14px;
+		}
+
+		&:hover:not(:disabled) {
+			color: var(--neoabs-text-primary);
+			background: var(--neoabs-glass-bg);
+			border-color: var(--neoabs-glass-border-strong);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--neoabs-timer-accent, #8a5a33);
+			outline-offset: 1px;
+		}
+
+		&:disabled {
+			opacity: 0.35;
+			cursor: default;
+		}
+	}
+
+	// The play/pause toggle reads as active while a session is running.
+	&[data-md-neoabs-timer-running="true"]
+		&__control[data-md-neoabs-timer-ctrl="toggle"] {
+		color: var(--neoabs-timer-accent, #8a5a33);
+		border-color: var(--neoabs-timer-accent, #8a5a33);
+	}
+}
+
+// Light-scheme variant for the glass widget.
+[data-md-color-scheme="default"] .neoabs-timer-toc {
+	background: rgba(255, 255, 255, 0.9);
+}
+
+// Narrow-column responsiveness: let the readout wrap and shrink before any
+// overflow, keep the controls centred, and shrink the ring on very tight TOCs.
+@media (max-width: 480px) {
+	.neoabs-timer-toc {
+		padding: var(--neoabs-space-2);
+		gap: var(--neoabs-space-1) var(--neoabs-space-2);
+
+		&__ring {
+			width: 28px;
+			height: 28px;
+		}
+
+		&__control {
+			width: 28px;
+			height: 28px;
+		}
+	}
+}
+
+// --- Reading-mode chip (.neoabs-timer-reading) -----------------------------
+// Floating status chip rendered only while reading mode is active (the TOC --
+// and therefore the widget -- is hidden there). Bound to
+// `[data-md-neoabs-reading="active"]` so it appears/disappears exactly with
+// the reading view, using the same glass family as the other floating chrome.
+.neoabs-timer-reading {
+	position: fixed;
+	right: var(--neoabs-space-8);
+	bottom: var(--neoabs-space-8);
+	z-index: var(--neoabs-z-sticky);
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	padding: var(--neoabs-space-2) var(--neoabs-space-4);
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-glass-bg-strong);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-pill);
+	box-shadow: var(--neoabs-shadow-md);
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(8px);
+	transition: opacity var(--neoabs-transition-normal),
+	            visibility var(--neoabs-transition-normal),
+	            transform var(--neoabs-transition-normal);
+
+	html[data-md-neoabs-reading="active"] & {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	&__dot {
+		width: 8px;
+		height: 8px;
+		flex-shrink: 0;
+		border-radius: 50%;
+		background: var(--neoabs-timer-accent, #8a5a33);
+		box-shadow: 0 0 8px var(--neoabs-timer-accent, #8a5a33);
+	}
+
+	&__digits {
+		min-width: 2ch;
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-timer-reading {
+	background: rgba(255, 255, 255, 0.96);
+}
+
+// --- Settings popup (.neoabs-timer-settings) -------------------------------
+// Reuses the keyboard-help modal pattern: fixed shell + blurred overlay +
+// centered panel + header/close. The form controls configure the session and
+// the surfaces live (theme.neoabs.timer.settings_popup).
+.neoabs-timer-settings {
+	position: fixed;
+	inset: 0;
+	z-index: calc(var(--neoabs-z-modal) + 10);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity var(--neoabs-transition-normal),
+	            visibility var(--neoabs-transition-normal);
+
+	&--visible {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	&__overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		cursor: pointer;
+	}
+
+	&__panel {
+		position: relative;
+		width: 100%;
+		max-width: 380px;
+		margin: 0 var(--neoabs-space-4);
+		background: rgba(0, 0, 0, 0.9);
+		backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+		-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+		border-radius: var(--neoabs-radius-xl);
+		box-shadow: var(--neoabs-shadow-lg);
+		overflow: hidden;
+		transform: scale(0.95) translateY(10px);
+		transition: transform var(--neoabs-transition-spring);
+
+		.neoabs-timer-settings--visible & {
+			transform: scale(1) translateY(0);
+		}
+	}
+
+	&__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--neoabs-space-4) var(--neoabs-space-6);
+		border-bottom: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	}
+
+	&__title {
+		font-family: var(--neoabs-font-mono);
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--neoabs-text-primary);
+	}
+
+	&__close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		color: var(--neoabs-text-muted);
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: var(--neoabs-radius-pill);
+		cursor: pointer;
+		font-size: 18px;
+		transition: color var(--neoabs-transition-fast),
+		            background var(--neoabs-transition-fast);
+
+		&:hover {
+			color: var(--neoabs-text-primary);
+			background: var(--neoabs-ghost);
+		}
+	}
+
+	&__body {
+		padding: var(--neoabs-space-4) var(--neoabs-space-6) var(--neoabs-space-6);
+	}
+
+	&__row {
+		display: flex;
+		flex-direction: column;
+		gap: var(--neoabs-space-1);
+		margin-bottom: var(--neoabs-space-3);
+	}
+
+	&__label {
+		font-family: var(--neoabs-font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--neoabs-text-muted);
+	}
+
+	&__control {
+		width: 100%;
+		font-family: var(--neoabs-font-body);
+		font-size: 13px;
+		color: var(--neoabs-text-primary);
+		background: var(--neoabs-glass-bg-strong);
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-sm);
+		padding: var(--neoabs-space-1) var(--neoabs-space-2);
+
+		&:focus-visible {
+			outline: 2px solid var(--neoabs-accent);
+			outline-offset: 1px;
+		}
+	}
+
+	&__check {
+		margin-bottom: var(--neoabs-space-2);
+	}
+
+	&__check-label {
+		display: flex;
+		align-items: center;
+		gap: var(--neoabs-space-2);
+		font-family: var(--neoabs-font-body);
+		font-size: 13px;
+		color: var(--neoabs-text-secondary);
+		cursor: pointer;
+
+		input {
+			accent-color: var(--neoabs-timer-accent, #8a5a33);
+		}
+	}
+
+	&__actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--neoabs-space-2);
+		margin-top: var(--neoabs-space-4);
+	}
+
+	&__cancel {
+		font-family: var(--neoabs-font-display);
+		font-size: 14px;
+		font-weight: 500;
+		padding: var(--neoabs-space-1) var(--neoabs-space-3);
+		color: var(--neoabs-text-secondary);
+		background: transparent;
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		border-radius: var(--neoabs-radius-sm);
+		cursor: pointer;
+		transition: color var(--neoabs-transition-fast),
+		            background var(--neoabs-transition-fast);
+
+		&:hover {
+			color: var(--neoabs-text-primary);
+			background: var(--neoabs-ghost);
+		}
+	}
+
+	&__save {
+		font-size: 14px;
+		font-weight: 500;
+		padding: var(--neoabs-space-1) var(--neoabs-space-4);
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-timer-settings__panel {
+	background: rgba(255, 255, 255, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.neoabs-timer-settings,
+	.neoabs-timer-reading {
+		transition: none;
+	}
+}

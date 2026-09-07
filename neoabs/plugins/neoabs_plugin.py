@@ -305,6 +305,28 @@ _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
     "focus_trap",
 )
 
+# Phase 17 - Focus timer.
+#
+# A built-in focus timer driven from the cluster's timer action or its own
+# shortcut. The session runs off `Date.now()` accounting in the JS so browser
+# throttling never drifts the time; the TOC widget and the reading-mode chip are
+# the visible surfaces. Every knob is `theme.neoabs.timer` configurable and the
+# defaults ship fully ON with a 25-minute Pomodoro-style default session.
+_NEOABS_DEFAULT_TIMER = {
+    "enabled": True,
+    "default_minutes": 25,
+    "toc": {"show": True, "position": "bottom", "style": "ring"},
+    "reading": {"show": True},
+    "notifications": {"enabled": True, "toast": True, "sound": True},
+    "persist": True,
+    "settings_popup": True,
+    "colors": {"progress": "#8a5a33"},
+}
+
+# Allowed enums for the focus timer so a typo fails the build loudly.
+_NEOABS_TIMER_TOC_POSITIONS = ("top", "bottom")
+_NEOABS_TIMER_TOC_STYLES = ("ring", "bar", "digits")
+
 # Phase 11 - Content area customization.
 #
 # `theme.neoabs.content` gives full control over content rendering. Empty
@@ -687,6 +709,86 @@ def _validate_action_cluster(action_cluster):
                 )
 
 
+def _validate_timer(timer):
+    """Validate a merged `theme.neoabs.timer` mapping, raising a clear MkDocs
+    configuration error for malformed entries instead of silently degrading
+    the focus timer."""
+    if not isinstance(timer, dict):
+        raise ConfigurationError("theme.neoabs.timer must be a mapping.")
+
+    enabled = timer.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        raise ConfigurationError("theme.neoabs.timer.enabled must be a boolean.")
+
+    default_minutes = timer.get("default_minutes")
+    if default_minutes is not None and (
+        isinstance(default_minutes, bool)
+        or not isinstance(default_minutes, int)
+        or default_minutes < 1
+    ):
+        raise ConfigurationError(
+            "theme.neoabs.timer.default_minutes must be a positive integer."
+        )
+
+    toc = timer.get("toc")
+    if isinstance(toc, dict):
+        toc_show = toc.get("show")
+        if toc_show is not None and not isinstance(toc_show, bool):
+            raise ConfigurationError("theme.neoabs.timer.toc.show must be a boolean.")
+        position = toc.get("position")
+        if position is not None and position not in _NEOABS_TIMER_TOC_POSITIONS:
+            raise ConfigurationError(
+                f"theme.neoabs.timer.toc.position must be one of "
+                f"{sorted(_NEOABS_TIMER_TOC_POSITIONS)}; got {position!r}."
+            )
+        style = toc.get("style")
+        if style is not None and style not in _NEOABS_TIMER_TOC_STYLES:
+            raise ConfigurationError(
+                f"theme.neoabs.timer.toc.style must be one of "
+                f"{sorted(_NEOABS_TIMER_TOC_STYLES)}; got {style!r}."
+            )
+    elif toc is not None:
+        raise ConfigurationError("theme.neoabs.timer.toc must be a mapping.")
+
+    reading = timer.get("reading")
+    if isinstance(reading, dict):
+        reading_show = reading.get("show")
+        if reading_show is not None and not isinstance(reading_show, bool):
+            raise ConfigurationError(
+                "theme.neoabs.timer.reading.show must be a boolean."
+            )
+    elif reading is not None:
+        raise ConfigurationError("theme.neoabs.timer.reading must be a mapping.")
+
+    notifications = timer.get("notifications")
+    if isinstance(notifications, dict):
+        for field in ("enabled", "toast", "sound"):
+            value = notifications.get(field)
+            if value is not None and not isinstance(value, bool):
+                raise ConfigurationError(
+                    f"theme.neoabs.timer.notifications.{field} must be a boolean."
+                )
+    elif notifications is not None:
+        raise ConfigurationError("theme.neoabs.timer.notifications must be a mapping.")
+
+    for field in ("persist", "settings_popup"):
+        value = timer.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(f"theme.neoabs.timer.{field} must be a boolean.")
+
+    colors = timer.get("colors")
+    if isinstance(colors, dict):
+        progress = colors.get("progress")
+        if progress is not None and (
+            not isinstance(progress, str) or not progress.strip()
+        ):
+            raise ConfigurationError(
+                "theme.neoabs.timer.colors.progress must be a non-empty string."
+            )
+    elif colors is not None:
+        raise ConfigurationError("theme.neoabs.timer.colors must be a mapping.")
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -800,6 +902,7 @@ class NeoAbsPlugin(BasePlugin):
         ("content", Type(dict)),
         ("reading_mode", Type(dict)),
         ("action_cluster", Type(dict)),
+        ("timer", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -903,6 +1006,19 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["action_cluster"] = action_cluster
         theme["neoabs"] = neoabs
 
+        # Phase 17: resolve the focus timer. Defaults ship fully ON (TOC
+        # widget, reading chip, notifications, settings popup); user overrides
+        # are deep-merged and validated, then the toggle shortcut is seeded
+        # into the Phase 7 layer below so an explicit
+        # `keyboard.shortcuts.timer_toggle` the author set still wins.
+        provided_timer = neoabs.get("timer")
+        if not isinstance(provided_timer, dict):
+            provided_timer = {}
+        timer = _deep_merge(_NEOABS_DEFAULT_TIMER, provided_timer)
+        _validate_timer(timer)
+        neoabs["timer"] = timer
+        theme["neoabs"] = neoabs
+
         # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
         # shortcut works out of the box); user overrides are deep-merged and
         # validated so a malformed key or custom action fails the build with a
@@ -942,6 +1058,20 @@ class NeoAbsPlugin(BasePlugin):
             },
         )
 
+        # Phase 17: seed the focus-timer shortcut from `timer` so an explicit
+        # `keyboard.shortcuts.timer_toggle` wins. The shortcut is never
+        # persisted on its own; the timer *session* persistence is tracked
+        # separately by the `timer.persist` knob.
+        seeded_keyboard["shortcuts"].setdefault(
+            "timer_toggle",
+            {
+                "key": "Alt+Shift+T",
+                "label": "Toggle focus timer",
+                "enabled": timer.get("enabled"),
+                "persisted": False,
+            },
+        )
+
         keyboard = _deep_merge(_NEOABS_DEFAULT_KEYBOARD, seeded_keyboard)
         _validate_keyboard(keyboard)
         neoabs["keyboard"] = keyboard
@@ -973,6 +1103,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_content"] = content
         extra["neoabs_reading_mode"] = reading_mode
         extra["neoabs_action_cluster"] = action_cluster
+        extra["neoabs_timer"] = timer
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
