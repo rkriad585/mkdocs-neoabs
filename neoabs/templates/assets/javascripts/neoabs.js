@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "9"
+  var NEOABS_VERSION = "10"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -1456,6 +1456,13 @@
       .replace("ArrowRight", "\u2192")
   }
 
+  // Order- and case-insensitive canonical form of a key combo, used to detect
+  // Phase 18 action shortcuts that alias an enabled built-in shortcut (so the
+  // cluster action never double-fires).
+  function normalizeCombo(combo) {
+    return String(combo || "").split("+").map((p) => p.trim().toLowerCase()).sort().join("+")
+  }
+
   // Built-in action registry for user-defined shortcuts
   // (`theme.neoabs.keyboard.custom`). Feature toggles register their exact
   // handlers here; unknown action names resolve to null and are ignored.
@@ -1484,6 +1491,20 @@
     const notes = cfg.notes || {}
     if (notes.open_on_enter) notesSetOpen(true)
     if (notes.show === false) notesSetOpen(false)
+
+    // Phase 18: auto-start the focus timer when reading mode turns on
+    // (`timer.start_with_reading`). The plugin mirrors that flag into the
+    // reading-mode block (`reading_mode.start_with_reading`), so the JS reads
+    // it here on the Phase 15 route; an explicit reading-mode key stays
+    // authoritative. Only an idle session is started, so a running/paused one
+    // is never disturbed; this also covers the boot-restore path where a
+    // persisted reading state is reapplied on load.
+    const rmCfg = _config.reading_mode || {}
+    const tcfg = timerConfig()
+    if (rmCfg.start_with_reading === true &&
+        tcfg.enabled && _timerState.phase === "idle") {
+      focusTimerStart()
+    }
   }
 
   function initReadingMode(config) {
@@ -1692,6 +1713,23 @@
         const label = typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : ""
         if (!label) return
         rows.push({ keys: displayKey(entry.key), desc: label })
+      })
+    }
+
+    // Phase 18: surface the cluster action shortcuts with their action labels.
+    // Rows appear regardless of whether the key aliases a built-in shortcut,
+    // but an exact (key, desc) duplicate is dropped so the modal stays tidy.
+    if (kbdEnabled("") !== false && _config.action_cluster) {
+      const actions = Array.isArray(_config.action_cluster.actions)
+        ? _config.action_cluster.actions
+        : []
+      actions.forEach((action) => {
+        if (!action || action.enabled === false) return
+        const keys = displayKey(action.shortcut)
+        const desc = typeof action.label === "string" && action.label.trim() ? action.label.trim() : ""
+        if (!keys || !desc) return
+        const dup = rows.some((r) => r.keys === keys && r.desc === desc)
+        if (!dup) rows.push({ keys, desc })
       })
     }
     return rows
@@ -2449,10 +2487,22 @@
       btn.type = "button"
       btn.className = "neoabs-action-cluster__action"
       btn.setAttribute("aria-label", action.label || "")
+      btn.setAttribute("data-md-neoabs-cluster-action", action.id || "")
       btn.style.setProperty("--neoabs-action-cluster-index", String(index))
+      // Phase 18: a live remaining-time badge on the timer action (only when
+      // the action opts in with `badge: time` and the timer layer agrees).
+      let badgeHtml = ""
+      if (action.badge === "time" && action.id === "timer") {
+        const tcfg = (_config.timer && typeof _config.timer === "object") ? _config.timer : {}
+        if (tcfg.enabled !== false && tcfg.badge_in_cluster !== false) {
+          badgeHtml = '<span class="neoabs-action-cluster__badge">' +
+            formatTimer(_timerState.remaining, timerConfig().display_format) + "</span>"
+        }
+      }
       btn.innerHTML =
         (ACTION_CLUSTER_ICONS[action.icon] || ACTION_CLUSTER_ICONS.plus) +
-        '<span class="neoabs-action-cluster__tooltip">' + escapeHtml(action.label || "") + "</span>"
+        '<span class="neoabs-action-cluster__tooltip">' + escapeHtml(action.label || "") + "</span>" +
+        badgeHtml
       btn.addEventListener("click", () => actionClusterDispatch(action.id))
       menu.appendChild(btn)
     })
@@ -2483,7 +2533,8 @@
     const minActions = typeof behavior.min_actions === "number" ? behavior.min_actions : 2
     if (actions.length < minActions) return
 
-    actionClusterEnsureUi(cfg)
+actionClusterEnsureUi(cfg)
+    actionClusterBindShortcuts(cfg)
 
     if (behavior.focus_trap !== false) {
       document.addEventListener("keydown", actionClusterFocusTrap)
@@ -2499,6 +2550,58 @@
     })
 
     keyboardActions.toggle_action_cluster = toggleActionCluster
+  }
+
+  // Phase 18: cluster action id -> built-in keyboard shortcut name it aliases.
+  // Used to skip a redundant bound handler when the matching built-in shortcut
+  // is enabled for the exact same combo (so both never double-fire).
+  const CLUSTER_ACTION_KEYBOARD = {
+    timer: "timer_toggle",
+    reading_mode: "toggle_reading_mode",
+    notes: "toggle_notes",
+    keyboard_help: "help",
+  }
+
+  // Phase 18: per-action shortcut binding. Every enabled cluster action with a
+  // configured `shortcut` responds to that key, mirroring its click handler,
+  // with the same editable/overlay guards as the Phase 7 dispatcher. When the
+  // action's key aliases an *enabled* built-in shortcut (same normalized combo)
+  // the redundant binding is skipped; if the built-in is re-keyed or turned
+  // off, the action keeps answering to its own configured shortcut.
+  function actionClusterBindShortcuts(cfg) {
+    if (!cfg || kbdEnabled("") === false) return
+    const actions = Array.isArray(cfg.actions) ? cfg.actions : []
+    actions.forEach((action) => {
+      if (!action || action.enabled === false) return
+      const combo = action.shortcut
+      if (typeof combo !== "string" || !combo.trim()) return
+      const builtinName = CLUSTER_ACTION_KEYBOARD[action.id]
+      if (builtinName) {
+        const componentOk = builtinName === "help"
+          ? componentShow("keyboard_help", "show")
+          : true
+        if (componentOk &&
+            kbdEnabled(builtinName) &&
+            normalizeCombo(kbdKey(builtinName)) === normalizeCombo(combo)) {
+          return
+        }
+      }
+      document.addEventListener("keydown", (e) => {
+        if (isComposing) return
+        const el = document.activeElement
+        const tag = el ? el.tagName : ""
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (el && el.isContentEditable)) return
+        const search = $(".neoabs-search")
+        if (search && search.classList.contains("neoabs-search--active")) return
+        const drawer = document.getElementById("neoabs-drawer")
+        if (drawer && drawer.checked) return
+        if (matchesKeyCombo(e, combo)) {
+          e.preventDefault()
+          e.stopPropagation()
+          actionClusterDispatch(action.id)
+        }
+      })
+    })
   }
 
   // ---------------------------------------------------------------------------
@@ -2561,6 +2664,16 @@
       },
       persist: cfg.persist !== false,
       settings_popup: cfg.settings_popup !== false,
+      // Phase 18: cluster badge, display format, and the opt-in tab-title
+      // countdown. `start_with_reading` is read from the reading-mode block
+      // (the plugin mirrors `timer.start_with_reading` into it), so it is not
+      // resolved here. `document_title` is opt-in; `display_format` falls back
+      // to the theme default.
+      display_format: ["mm:ss", "m:ss", "SS"].indexOf(cfg.display_format) !== -1
+        ? cfg.display_format
+        : "mm:ss",
+      document_title: cfg.document_title === true,
+      badge_in_cluster: cfg.badge_in_cluster !== false,
       colors: {
         progress: saved.progress || colorsCfg.progress || "#8a5a33",
       },
@@ -2580,11 +2693,19 @@
     storageSet(FOCUS_TIMER_SETTINGS_KEY, JSON.stringify(obj))
   }
 
-  function formatTimer(ms) {
+  // Phase 17/18: time readout. `format` mirrors `timer.display_format`:
+  // "mm:ss" zero-pads the minutes ("05:00"), "m:ss" leaves them bare ("5:00"),
+  // and "SS" shows plain total seconds. The default is the canonical mm:ss the
+  // theme ships with.
+  function formatTimer(ms, format) {
     const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
     const minutes = Math.floor(totalSeconds / 60)
     const seconds = totalSeconds % 60
-    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds
+    const pad = (n) => (n < 10 ? "0" : "") + n
+    format = format || "mm:ss"
+    if (format === "SS") return String(totalSeconds)
+    if (format === "m:ss") return minutes + ":" + pad(seconds)
+    return pad(minutes) + ":" + pad(seconds)
   }
 
   function focusTimerPersist() {
@@ -2767,7 +2888,7 @@
     const progress = total > 0
       ? Math.max(0, Math.min(1, _timerState.remaining / total))
       : 0
-    const label = formatTimer(_timerState.remaining)
+    const label = formatTimer(_timerState.remaining, cfg.display_format)
 
     const tocWidget = $(".neoabs-timer-toc")
     if (tocWidget) {
@@ -2796,6 +2917,27 @@
     if (chip) {
       const digitEl = chip.querySelector(".neoabs-timer-reading__digits")
       if (digitEl) digitEl.textContent = label
+    }
+
+    // Phase 18: mirror the same readout into the cluster badge (when present).
+    const badge = $('.neoabs-action-cluster__action[data-md-neoabs-cluster-action="timer"] .neoabs-action-cluster__badge')
+    if (badge) badge.textContent = label
+
+    focusTimerApplyTitle()
+  }
+
+  // Phase 18: optional live countdown in the tab title (`timer.document_title`).
+  // The page's real title is captured once (boot) and re-synced on SPA
+  // navigation, so the template never shows a stale title once the session ends.
+  let _tabTitleBase = ""
+
+  function focusTimerApplyTitle() {
+    const cfg = timerConfig()
+    if (cfg.document_title && _timerState.phase === "running") {
+      if (!_tabTitleBase) _tabTitleBase = document.title
+      document.title = formatTimer(_timerState.remaining, cfg.display_format) + " \u2014 " + _tabTitleBase
+    } else if (_timerState.phase !== "running" && _tabTitleBase) {
+      document.title = _tabTitleBase
     }
   }
 
@@ -2989,6 +3131,8 @@
   function initFocusTimer(config) {
     const cfg = timerConfig()
     if (cfg.enabled === false) return
+
+    _tabTitleBase = document.title
 
     if (cfg.persist) focusTimerRestore()
 
@@ -3570,6 +3714,12 @@
         if (footer) footer.outerHTML = data.footer
       }
       if (data.title) document.title = data.title
+      // Phase 18: keep the timer's captured base title in sync across SPA
+      // navigation so the tab-title countdown never anchors to a stale page.
+      if (_tabTitleBase) {
+        _tabTitleBase = document.title
+        focusTimerApplyTitle()
+      }
       const pageTitle = $(".neoabs-header__page-title")
       if (pageTitle && data.pageTitle) pageTitle.innerHTML = data.pageTitle
     }

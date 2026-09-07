@@ -578,9 +578,28 @@ theme:
     #   settings_popup: true            # Config popup opened from the timer action
     #   colors:
     #     progress: "#8a5a33"           # Ring/bar progress accent while running
+    # --- Phase 18: Action shortcuts & cluster customization (optional) --------
+    # Per-action shortcuts and a live remaining-time badge on the cluster, the
+    # timer display format, an opt-in tab-title countdown, and auto-starting
+    # the focus timer when reading mode turns on. Action shortcuts are additive
+    # on the Phase 7 layer: when a shortcut aliases an enabled built-in (e.g.
+    # `timer`/Alt+Shift+T vs `keyboard.shortcuts.timer_toggle`), the built-in
+    # wins and the action shortcut is skipped so nothing double-fires; re-keying
+    # or disabling that built-in lets the action shortcut take over.
+    # action_cluster:
+    #   actions:                        # Phase 18 adds per-action shortcut + badge
+    #     - { id: keyboard_help, icon: "help",    label: "Keyboard shortcuts", shortcut: "?",             badge: none, enabled: true }
+    #     - { id: notes,          icon: "notes",   label: "Open notes panel",  shortcut: "Ctrl+Shift+N", badge: none, enabled: true }
+    #     - { id: timer,          icon: "timer",   label: "Focus timer",        shortcut: "Alt+Shift+T",  badge: time, enabled: true }
+    #     - { id: reading_mode,   icon: "reading", label: "Reading mode",       shortcut: "Alt+Shift+R",  badge: none, enabled: true }
+    # timer:
+    #   start_with_reading: false      # Auto-start the session when reading mode turns on (idle sessions only)
+    #   display_format: "mm:ss"        #  mm:ss | m:ss | SS (seconds only)
+    #   document_title: false          # Opt-in: live mm:ss + " — <page>" in the tab title while running
+    #   badge_in_cluster: true         # Mirror the remaining time into the cluster timer action badge
 
 extra:
-  neoabs_version: 13
+  neoabs_version: 14
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

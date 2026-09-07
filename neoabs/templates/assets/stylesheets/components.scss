@@ -5983,3 +5983,39 @@ img.neoabs-repo-pop__avatar {
 		transition: none;
 	}
 }
+
+// PHASE 18: ACTION SHORTCUTS & CLUSTER CUSTOMIZATION
+// ===========================================================================
+// The timer cluster action gains a live remaining-time badge
+// (`timer.badge_in_cluster` x per-action `badge: time`). It sits below the icon
+// inside the circular button: the action flips to a tight column so the mm:ss
+// chip never overflows the button or collides with its hover tooltip.
+.neoabs-action-cluster__action[data-md-neoabs-cluster-action="timer"] {
+	flex-direction: column;
+	gap: 3px;
+
+	svg {
+		width: 18px;
+		height: 18px;
+	}
+}
+
+.neoabs-action-cluster__badge {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	padding: 2px 6px;
+	font-family: var(--neoabs-font-mono);
+	font-size: 9px;
+	font-weight: 600;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+	color: var(--neoabs-timer-accent, #8a5a33);
+	background: var(--neoabs-glass-bg);
+	border: 1px solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-pill);
+	white-space: nowrap;
+	user-select: none;
+	pointer-events: none;
+}

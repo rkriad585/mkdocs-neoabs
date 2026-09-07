@@ -2129,10 +2129,10 @@ theme:
       main: { icon: "plus", size: "44px", glass: true, icon_transform: true }
       behavior: { min_actions: 2, close_on_select: true, close_on_escape: true, close_on_outside: true, animation: "normal", tooltips: true, focus_trap: true }
       actions:
-        - { id: keyboard_help, icon: "help", label: "Keyboard shortcuts", enabled: true }
-        - { id: notes, icon: "notes", label: "Open notes panel", enabled: true }
+        - { id: keyboard_help, icon: "help", label: "Keyboard shortcuts", shortcut: "?", badge: none, enabled: true }
+        - { id: notes, icon: "notes", label: "Open notes panel", shortcut: "Ctrl+Shift+N", badge: none, enabled: true }
         - { id: timer, icon: "timer", label: "Focus timer", shortcut: "Alt+Shift+T", badge: time, enabled: true }
-        - { id: reading_mode, icon: "reading", label: "Reading mode", shortcut: "Alt+Shift+R", enabled: true }
+        - { id: reading_mode, icon: "reading", label: "Reading mode", shortcut: "Alt+Shift+R", badge: none, enabled: true }
 
     # Phase 17 + 18: Focus timer
     timer:

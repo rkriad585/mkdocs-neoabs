@@ -277,14 +277,32 @@ _NEOABS_DEFAULT_ACTION_CLUSTER = {
             "id": "keyboard_help",
             "icon": "help",
             "label": "Keyboard shortcuts",
+            "shortcut": "?",
+            "badge": "none",
             "enabled": True,
         },
-        {"id": "notes", "icon": "notes", "label": "Open notes panel", "enabled": True},
-        {"id": "timer", "icon": "timer", "label": "Focus timer", "enabled": True},
+        {
+            "id": "notes",
+            "icon": "notes",
+            "label": "Open notes panel",
+            "shortcut": "Ctrl+Shift+N",
+            "badge": "none",
+            "enabled": True,
+        },
+        {
+            "id": "timer",
+            "icon": "timer",
+            "label": "Focus timer",
+            "shortcut": "Alt+Shift+T",
+            "badge": "time",
+            "enabled": True,
+        },
         {
             "id": "reading_mode",
             "icon": "reading",
             "label": "Reading mode",
+            "shortcut": "Alt+Shift+R",
+            "badge": "none",
             "enabled": True,
         },
     ],
@@ -297,6 +315,7 @@ _NEOABS_ACTION_CLUSTER_ICONS = ("plus", "menu", "notes", "help", "timer", "readi
 _NEOABS_ACTION_CLUSTER_ANIMATIONS = ("normal", "reduced", "none")
 _NEOABS_ACTION_CLUSTER_IDS = ("keyboard_help", "notes", "timer", "reading_mode")
 _NEOABS_ACTION_CLUSTER_OFFSET_KEYS = ("bottom", "left", "right")
+_NEOABS_ACTION_CLUSTER_BADGES = ("none", "time")
 _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
     "close_on_select",
     "close_on_escape",
@@ -312,6 +331,10 @@ _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
 # throttling never drifts the time; the TOC widget and the reading-mode chip are
 # the visible surfaces. Every knob is `theme.neoabs.timer` configurable and the
 # defaults ship fully ON with a 25-minute Pomodoro-style default session.
+# Phase 18 adds the remaining-time badge in the cluster, the `mm:ss`/`m:ss`/`SS`
+# display format, an opt-in tab-title countdown, and `start_with_reading` (both
+# surfaced in the JS; `document_title` / `start_with_reading` are opt-in by
+# design because they change visible page behavior).
 _NEOABS_DEFAULT_TIMER = {
     "enabled": True,
     "default_minutes": 25,
@@ -320,12 +343,17 @@ _NEOABS_DEFAULT_TIMER = {
     "notifications": {"enabled": True, "toast": True, "sound": True},
     "persist": True,
     "settings_popup": True,
+    "start_with_reading": False,
+    "display_format": "mm:ss",
+    "document_title": False,
+    "badge_in_cluster": True,
     "colors": {"progress": "#8a5a33"},
 }
 
 # Allowed enums for the focus timer so a typo fails the build loudly.
 _NEOABS_TIMER_TOC_POSITIONS = ("top", "bottom")
 _NEOABS_TIMER_TOC_STYLES = ("ring", "bar", "digits")
+_NEOABS_TIMER_DISPLAY_FORMATS = ("mm:ss", "m:ss", "SS")
 
 # Phase 11 - Content area customization.
 #
@@ -672,7 +700,8 @@ def _validate_action_cluster(action_cluster):
             if not isinstance(entry, dict):
                 raise ConfigurationError(
                     f"theme.neoabs.action_cluster.actions[{index}] must be a "
-                    "mapping with 'id', 'icon', 'label', and 'enabled'."
+                    "mapping with 'id', 'icon', 'label', 'shortcut', 'badge', "
+                    "and 'enabled'."
                 )
             action_id = entry.get("id")
             if action_id not in _NEOABS_ACTION_CLUSTER_IDS:
@@ -700,6 +729,21 @@ def _validate_action_cluster(action_cluster):
                 raise ConfigurationError(
                     f"theme.neoabs.action_cluster.actions[{index}].label must be "
                     "a non-empty string."
+                )
+            shortcut = entry.get("shortcut")
+            if shortcut is not None and (
+                not isinstance(shortcut, str) or not shortcut.strip()
+            ):
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].shortcut must "
+                    "be a non-empty key string (e.g. 'Alt+Shift+T')."
+                )
+            badge = entry.get("badge")
+            if badge is not None and badge not in _NEOABS_ACTION_CLUSTER_BADGES:
+                raise ConfigurationError(
+                    f"theme.neoabs.action_cluster.actions[{index}].badge must be "
+                    f"one of {sorted(_NEOABS_ACTION_CLUSTER_BADGES)}; got "
+                    f"{badge!r}."
                 )
             action_enabled = entry.get("enabled")
             if action_enabled is not None and not isinstance(action_enabled, bool):
@@ -771,10 +815,26 @@ def _validate_timer(timer):
     elif notifications is not None:
         raise ConfigurationError("theme.neoabs.timer.notifications must be a mapping.")
 
-    for field in ("persist", "settings_popup"):
+    for field in (
+        "persist",
+        "settings_popup",
+        "start_with_reading",
+        "document_title",
+        "badge_in_cluster",
+    ):
         value = timer.get(field)
         if value is not None and not isinstance(value, bool):
             raise ConfigurationError(f"theme.neoabs.timer.{field} must be a boolean.")
+
+    display_format = timer.get("display_format")
+    if (
+        display_format is not None
+        and display_format not in _NEOABS_TIMER_DISPLAY_FORMATS
+    ):
+        raise ConfigurationError(
+            f"theme.neoabs.timer.display_format must be one of "
+            f"{sorted(_NEOABS_TIMER_DISPLAY_FORMATS)}; got {display_format!r}."
+        )
 
     colors = timer.get("colors")
     if isinstance(colors, dict):
@@ -1017,6 +1077,15 @@ class NeoAbsPlugin(BasePlugin):
         timer = _deep_merge(_NEOABS_DEFAULT_TIMER, provided_timer)
         _validate_timer(timer)
         neoabs["timer"] = timer
+        theme["neoabs"] = neoabs
+
+        # Phase 18: mirror `timer.start_with_reading` into the reading-mode
+        # layer. `setdefault` keeps an explicit `reading_mode.start_with_reading`
+        # the author may have set earlier authoritative, while every site gets a
+        # defined value (default False). The JS reads it from the merged reading
+        # block so the boot-restore path (SPA refresh mid-session) still counts.
+        reading_mode.setdefault("start_with_reading", timer["start_with_reading"])
+        neoabs["reading_mode"] = reading_mode
         theme["neoabs"] = neoabs
 
         # Phase 7: resolve keyboard shortcuts. Defaults are all-ON (every
