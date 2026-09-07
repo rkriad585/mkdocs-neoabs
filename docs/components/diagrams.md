@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 # Diagrams (Mermaid)
 
 NeoAbs renders fenced `mermaid` blocks through [Mermaid.js](https://mermaid.js.org)

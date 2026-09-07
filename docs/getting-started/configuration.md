@@ -1,4 +1,5 @@
 ---
+date: 2026-09-07
 title: Configuration
 ---
 
@@ -217,6 +218,52 @@ extra:
     A `page.meta.image` in a page's front matter overrides the auto-generated
     card for that page. If no card exists for a page (e.g. 404 pages), the OG
     block falls back to a summary Twitter card.
+
+### `neoabs.meta`
+
+Phase 5 freshness + "edit the source" bar. A small metadata row under the
+content: a "Last updated" date and an "Edit this page" link. The date is picked
+from `page.meta.git_revision_date_localized` (set by the
+[`mkdocs-git-revision-date-localized`](https://github.com/timvink/mkdocs-git-revision-date-localized)
+plugin) and falls back to the page's `date:` front matter when the plugin is not
+installed — or is omitted entirely when neither exists (never breaks).
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for the metadata bar |
+| `show_last_updated` | `true` | Show the "Last updated" date row |
+| `show_edit_on_github` | `true` | Show the "Edit this page" link |
+| `last_updated_label` | `"Last updated"` | Label before the date |
+| `edit_label` | `"Edit this page"` | Link text |
+| `date_source` | `"auto"` | `auto` (git first, then front matter), `git`, or `front_matter` |
+| `branch` | `"main"` | Repository branch used for the edit link |
+| `source_dir` | `"docs"` | Source folder used for the edit link |
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    meta:
+      enabled: true                # master on/off
+      show_last_updated: true
+      show_edit_on_github: true
+      date_source: auto            # auto | git | front_matter
+      branch: main
+      source_dir: docs
+```
+
+The edit link is built as
+`{repo_url}/blob/{branch}/{source_dir}/{page.file.src_uri}` and only renders when
+`config.repo_url` is set. A page can override either row per-page via front
+matter:
+
+```yaml
+---
+neoabs:
+  meta:
+    show_last_updated: false      # hide the date on this page
+---
+```
 
 ## Generated reference
 

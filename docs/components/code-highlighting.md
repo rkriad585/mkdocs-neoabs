@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 # Code Highlighting
 
 NeoAbs enhances syntax highlighting with [highlight.js](https://highlightjs.org)
@@ -62,3 +66,27 @@ theme:
   working.
 - The copy button is inserted after highlighting so the `<pre>` wrapper stays
   intact.
+
+## Code annotations
+
+Annotate specific lines of a code block with a numbered marker using the
+`pymdownx.highlight` guide: end a source line with `# (1)!` (or `// (1)!`,
+`-- (1)!`, etc.) and add the numbered legend directly below the block:
+
+```python
+import os
+cwd = os.getcwd()        # (1)!
+```
+
+<ol>
+<li>Prints the current working directory.</li>
+</ol>
+
+The marker becomes a red pill on that line, and the following `<ol>` becomes a
+styled legend — hovering an entry highlights its matching marker. A plain
+Markdown ordered list (`1.  ...`) works too when the toolchain emits an `<ol>`
+directly after the highlighted block; the raw `<ol>` above is the form that
+always renders as a sibling of the code block.
+
+Annotations are applied client-side, so they need no extra Markdown
+extensions. Toggle them off with `theme.neoabs.content.code.annotate: false`.

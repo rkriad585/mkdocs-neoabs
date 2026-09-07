@@ -34,6 +34,7 @@ DEFAULT_DICTS = (
     "_NEOABS_DEFAULT_CONTENT",
     "_NEOABS_DEFAULT_AI_READER",
     "_NEOABS_DEFAULT_SOCIAL_CARDS",
+    "_NEOABS_DEFAULT_META",
 )
 
 # Human titles for the default dicts, matching the config sections users know.
@@ -46,6 +47,7 @@ DEFAULT_TITLES = {
     "_NEOABS_DEFAULT_CONTENT": "content",
     "_NEOABS_DEFAULT_AI_READER": "ai_reader",
     "_NEOABS_DEFAULT_SOCIAL_CARDS": "social_cards",
+    "_NEOABS_DEFAULT_META": "meta",
 }
 
 

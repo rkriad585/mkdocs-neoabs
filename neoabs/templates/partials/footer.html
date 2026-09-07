@@ -8,6 +8,7 @@
 {% set _ftr_copy_cfg = _ftr_cfg.get("copyright") if (_ftr_cfg.get("copyright") is mapping) else {} %}
 {% set _ftr_social = _ftr_cfg.social if (_ftr_cfg.social is defined) else [] %}
 {% set _ftr_columns = _ftr_cfg.columns if (_ftr_cfg.columns is defined) else [] %}
+{% set _meta_cfg = config.extra.neoabs_meta if (config.extra and config.extra.neoabs_meta is mapping) else {} %}
 {% set _ftr_style = namespace(parts=[]) %}
 {% if _ftr_position != "relative" %}
 {% set _ftr_style.parts = _ftr_style.parts + ["--neoabs-footer-position: " ~ _ftr_position] %}
@@ -85,6 +86,31 @@
       {% endif %}
     </div>
     {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if (_meta_cfg.enabled | default(true)) and (_comp.footer.show_meta | default(true)) %}
+  {% set _pg_meta = ((_pg.meta) if (_pg is defined and _pg is mapping and _pg.meta is mapping) else {}) %}
+  {% set _meta_show_last = (_pg_meta.show_last_updated if (_pg_meta.show_last_updated is defined) else _meta_cfg.show_last_updated | default(true)) %}
+  {% set _meta_show_edit = (_pg_meta.show_edit_on_github if (_pg_meta.show_edit_on_github is defined) else _meta_cfg.show_edit_on_github | default(true)) %}
+  <div class="neoabs-footer__meta">
+    {% if _meta_show_last %}
+    {% set _git_date = page.meta.git_revision_date_localized if (page and page.meta and page.meta.git_revision_date_localized) else "" %}
+    {% set _page_date = page.meta.date if (page and page.meta and page.meta.date) else "" %}
+    {% set _date_source = ((_pg_meta.date_source | default('')) | string) if (_pg_meta.date_source is defined) else (_meta_cfg.date_source | default('auto')) %}
+    {% set _use_git = (false if (_date_source == "front_matter") else (true if (_date_source == "git") else (_git_date | trim))) %}
+    {% if _git_date and _use_git %}
+    <span class="neoabs-last-updated">{{ _meta_cfg.last_updated_label | default("Last updated") }}: {{ _git_date }}</span>
+    {% elif _page_date %}
+    <span class="neoabs-last-updated">{{ _meta_cfg.last_updated_label | default("Last updated") }}: {{ _page_date }}</span>
+    {% endif %}
+    {% endif %}
+
+    {% if _meta_show_edit and config.repo_url and page and page.file and page.file.src_uri %}
+    <a class="neoabs-edit" href="{{ config.repo_url }}/blob/{{ _meta_cfg.branch | default('main') }}/{{ _meta_cfg.source_dir | default('docs') }}/{{ page.file.src_uri }}">
+      {{ _meta_cfg.edit_label | default("Edit this page") }}
+    </a>
+    {% endif %}
   </div>
   {% endif %}
 

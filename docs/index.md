@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 <p align="center">
   <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="120"
        data-md-scheme-dark="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg"

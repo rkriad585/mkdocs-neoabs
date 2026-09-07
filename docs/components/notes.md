@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 # Notes & Annotations
 
 NeoAbs ships a **browser-local** note layer. Open the notes panel and save

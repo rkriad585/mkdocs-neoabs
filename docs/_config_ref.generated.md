@@ -86,6 +86,7 @@ sections:
       copyright_text: ''
       show: true
       show_copyright: true
+      show_meta: true
       show_prev_next: true
     header:
       show: true
@@ -153,6 +154,7 @@ sections:
     back_to_top_label: Back to top
     back_to_top_threshold: 500
     code:
+      annotate: true
       copied_label: ''
       copy_label: ''
       highlight_lines: true
@@ -178,6 +180,7 @@ sections:
       anchor_symbol: ''
       heading_anchor: true
       image_behavior: normal
+      image_lightbox: true
       link_behavior: smooth
       video_behavior: responsive
   keyboard (shortcuts):
@@ -243,6 +246,15 @@ sections:
         key: Ctrl+Shift+T
         label: Toggle table of contents
         persisted: true
+  meta:
+    branch: main
+    date_source: auto
+    edit_label: Edit this page
+    enabled: true
+    last_updated_label: Last updated
+    show_edit_on_github: true
+    show_last_updated: true
+    source_dir: docs
   reading_mode:
     enabled: true
     notes:

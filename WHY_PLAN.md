@@ -197,8 +197,8 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 5 | AI/LLM-readiness (`llms.txt`, mirrors, FAQ/Article schema) | 🟡 `llms.txt`+`llms-full.txt`+mirrors shipped; schema pending | P4 |
 | 6 | Search config surface | ✅ fully wired (placeholder/shortcut/min/max/context/highlight/suggest) | done |
 | 7 | Search `?q=` deep link + share | ✅ `?q=` restore auto-opens search; per-result "copy link" | done |
-| 8 | "Last updated" date + "Edit on GitHub" link | ❌ | P5 |
-| 9 | Image lightbox, footnotes, code annotations | ❌ (responsive images/video ✅) | P5 |
+| 8 | "Last updated" date + "Edit on GitHub" link | ✅ `neoabs.meta` footer config (git-revision-date, front-matter date fallback, configurable labels/branch/source_dir) | done |
+| 9 | Image lightbox, footnotes, code annotations | ✅ vanilla `initImageZoom` (overlay/keyboard), `footnotes` styled, custom `initCodeAnnotations` (text-node badge wrapping) | done |
 | 10 | Cookie consent, announcement bar, feedback ("was this helpful"?) | ❌ | P6 |
 | 11 | Comments (giscus) | ❌ | P6 |
 | 12 | i18n of UI strings, translations of chrome | 🟡 `language` + partial `translations`; no override merge | P7 |
@@ -562,10 +562,11 @@ document.querySelectorAll(".neoabs-typeset img").forEach((img) => {
   add an "annotate" CSS-comment syntax guide for `pymdownx.highlight`
   (`content.code.annotate` equivalent).
 
-**Files.** `footer.html`, `neoabs.js`, `components.scss`, `mkdocs.yml` (extensions), `docs/components/*`.
+**Files.** `footer.html`, `neoabs.js`, `components.scss`, `mkdocs.yml` (extensions), `docs/components/*`, `neoabs_plugin.py` (`_NEOABS_DEFAULT_META`, `_validate_meta`, `("meta", Type(dict))`), `tools/emit_config_reference.py`, `docs/_config_ref.generated.md`.
 
-**Acceptance.** git-revision-date renders when plugin present, no-op otherwise;
-image zoom works w/o deps; footnotes styled; `npm test` + build green.
+**Acceptance.** git-revision-date renders when plugin present, front-matter `date:` fallback works, no-op otherwise (page/404 safe); image zoom opens overlay on click with keyboard/close; footnotes styled in `.neoabs-typeset`; code annotations (line-end marker `# (N)!` + legend `<ol>`) apply at runtime after hljs re-highlight; strict build passes; `npm test` 8/8; `ruff check` clean; `tools/add_dates.py` stamps docs with date front matter.
+
+**Done (verified).** Phase 5 implemented and committed in `e2dae82`...`HEAD` (meta bar, lightbox, footnotes, code annotations, full docs, JS test). All acceptance criteria met.
 
 ---
 

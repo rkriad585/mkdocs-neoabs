@@ -54,6 +54,17 @@ theme:
       enabled: true   # Master on/off: JSON-LD + auto card images (default true)
       jsonld: true    # Article JSON-LD structured data in <head> (default true)
       cards: true     # Build per-page og:image cards when og_image = __auto__ (default true)
+    # --- Phase 5: Page metadata bar -----------------------------------------
+    # "Last updated" date + "Edit this page" link under the content. The date
+    # works with mkdocs-git-revision-date-localized (page.meta.git_revision_date_localized)
+    # and falls back to `date:` front matter, or is omitted when neither exists.
+    meta:
+      enabled: true                # Master on/off (default true)
+      show_last_updated: true      # "Last updated: <date>" row (default true)
+      show_edit_on_github: true    # "Edit this page" link to the source file (default true)
+      last_updated_label: Last updated
+      edit_label: Edit this page
+      date_source: auto            # auto | front_matter | git
     # --- Phase 1: Design token overrides (optional) -------------------------
     # Uncomment any value to override the theme's default design token. Values
     # map to CSS custom properties and win against the compiled stylesheet.
@@ -721,6 +732,7 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - footnotes
   - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
@@ -764,6 +776,7 @@ nav:
     - Notes: components/notes.md
     - Diagrams: components/diagrams.md
     - Code Highlighting: components/code-highlighting.md
+    - Footnotes: components/footnotes.md
     - Trees: components/trees.md
     - Task Lists: components/task-lists.md
     - Tabs: components/tabs.md

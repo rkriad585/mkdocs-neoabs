@@ -1,4 +1,5 @@
 ---
+date: 2026-09-07
 title: Images & SVG
 ---
 
@@ -15,6 +16,24 @@ Images get the glass treatment automatically: rounded corners, subtle border, an
 ```markdown
 ![NeoAbs logo](https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg){ width="120" }
 ```
+
+## Image lightbox
+
+Click any content image (not wrapped in a link) to open a full-viewport preview
+overlay. Close with the × button, clicking the backdrop, the `Esc` key, or
+scrolling; navigate multiple openable images with the ← / → arrow keys. The
+overlay works with zero dependencies — no extra pip packages.
+
+```yaml
+theme:
+  neoabs:
+    content:
+      typography:
+        image_lightbox: true   # default true
+```
+
+- Images inside a `<a>` (e.g. linked thumbnails) are deliberately left alone.
+- The overlay respects `prefers-reduced-motion` and locks body scroll while open.
 
 ## Image classes via `attr_list`
 

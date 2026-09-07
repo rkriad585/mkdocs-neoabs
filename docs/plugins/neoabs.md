@@ -1,4 +1,5 @@
 ---
+date: 2026-09-07
 title: NeoAbs Plugin
 ---
 
@@ -41,6 +42,7 @@ The plugin hooks into MkDocs' `on_config` event to set default values for theme 
 | `neoabs.animation` | `"normal"` | Animation mode |
 | `neoabs.border` | `"thin"` | Border style |
 | `neoabs.social_cards` | `{"enabled": true, "jsonld": true, "cards": true}` | Social preview cards + JSON-LD |
+| `neoabs.meta` | `{"enabled": true, "show_last_updated": true, "show_edit_on_github": true, ...}` | Last-updated + edit-on-GitHub bar |
 
 If you set these values in `mkdocs.yml`, the plugin will not override them.
 
@@ -108,6 +110,28 @@ extra:
 > To embed the site's own logo on the cards, set `theme.logo` to a local file (e.g. `assets/images/logo.svg`); it is used when the `neoabs_logo_light`/`neoabs_logo_dark` extras point at remote URLs, which are skipped at build time.
 >
 > Cards are rendered as PNG when [Pillow](https://python-pillow.org) is installed, otherwise as standalone SVG. Install the extra with `pip install mkdocs-neoabs[social-cards]`. An author can override the auto image for a single page with a `image:` entry in that page's front matter.
+
+### `meta`
+
+Phase 5 freshness bar: a "Last updated" date and an "Edit this page" link under
+the content. The date reads `page.meta.git_revision_date_localized` when the
+`mkdocs-git-revision-date-localized` plugin is installed, falls back to the
+page's `date:` front matter, and is omitted when neither is present (so nothing
+breaks without the git plugin). The edit link points at the page source in the
+repository configured by `repo_url`.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    meta:
+      enabled: true                # master on/off
+      show_last_updated: true      # "Last updated: <date>"
+      show_edit_on_github: true    # "Edit this page"
+      date_source: auto            # auto | git | front_matter
+      branch: main
+      source_dir: docs
+```
 
 ## Full Example
 

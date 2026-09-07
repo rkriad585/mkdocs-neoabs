@@ -8,11 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- Automatic per-page social preview cards (Phase 4): with `extra.neoabs_og_image: __auto__` the build renders a clean 1200×630 Open Graph card for every page in the theme palette, embedding the site logo (`theme.logo`, or `neoabs_logo_light`/`neoabs_logo_dark` when local). Cards are PNG when Pillow is installed, else standalone SVG; the site logo is drawn when available, otherwise a monogram accent is used.
-- Article JSON-LD structured data injected into each page's `<head>` alongside the per-page `og:image` and `summary_large_image` Twitter card
-- New `theme.neoabs.social_cards` config (`enabled` / `jsonld` / `cards`) to toggle the feature on and off; per-page `image:` front matter overrides the auto card
-- New `social-cards` optional dependency for Pillow-based PNG rendering, `pip install mkdocs-neoabs[social-cards]`
-- `tools/social_card.py` CLI (`--title`, `--site`, `--description`, `--logo`, `--out`) for generating cards without a full build
+- Footer metadata bar (`theme.neoabs.meta`): per-page "Last updated" timestamp (git-revision-date-localized plugin when installed, falling back to `date:` front-matter) and "Edit on GitHub" link (configurable `repo_url`, `branch`, `source_dir`, labels); gracefully hidden on 404 pages
+- New `("meta", Type(dict))` schema for `theme.neoabs.meta` with `_validate_meta()` validation; default values in `_NEOABS_DEFAULT_META`; `_NEOABS_META_BOOLS` frozenset for safe key lookup
+- Vanilla image lightbox (`initImageZoom`): click to zoom any typeset image (skips images inside links) in a full-screen overlay with caption, Esc/scroll/resize close, ←/→ keyboard navigation, and `prefers-reduced-motion` support — zero external dependencies
+- Styled footnotes: `- footnotes` extension registered, `.footnote-ref` pill badges, `.footnotes` glass card, `.neoabs-backref` accent link
+- Code annotations (pymdownx.highlight-style): line-end marker `# (1)!` syntax converted client-side to red inline badges; adjacent `<ol>` legend auto-detected and wired for hover highlighting; annotation markers re-applied after highlight.js re-highlight via `applyCodeAnnotations()`
+- `tools/add_dates.py`: stamps every `docs/**/*.md` page with a `date:` front-matter key (`YYYY-MM-DD`, UTC-based); skips MkDocs `_`-prefixed generated files; idempotent, handles files with or without existing front matter, preserves line endings
+
+### Changed
+
+- `neoabs/templates/partials/footer.html` now renders `.neoabs-footer__meta` conditionally from `config.extra.neoabs_meta` and per-page `_pg` override; `_meta_cfg` variable guards Jinja against missing page context
+- `neoabs.js` boot init order: `initContentMedia` → `initImageZoom` → `initHighlighting` (hljs callback now calls `applyCodeAnnotations()` after re-highlight)
+- SCSS additions: `.neoabs-zoom` overlay (slide-up entrance), `.neoabs-annotation` badge, `.neoabs-annotations` legend with `attr(data-index)` counters, `.neoabs-footer__meta` / `.neoabs-edit` / `.neoabs-last-updated` layout
+
+### Fixed
+
+- Phase 5 annotation legend rendering: live docs example uses raw `<ol>` after `div.highlight` (reliable sibling regardless of Python-Markdown extension-set), fixing the ordered-list-not-parsed issue when `pymdownx.highlight` anchor_linenums are active
 
 ## [0.1.2] - 2026-09-04
 

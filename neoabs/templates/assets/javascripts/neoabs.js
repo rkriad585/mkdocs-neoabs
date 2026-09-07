@@ -1208,6 +1208,10 @@
             anchors.forEach(function (a) { frag.appendChild(a) })
             codeEl.insertBefore(frag, codeEl.firstChild)
           })
+
+        // highlight.js rebuilds each code block, so annotation badges must be
+        // re-applied after re-folding (idempotent).
+        applyCodeAnnotations()
       } catch (e) {}
     })
   }
@@ -1722,6 +1726,105 @@
     }
   }
 
+  // Vanilla image lightbox: opens a full-viewport overlay when any content
+  // image without a wrapping link is clicked. Closes on overlay click, Escape,
+  // scroll, or keyboard arrow navigation when multiple images are present.
+  // Opt out via theme.neoabs.content.typography.image_lightbox = false.
+  function initImageZoom() {
+    if (contentSetting("typography", "image_lightbox", true) === false) return
+    const images = $$("article .neoabs-typeset img")
+    if (!images.length) return
+
+    let openEl = null
+    let openIndex = -1
+
+    function buildOverlay() {
+      const ov = document.createElement("div")
+      ov.className = "neoabs-zoom"
+      ov.setAttribute("role", "dialog")
+      ov.setAttribute("aria-modal", "true")
+      ov.setAttribute("aria-label", "Image preview")
+      const img = document.createElement("img")
+      img.className = "neoabs-zoom__img"
+      img.alt = ""
+      const caption = document.createElement("div")
+      caption.className = "neoabs-zoom__caption"
+      const btn = document.createElement("button")
+      btn.className = "neoabs-zoom__close"
+      btn.setAttribute("aria-label", "Close preview")
+      btn.innerHTML = "&#215;"
+      ov.appendChild(img)
+      ov.appendChild(caption)
+      ov.appendChild(btn)
+      return ov
+    }
+
+    function show(index) {
+      const img = images[index]
+      openEl = buildOverlay()
+      openIndex = index
+      const view = openEl.querySelector("img")
+      view.src = img.currentSrc || img.src
+      view.alt = img.alt || ""
+      const cap = openEl.querySelector(".neoabs-zoom__caption")
+      cap.textContent = "" + (index + 1) + " / " + images.length
+      document.body.classList.add("neoabs-zoom--open")
+      document.body.appendChild(openEl)
+      openEl.addEventListener("click", close)
+      openEl.querySelector("button").addEventListener("click", function (e) {
+        e.stopPropagation()
+        close()
+      })
+      window.addEventListener("keydown", onKey)
+      window.addEventListener("scroll", close, true)
+      window.addEventListener("resize", close)
+    }
+
+    function close() {
+      if (!openEl) return
+      document.body.classList.remove("neoabs-zoom--open")
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("scroll", close, true)
+      window.removeEventListener("resize", close)
+      openEl.remove()
+      openEl = null
+      openIndex = -1
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape" || e.key === "Esc") {
+        e.preventDefault()
+        close()
+        return
+      }
+      if (!images.length || openIndex < 0) return
+      if (e.key === "ArrowRight") {
+        e.preventDefault()
+        show((openIndex + 1) % images.length)
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        show((openIndex - 1 + images.length) % images.length)
+      }
+    }
+
+    images.forEach(function (img, i) {
+      if (img.closest("a")) return
+      img.tabIndex = 0
+      img.setAttribute("role", "button")
+      img.setAttribute("aria-label", "Preview image")
+      img.addEventListener("click", function (e) {
+        e.preventDefault()
+        show(i)
+      })
+      img.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          show(i)
+        }
+      })
+    })
+  }
+
   // Responsive tables: wraps markdown <table> in a horizontally scrollable
   // `.table-wrapper`. Opt out via theme.neoabs.content.tables.responsive = false.
   function initContentTables() {
@@ -1779,6 +1882,111 @@
         code.style.paddingLeft = (digits + 2) + "ch"
         pre.insertBefore(gutter, pre.firstChild)
       })
+  }
+
+  // Code annotations (`# (1)!` markers, pymdownx.highlight "annotate" guide).
+  // Walks the highlighted source as text nodes so it works whether the block was
+  // rendered by Pygments at build time or re-folded by highlight.js at runtime.
+  // The trailing marker on a line like `os.getcwd()  # (1)!` becomes a numbered
+  // pill; the definition list that follows the code block is the legend.
+  function applyCodeAnnotations() {
+    if (contentSetting("code", "annotate", true) === false) return
+    $$("article .highlight pre > code, article pre.highlight > code, article .codehilite pre > code")
+      .forEach(function (codeEl) {
+        if (codeEl.querySelector(".neoabs-annotation")) return
+        collectCodeAnnotationMarkers(codeEl)
+      })
+    wireAnnotationLegend()
+  }
+
+  function codeTextNodes(root) {
+    const nodes = []
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    let n
+    while ((n = walker.nextNode())) nodes.push(n)
+    return nodes
+  }
+
+  function collectCodeAnnotationMarkers(codeEl) {
+    const textNodes = codeTextNodes(codeEl)
+    if (!textNodes.length) return
+    let full = ""
+    textNodes.forEach(function (t) { full += t.nodeValue })
+
+    // A marker is `(N)!` at the end of a source line, optionally prefixed by a
+    // comment leader (`# `, `// `, `-- `, `/* ` ...). Match per line so a marker
+    // can never span into the next line.
+    let cursor = 0
+    full.split("\n").forEach(function (line) {
+      const m = /\((\d+)\)!(\s*)$/.exec(line)
+      if (m) {
+        const markerStart = cursor + m.index
+        const markerEnd = cursor + m.index + m[0].length - m[1].length - 1 // drop `!...`
+        wrapAnnotationRange(codeEl, markerStart, markerEnd, m[1])
+      }
+      cursor += line.length + 1 // +1 for the consumed newline
+    })
+  }
+
+  function wrapAnnotationRange(codeEl, start, end, label) {
+    const textNodes = codeTextNodes(codeEl)
+    let pos = 0
+    textNodes.forEach(function (tn) {
+      if (!tn.nodeValue.length) return
+      const nodeStart = pos
+      const nodeEnd = pos + tn.nodeValue.length
+      pos = nodeEnd
+      const ovStart = Math.max(nodeStart, start)
+      const ovEnd = Math.min(nodeEnd, end)
+      if (ovStart >= ovEnd) return
+      let seg = tn
+      if (ovStart > nodeStart) seg = tn.splitText(ovStart - nodeStart)
+      const overlap = end - ovStart
+      if (overlap < seg.nodeValue.length) seg = seg.splitText(overlap)
+      const badge = document.createElement("span")
+      badge.className = "neoabs-annotation"
+      badge.setAttribute("data-index", label)
+      badge.setAttribute("aria-label", "Annotation " + label)
+      badge.textContent = label
+      seg.parentNode.replaceChild(badge, seg)
+    })
+  }
+
+  function wireAnnotationLegend() {
+    const list = $$("article .neoabs-typeset ol.neoabs-annotations")[0] || null
+    if (!list) return
+    const items = $$("li", list)
+    function clearActive() {
+      items.forEach(function (li) { li.classList.remove("is-active") })
+    }
+    list.addEventListener("mouseover", function (e) {
+      const li = e.target.closest("li")
+      if (!li) return
+      const idx = items.indexOf(li) + 1
+      clearActive()
+      $$(".neoabs-annotation").forEach(function (b) {
+        if (Number(b.getAttribute("data-index")) === idx) b.classList.add("is-active")
+      })
+      li.classList.add("is-active")
+    })
+    list.addEventListener("mouseout", function () {
+      clearActive()
+      $$(".neoabs-annotation").forEach(function (b) { b.classList.remove("is-active") })
+    })
+  }
+
+  function initCodeAnnotations() {
+    if (contentSetting("code", "annotate", true) === false) return
+    // Number the definition lists that immediately follow annotated blocks.
+    $$("article .neoabs-typeset div.highlight + ol, article .neoabs-typeset pre.highlight + ol, article .neoabs-typeset pre + ol")
+      .forEach(function (ol) {
+        if (ol.classList.contains("neoabs-annotations")) return
+        ol.classList.add("neoabs-annotations")
+        $$("li", ol).forEach(function (li, i) {
+          li.setAttribute("data-index", "" + (i + 1))
+        })
+      })
+    applyCodeAnnotations()
   }
 
   // ---------------------------------------------------------------------------
@@ -4164,7 +4372,7 @@ actionClusterEnsureUi(cfg)
     function reinitPageScoped() {
       const inits = [
         initTocTracking, initHighlighting, initCodeLineNumbers, initContentMedia,
-        initContentTables, initMermaid,
+        initContentTables, initMermaid, initImageZoom, initCodeAnnotations,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
         initUIExamples, () => initMath(_navConfig), initNavToggle,
         initPermalinks,
@@ -4423,7 +4631,7 @@ actionClusterEnsureUi(cfg)
     const init = [initTheme, initColorScheme, initMobileNav,
       () => initSearch(config), initTocTracking, initBackToTop,
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
-      initContentTables, initMermaid,
+      initContentTables, initMermaid, initImageZoom, initCodeAnnotations,
       () => initCopyButtons(config), initTabs, initTaskLists,
       () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,

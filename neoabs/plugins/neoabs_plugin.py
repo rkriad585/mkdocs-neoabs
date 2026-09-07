@@ -104,6 +104,7 @@ _NEOABS_DEFAULT_COMPONENTS = {
         "show": True,
         "show_prev_next": True,
         "show_copyright": True,
+        "show_meta": True,
         "copyright_text": "",
     },
     "content": {
@@ -398,6 +399,7 @@ _NEOABS_DEFAULT_CONTENT = {
         "link_behavior": "smooth",
         "image_behavior": "normal",
         "video_behavior": "responsive",
+        "image_lightbox": True,
     },
     "code": {
         "show_copy_button": True,
@@ -407,6 +409,7 @@ _NEOABS_DEFAULT_CONTENT = {
         "line_number_start": 1,
         "highlight_lines": True,
         "line_number_color": "",
+        "annotate": True,
     },
     "admonitions": {
         "enabled": True,
@@ -476,6 +479,20 @@ _NEOABS_DEFAULT_SOCIAL_CARDS = {
 
 # Allowed key sets for social cards so a typo fails the build loudly.
 _NEOABS_SOCIAL_CARDS_BOOLS = ("enabled", "jsonld", "cards")
+
+# Phase 5 - page metadata bar: last-updated date + edit-on-GitHub link.
+_NEOABS_DEFAULT_META = {
+    "enabled": True,
+    "show_last_updated": True,
+    "show_edit_on_github": True,
+    "last_updated_label": "Last updated",
+    "edit_label": "Edit this page",
+    "date_source": "auto",
+    "branch": "main",
+    "source_dir": "docs",
+}
+
+_NEOABS_META_BOOLS = ("enabled", "show_last_updated", "show_edit_on_github")
 
 # Allowed enums / key sets for the AI reader so a typo fails the build loudly.
 _NEOABS_AI_READER_URL_STYLES = ("sidecar", "inline")
@@ -1010,6 +1027,36 @@ def _validate_social_cards(social_cards):
             )
 
 
+def _validate_meta(meta):
+    """Validate a merged `theme.neoabs.meta` mapping, raising a clear MkDocs
+    configuration error for malformed entries instead of silently dropping the
+    last-updated / edit-on-GitHub page metadata bar."""
+    if not isinstance(meta, dict):
+        raise ConfigurationError("theme.neoabs.meta must be a mapping.")
+
+    for field in _NEOABS_META_BOOLS:
+        value = meta.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(f"theme.neoabs.meta.{field} must be a boolean.")
+
+    date_source = meta.get("date_source")
+    if date_source not in (None, "", "auto", "front_matter", "git"):
+        raise ConfigurationError(
+            "theme.neoabs.meta.date_source must be one of: "
+            "'auto', 'front_matter', 'git'."
+        )
+
+    for field in ("branch", "source_dir"):
+        value = meta.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.meta.{field} must be a string.")
+
+    for field in ("last_updated_label", "edit_label"):
+        value = meta.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.meta.{field} must be a string.")
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -1126,6 +1173,7 @@ class NeoAbsPlugin(BasePlugin):
         ("timer", Type(dict)),
         ("ai_reader", Type(dict)),
         ("social_cards", Type(dict)),
+        ("meta", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -1265,6 +1313,15 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["social_cards"] = social_cards
         theme["neoabs"] = neoabs
 
+        # Phase 5 - page metadata bar: last-updated date + edit-on-GitHub link.
+        provided_meta = neoabs.get("meta")
+        if not isinstance(provided_meta, dict):
+            provided_meta = {}
+        meta = _deep_merge(_NEOABS_DEFAULT_META, provided_meta)
+        _validate_meta(meta)
+        neoabs["meta"] = meta
+        theme["neoabs"] = neoabs
+
         # Mirror bookkeeping for the Phase 19 build hooks (a fresh build always
         # resets both so a plugin instance is never reused across builds).
         self._ai_mirrors = []
@@ -1372,6 +1429,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_timer"] = timer
         extra["neoabs_ai_reader"] = ai_reader
         extra["neoabs_social_cards"] = social_cards
+        extra["neoabs_meta"] = meta
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.

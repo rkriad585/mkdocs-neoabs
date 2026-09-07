@@ -287,7 +287,7 @@ NeoAbs is a **MkDocs theme** — it provides HTML templates, CSS, and JavaScript
 
 ## Architecture
 
-```
+```tree
 mkdocs-neoabs/
 ├── neoabs/                          # Python package
 │   ├── __init__.py                  # Version (0.1.2)

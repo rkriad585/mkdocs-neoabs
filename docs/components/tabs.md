@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 # Tabs
 
 NeoAbs styles `pymdownx.tabbed` content with a glass-styled tab strip that

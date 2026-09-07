@@ -1,3 +1,7 @@
+---
+date: 2026-09-07
+---
+
 # Admonitions
 
 NeoAbs styles the standard MkDocs `admonition` extension, plus collapsible

@@ -60,6 +60,9 @@ function makeNode() {
       this.childNodes = this.childNodes.filter((c) => c !== child)
       return child
     },
+    remove() {
+      if (this.parentNode) this.parentNode.removeChild(this)
+    },
     insertBefore(child, ref) {
       this._children.push(child)
       this.childNodes.push(child)
@@ -115,6 +118,33 @@ function searchDomFixture() {
 
 let _searchDom = null
 
+// Phase 5: lightbox — images the harness injects for the zoom test.
+let _zoomImgs = []
+let _zoomOverlayMode = false
+function zoomImageFixture() {
+  const img = makeNode()
+  img.tagName = "IMG"
+  img.src = "https://x/img.png"
+  img.alt = "fixture"
+  img.tabIndex = -1
+  return img
+}
+function zoomOverlayFixture() {
+  const ov = makeNode()
+  const view = makeNode()
+  view.tagName = "IMG"
+  const caption = makeNode()
+  const close = makeNode()
+  close.tagName = "BUTTON"
+  ov.querySelector = (sel) => {
+    if (sel === "img") return view
+    if (sel === ".neoabs-zoom__caption") return caption
+    if (sel === "button") return close
+    return null
+  }
+  return ov
+}
+
 const documentStub = {
   readyState: "complete",
   body,
@@ -123,6 +153,18 @@ const documentStub = {
   createElement(tag) {
     const n = makeNode()
     n.tagName = tag
+    if (tag === "div" && _zoomOverlayMode) {
+      // Phase 5 lightbox: the overlay div gets sub-query support.
+      n._zoomView = makeNode(); n._zoomView.tagName = "IMG"
+      n._zoomCap = makeNode()
+      n._zoomBtn = makeNode(); n._zoomBtn.tagName = "BUTTON"
+      n.querySelector = (sel) => {
+        if (sel === "img") return n._zoomView
+        if (sel === ".neoabs-zoom__caption") return n._zoomCap
+        if (sel === "button") return n._zoomBtn
+        return null
+      }
+    }
     if (tag === "a") {
       // Browser-accurate <a>.href: store the raw value but resolve it against
       // the current document location (hash stripped) when read. Without this,
@@ -158,7 +200,10 @@ const documentStub = {
     }
     return null
   },
-  querySelectorAll(sel) { return [] },
+  querySelectorAll(sel) {
+    if (sel === "article .neoabs-typeset img") return _zoomImgs
+    return []
+  },
   getElementById(id) {
     if (id === "__config") return _configEl
     if (_searchDom && id === "neoabs-search") return _searchDom.checkbox
@@ -180,7 +225,8 @@ const storageStub = {
 }
 
 const windowStub = {
-  addEventListener() {},
+  addEventListener(type, fn) { this._handlers = this._handlers || {}; (this._handlers[type] = this._handlers[type] || []).push(fn) },
+  removeEventListener() {},
   innerWidth: 1024,
   innerHeight: 768,
   _scriptsLoaded: [],
@@ -410,6 +456,46 @@ check(
     noShareChildren[0].className === "neoabs-search__result-link" &&
     !noShareHasButton
 )
+
+// ============================================================================
+// Test 7: vanilla image lightbox opens an overlay on click
+// ============================================================================
+const img1 = zoomImageFixture()
+const img2 = zoomImageFixture()
+_zoomImgs = [img1, img2]
+_zoomOverlayMode = true
+body._children = []
+body.childNodes = []
+windowStub._handlers = {}
+
+const zoomBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    components: {},
+    content: {},
+    neoabs_search: { enabled: false },
+    translations: {},
+  },
+  searchDom: null,
+  stored: {},
+})
+_zoomOverlayMode = true // overlay is created on click, so stay in zoom mode
+
+let zoomOpened = false
+if (zoomBoot && Array.isArray(img1.listeners.click)) {
+  const beforeCount = body._children.length
+  img1.listeners.click.forEach((fn) => fn({ preventDefault() {}, currentTarget: null }))
+  const afterCount = body._children.length
+  const zoomOverlay = body._children[body._children.length - 1] || null
+  zoomOpened = afterCount === beforeCount + 1 &&
+    !!zoomOverlay &&
+    zoomOverlay.className === "neoabs-zoom" &&
+    body.classList.contains("neoabs-zoom--open") &&
+    (windowStub._handlers.keydown || []).length > 0
+}
+_zoomOverlayMode = false
+check("image lightbox opens an overlay on image click", zoomOpened)
 
 // ============================================================================
 // Report
