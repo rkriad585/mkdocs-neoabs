@@ -381,6 +381,37 @@ check(
 )
 
 // ============================================================================
+// Test 6: config `result.show_share: false` hides the per-result share button
+// ============================================================================
+const noShareDom = searchDomFixture()
+const noShareBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/docs/getting-started/", search: "?q=tokens", href: "https://x/docs/getting-started/?q=tokens", hash: "" },
+  config: {
+    base: "/docs/",
+    neoabs_search: { enabled: true, min_chars: 2, result: { show_share: false } },
+    translations: { clipboard: { copy: "Copy link", copied: "Copied" } },
+    components: {},
+    content: {},
+  },
+  searchDom: noShareDom,
+  stored: {},
+})
+
+const noShareRow = noShareDom.list._children[0] || null
+const noShareChildren = (noShareRow && noShareRow._children) || []
+const noShareHasButton = noShareChildren.some(
+  (c) => c && String(c.tagName).toUpperCase() === "BUTTON"
+)
+
+check(
+  "result.show_share: false hides the per-result share button",
+  noShareBoot &&
+    noShareChildren.length === 1 &&
+    noShareChildren[0].className === "neoabs-search__result-link" &&
+    !noShareHasButton
+)
+
+// ============================================================================
 // Report
 // ============================================================================
 console.log("\n" + (failures === 0

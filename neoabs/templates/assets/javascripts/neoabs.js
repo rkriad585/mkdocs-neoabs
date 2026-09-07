@@ -468,6 +468,7 @@
     const sSuggest = sc.suggest !== false
     const sShowIcon = resCfg.show_icon !== false
     const sShowPath = resCfg.show_breadcrumb !== false
+    const sShowShare = resCfg.show_share !== false
 
     let searchTrigger = null
     let minSearchLength = sMinChars
@@ -653,40 +654,42 @@
         link.appendChild(body)
         row.appendChild(link)
 
-        // Phase 3: per-result copy-link — re-opens search via ?q= when visited.
-        const shareBtn = document.createElement("button")
-        shareBtn.type = "button"
-        shareBtn.className = "neoabs-search__result-share"
-        shareBtn.title = shareTitle
-        shareBtn.setAttribute("aria-label", shareTitle)
-        shareBtn.innerHTML = shareIcon
-        shareBtn.addEventListener("click", (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          const q = (input.value || "").trim()
-          // Build the deep link from the row's resolved browser URL (link.href is
-          // absolute in the real DOM, so "./result/" or "../result/" hosts are
-          // gone), drop any #fragment, then append ?q= so the query survives
-          // server-side and re-opens search on the shared page.
-          let abs = link.href || href
-          const fragIdx = abs.indexOf("#")
-          if (fragIdx !== -1) abs = abs.slice(0, fragIdx)
-          const url = abs + (q ? "?q=" + encodeURIComponent(q) : "")
-          copyToClipboard(url).then(() => {
-            shareBtn.title = shareCopiedTitle
-            shareBtn.setAttribute("aria-label", shareCopiedTitle)
-            shareBtn.classList.add("neoabs-search__result-share--copied")
-            neoabsToast(shareCopiedTitle, "success")
-            setTimeout(() => {
-              shareBtn.title = shareTitle
-              shareBtn.setAttribute("aria-label", shareTitle)
-              shareBtn.classList.remove("neoabs-search__result-share--copied")
-            }, 1600)
-          }).catch(() => {
-            neoabsToast("Copy link failed — clipboard unavailable", "error")
+        if (sShowShare) {
+          // Phase 3: per-result copy-link — re-opens search via ?q= when visited.
+          const shareBtn = document.createElement("button")
+          shareBtn.type = "button"
+          shareBtn.className = "neoabs-search__result-share"
+          shareBtn.title = shareTitle
+          shareBtn.setAttribute("aria-label", shareTitle)
+          shareBtn.innerHTML = shareIcon
+          shareBtn.addEventListener("click", (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            const q = (input.value || "").trim()
+            // Build the deep link from the row's resolved browser URL (link.href is
+            // absolute in the real DOM, so "./result/" or "../result/" hosts are
+            // gone), drop any #fragment, then append ?q= so the query survives
+            // server-side and re-opens search on the shared page.
+            let abs = link.href || href
+            const fragIdx = abs.indexOf("#")
+            if (fragIdx !== -1) abs = abs.slice(0, fragIdx)
+            const url = abs + (q ? "?q=" + encodeURIComponent(q) : "")
+            copyToClipboard(url).then(() => {
+              shareBtn.title = shareCopiedTitle
+              shareBtn.setAttribute("aria-label", shareCopiedTitle)
+              shareBtn.classList.add("neoabs-search__result-share--copied")
+              neoabsToast(shareCopiedTitle, "success")
+              setTimeout(() => {
+                shareBtn.title = shareTitle
+                shareBtn.setAttribute("aria-label", shareTitle)
+                shareBtn.classList.remove("neoabs-search__result-share--copied")
+              }, 1600)
+            }).catch(() => {
+              neoabsToast("Copy link failed — clipboard unavailable", "error")
+            })
           })
-        })
-        row.appendChild(shareBtn)
+          row.appendChild(shareBtn)
+        }
         list.push(row)
       }
       return list

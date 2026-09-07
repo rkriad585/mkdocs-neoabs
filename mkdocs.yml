@@ -472,6 +472,7 @@ theme:
     #     show_icon: true              # Show page icon in results
     #     show_breadcrumb: true        # Show page path in results
     #     show_highlights: true        # Highlight terms inside matched text
+    #     show_share: true             # Show "copy link" button on results
     # --- Phase 13: Page-level overrides (front matter) -------------------------
     # Any page can override these theme settings *for that page only* with a
     # `neoabs:` block in its front matter. Absent keys keep the theme config.

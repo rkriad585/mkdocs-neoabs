@@ -179,6 +179,7 @@
 {% set _search_show_icon = _search_res_cfg.show_icon | default(true) %}
 {% set _search_show_breadcrumb = _search_res_cfg.show_breadcrumb | default(true) %}
 {% set _search_show_highlights = _search_res_cfg.show_highlights | default(true) %}
+{% set _search_show_share = _search_res_cfg.show_share | default(true) %}
 {% set _reading = config.extra.neoabs_reading_mode | default({}) %}
 {% set _reading_hide = [] %}
 {% if _reading.sections %}
@@ -666,7 +667,8 @@
           "result": {
             "show_icon": {{ _search_show_icon | tojson }},
             "show_breadcrumb": {{ _search_show_breadcrumb | tojson }},
-            "show_highlights": {{ _search_show_highlights | tojson }}
+            "show_highlights": {{ _search_show_highlights | tojson }},
+            "show_share": {{ _search_show_share | tojson }}
           }
         },
         "version": null
