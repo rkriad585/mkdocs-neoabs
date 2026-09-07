@@ -105,6 +105,7 @@ styles `neoabs.scss` (630 lines) + `components.scss` (6,104 lines), CI under
 | SPA-style navigation, scroll restore + `lastPage` resume | JS `initSPANavigation` (L3988–4297) |
 | Service worker: static + CDN cache-first, versioned `?v=` passthrough | `sw.js` |
 | Full-screen search with rich config surface (placeholder, shortcut, min/max results, context, highlights, suggest, result icons/breadcrumbs), keyboard nav, focus trap | JS `initSearch` (L417–812) |
+| Search deep-link `?q=` restore + per-result "copy link" (shared links re-open search with the query) | JS `initSearch` (P3) + `partials/search.html`
 | TOC active-heading tracking (configurable levels/offset) | JS `initTocTracking` (L823–903) |
 | Reading progress bar + back-to-top (threshold + label config) | `initScrollBehavior`/`initBackToTop` (L905–967) |
 | highlight.js (dark + light), Mermaid, KaTeX — lazy CDN load with per-component `cdn_url` | JS init registry |
@@ -127,7 +128,6 @@ styles `neoabs.scss` (630 lines) + `components.scss` (6,104 lines), CI under
 
 - No JSON-LD structured data (OG/Twitter/theme-color are present; JSON-LD is not).
 - No auto-generated social-card image (`tools/social_card.py` does not exist).
-- No `?q=` search deep-link (search share/resume not implemented).
 - Screenshot gallery ❌→✅ fixed: all 17 `Screenshots/*.png` exist as real
   Playwright captures (macOS/phone frames), including `light-mode.png`,
   `code-blocks.png`, `mobile.png`; `tools/screenshots_gen.py` emits all of them.
@@ -196,7 +196,7 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 4 | Social-card image per page (auto-generated) | ❌ | P4 |
 | 5 | AI/LLM-readiness (`llms.txt`, mirrors, FAQ/Article schema) | 🟡 `llms.txt`+`llms-full.txt`+mirrors shipped; schema pending | P4 |
 | 6 | Search config surface | ✅ fully wired (placeholder/shortcut/min/max/context/highlight/suggest) | done |
-| 7 | Search `?q=` deep link + share | ❌ | P3 |
+| 7 | Search `?q=` deep link + share | ✅ `?q=` restore auto-opens search; per-result "copy link" | done |
 | 8 | "Last updated" date + "Edit on GitHub" link | ❌ | P5 |
 | 9 | Image lightbox, footnotes, code annotations | ❌ (responsive images/video ✅) | P5 |
 | 10 | Cookie consent, announcement bar, feedback ("was this helpful"?) | ❌ | P6 |
@@ -381,29 +381,58 @@ Phase 1a gap — `config.theme.font.text` crashes when the key is absent. Fixed 
 **Why it wins.** "Search works out of the box" is already our strength; the
 missing 10% (share/restore) turns an empty-win into a demo-able, linkable one.
 
-**Already shipped (verified).** Full search config surface (placeholder,
-shortcut key, `min_chars`, `max_results`, `show_context`, `context_length`,
-`highlight_results`, `suggest`, result icon/breadcrumb/highlight toggles) is
-wired end-to-end: base.html `__config.neoabs_search` → JS `initSearch`.
+**Already shipped (verified).** All items below are done.
 
-#### 3a. Deep link + share
+Full search config surface (placeholder, shortcut key, `min_chars`,
+`max_results`, `show_context`, `context_length`, `highlight_results`,
+`suggest`, result icon/breadcrumb/highlight toggles) is wired end-to-end:
+base.html `__config.neoabs_search` → JS `initSearch`.
+
+#### 3a. Deep link + share ✅ (done)
+
+- **`?q=` restore:** `initSearch` reads `URLSearchParams(location.search).get("q")`
+  on load, wins over any remembered session query, and auto-opens search with the
+  query pre-filled (`if (deepLink) openSearch()`). Runtime path: deep link →
+  `openSearch()` → the existing auto-run restores results immediately; if the
+  search worker is still warming up, the `allowSearch` handler re-runs the query.
+- **Per-result "copy link":** `buildResults` wraps each row as a
+  `<div class="neoabs-search__result">` containing a `.neoabs-search__result-link`
+  `<a>` plus a `.neoabs-search__result-share` `<button>`. The button copies the
+  row's **resolved browser URL** (`link.href` in the real DOM is absolute, so the
+  per-page `./` / `../` `base_url` never corrupts the host — no
+  `127.0.0.1:8000./...`), strips any `#fragment`, then appends `?q=<query>` via
+  the existing `copyToClipboard` helper. Success shows a `neoabsToast(..., "success")`
+  toast (copied translation); failure shows an error toast. The share markup/icon
+  lives in a `#neoabs-search-share` `<template>` in `partials/search.html` (cloned
+  by JS; inline fallback). `closeSearch()` strips `?q=` from the URL via
+  `history.replaceState` (preserving other params/hash) so re-opening search does
+  not re-inject a stale query.
+- **Keyboard nav:** Enter on a highlighted row clicks the inner `.result-link`.
 
 ```js
-// On modal open: honor ?q=
-const params = new URLSearchParams(location.search)
-if (params.has("q")) openSearch(params.get("q"))
-
-// Add a "copy link" action to a result row:
-resultLink.addEventListener("click", () => {
-  const url = location.origin + location.pathname + "?q=" + encodeURIComponent(activeQuery)
-  navigator.clipboard?.writeText(url)
-})
+// initSearch (neoabs.js) — on load: honor ?q= and open
+const urlParams = new URLSearchParams(location.search)
+if (urlParams.has("q")) {
+  deepLink = String(urlParams.get("q") || "").trim()
+  if (deepLink) { input.value = deepLink; sessionMutate((s) => { s.search = deepLink }) }
+}
+// ... at the end of initSearch:
+if (deepLink) openSearch()
 ```
 
-**Files.** `partials/search.html`, `neoabs.js` (`initSearch`).
+**Files.** `partials/search.html` (`<template id="neoabs-search-share">`),
+`neoabs.js` (`initSearch`: deep-link detect/auto-open, `buildResults` row
+restructure + share button, Enter handler, `closeSearch` URL cleanup),
+`components.scss` (`.neoabs-search__result-link`, `.neoabs-search__result-share`),
+`tests/neoabs.test.js` (search harness: DOM/Worker/clipboard stubs + deep-link +
+copy-link checks).
 
-**Acceptance.** `?q=foo` re-opens search with the query; "copy link" on results
-copies a working deep-link; search harness passes.
+**Acceptance (verified).** `?q=foo` re-opens search with the query pre-filled;
+the per-result "copy link" button writes a full deep-link URL (`origin + href +
+?q=…`) via `navigator.clipboard.writeText`, with translated copied-feedback;
+`closeSearch` drops `?q=` from the URL; search harness passes (6 checks —
+boot, notes TTL ×2, deep-link auto-open, copy-link URL, copy-link origin);
+`npm run build`, `mkdocs build --strict`, and `ruff check neoabs/` stay green.
 
 ---
 
@@ -759,7 +788,7 @@ def doctor() -> int:
 - **Compat matrix** (MkDocs 1.5 / 1.6 / 2.0.dev) as a CI matrix in
   `.github/workflows`, all green → the "future-proof" claim is machine-checked.
 - **PyPI publish**: extend `release.yml` with `twine upload` /
-  `pypa/gh-action-pypi-publish` (today it only cuts a GitHub Release).
+  `pypa/gh-action-pypi-publish` env: PYPI_TOKEN, env: PYPI_USERNAME already set (today it only cuts a GitHub Release).
 
 **Files.** `docs/plugins/integrations.md`, `neoabs/cli.py`, `.github/workflows/*`, `pyproject.toml`.
 

@@ -1905,6 +1905,48 @@ html[data-md-neoabs-search="false"] .neoabs-header__search {
 	margin-top: 4px;
 }
 
+// Phase 3: per-result clickable link area (replaces the former <a> row wrapper).
+.neoabs-search__result-link {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--neoabs-space-3);
+	flex: 1;
+	min-width: 0;
+	text-decoration: none;
+	color: inherit;
+
+	&:hover {
+		color: inherit;
+	}
+}
+
+// Phase 3: per-result "copy link" share button.
+.neoabs-search__result-share {
+	flex-shrink: 0;
+	align-self: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	margin-left: var(--neoabs-space-1);
+	color: var(--neoabs-text-muted);
+	background: transparent;
+	border: none;
+	border-radius: var(--neoabs-radius-sm);
+	cursor: pointer;
+	transition: color var(--neoabs-transition-fast), background var(--neoabs-transition-fast);
+
+	&:hover {
+		color: var(--neoabs-accent);
+		background: var(--neoabs-ghost);
+	}
+
+	&--copied {
+		color: var(--neoabs-accent);
+	}
+}
+
 // Search footer (keyboard shortcuts)
 .neoabs-search__footer {
 	display: flex;

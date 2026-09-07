@@ -3,8 +3,9 @@
  *
  * Stubs a minimal DOM/browser environment and loads the theme's neoabs.js IIFE
  * to verify the boot sequence (all init* functions) runs without throwing. It
- * also exercises the browser-local notes storage helpers (TTL purge) which are
- * deterministic and need no DOM.
+ * also exercises:
+ *   1. Browser-local notes storage (TTL purge)
+ *   2. Phase 3 shared search deep links (?q= auto-open + per-result copy link)
  *
  * Run:  node tests/neoabs.test.js
  */
@@ -35,7 +36,13 @@ function makeNode() {
     setAttribute(attr, val) { this._attrs[attr] = String(val) },
     getAttribute(attr) { return this._attrs[attr] },
     hasAttribute(attr) { return attr in this._attrs },
-    classList: { toggle: () => {}, add: () => {}, remove: () => {}, contains: () => false },
+    classList: {
+      _c: new Set(),
+      toggle(c, force) { const on = force !== undefined ? !!force : !this._c.has(c); on ? this._c.add(c) : this._c.delete(c); return on },
+      add(c) { this._c.add(c) },
+      remove(c) { this._c.delete(c) },
+      contains(c) { return this._c.has(c) },
+    },
     closest(sel) {
       if (sel.includes("input:checked")) return null
       return null
@@ -65,7 +72,16 @@ function makeNode() {
     focus() {},
     scrollIntoView() {},
     setProperty() {},
-    closest() { return null },
+    select() {},
+    querySelector(sel) {
+      // Make neoabsToast functional in the harness: a freshly created toast
+      // container gets a querySelector that hands back its message span.
+      if (sel === ".neoabs-toast__msg") {
+        if (!this._toastMsg) this._toastMsg = makeNode()
+        return this._toastMsg
+      }
+      return null
+    },
   }
   return el
 }
@@ -73,23 +89,82 @@ function makeNode() {
 // ---- DOM / window stubs ----------------------------------------------------
 const body = makeNode()
 body.textContent = ""
-let elId = 0
+
+function searchDomFixture() {
+  const p = makeNode()
+  p.tagName = "P"
+  const status = makeNode()
+  status.querySelector = (sel) => (sel === "p" ? p : null)
+  const list = makeNode()
+  list.querySelector = () => null
+  const input = makeNode()
+  input.tagName = "INPUT"
+  const searchEl = makeNode()
+  searchEl.querySelector = (sel) => {
+    if (sel === ".neoabs-search__status") return status
+    if (sel === ".neoabs-search__list") return list
+    if (sel === ".neoabs-search__input") return input
+    return null
+  }
+  const checkbox = makeNode()
+  checkbox.id = "neoabs-search"
+  checkbox.type = "checkbox"
+  const closeBtn = makeNode()
+  return { checkbox, searchEl, input, status, list, closeBtn }
+}
+
+let _searchDom = null
 
 const documentStub = {
   readyState: "complete",
   body,
   documentElement: makeNode(),
   _els: [],
-  createElement(tag) { const n = makeNode(); n.tagName = tag; return n },
+  createElement(tag) {
+    const n = makeNode()
+    n.tagName = tag
+    if (tag === "a") {
+      // Browser-accurate <a>.href: store the raw value but resolve it against
+      // the current document location (hash stripped) when read. Without this,
+      // the share handler would read back "./guide/index.html" and the
+      // assertion that the "."/fragment bugs are gone would be meaningless.
+      let _href = ""
+      Object.defineProperty(n, "href", {
+        configurable: true,
+        get() {
+          const raw = _href
+          const baseHref = String((globalThis.location && globalThis.location.href) || "").replace(/#.*$/, "")
+          if (!baseHref) return raw
+          try { return new __RealURL(raw, baseHref).href }
+          catch (_e) { return raw }
+        },
+        set(v) { _href = String(v) },
+      })
+    }
+    return n
+  },
   createTextNode(txt) { const n = makeNode(); n.textContent = txt; return n },
   createDocumentFragment() { return makeNode() },
   createTreeWalker() {
-    // Minimal tree-walk returning nothing.
     return { nextNode: () => null }
   },
-  querySelector(sel) { return null },
+  querySelector(sel) {
+    if (_searchDom) {
+      if (sel === ".neoabs-search") return _searchDom.searchEl
+      if (sel === ".neoabs-search__input") return _searchDom.input
+      if (sel === ".neoabs-search__status") return _searchDom.status
+      if (sel === ".neoabs-search__list") return _searchDom.list
+      if (sel === ".neoabs-search__close") return _searchDom.closeBtn
+    }
+    return null
+  },
   querySelectorAll(sel) { return [] },
-  getElementById(id) { return null },
+  getElementById(id) {
+    if (id === "__config") return _configEl
+    if (_searchDom && id === "neoabs-search") return _searchDom.checkbox
+    if (id === "neoabs-search-share") return null
+    return null
+  },
   addEventListener() {},
   removeEventListener() {},
   get activeElement() { return null },
@@ -111,12 +186,19 @@ const windowStub = {
   _scriptsLoaded: [],
   matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
   getSelection() { return { toString: () => "", removeAllRanges: () => {}, anchorNode: null } },
+  setTimeout() { return 0 },
+  clearTimeout() {},
 }
+
+let _configEl = null
+
+// Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
+// harness can resolve relative paths the way a real browser does.
+const __RealURL = globalThis.URL
 
 globalThis.document = documentStub
 globalThis.window = windowStub
 globalThis.localStorage = storageStub
-globalThis.location = { pathname: "/page/", search: "", href: "https://x/page/" }
 globalThis.Node = { TEXT_NODE: 3, ELEMENT_NODE: 1 }
 globalThis.URL = { createObjectURL: () => "blob:x", revokeObjectURL: () => {} }
 globalThis.getComputedStyle = () => ({ position: "static" })
@@ -124,77 +206,184 @@ globalThis.requestAnimationFrame = (cb) => { cb(); return 0 }
 globalThis.cancelAnimationFrame = () => {}
 globalThis.Blob = class Blob { constructor(text, opts) { this.text = text; this.opts = opts } }
 
+// Phase 3: Worker shim so initSearch creates the search worker without throwing.
+globalThis.Worker = class Worker {
+  constructor(url) { this.url = url; this.onmessage = null; this._ready = false }
+  postMessage(msg) {
+    if (msg.init) {
+      this._ready = true
+      // Simulate the built-in search plugin telling the theme the worker is ready.
+      if (this.onmessage) this.onmessage({ data: { allowSearch: true } })
+    }
+    if (msg.query && this.onmessage) {
+      // Return a tiny fixture result so buildResults / share button is reachable.
+      // The first hit carries a #fragment so we can prove the share URL strips it
+      // before appending ?q= (a "...#frag?q=" deep link is silently lost).
+      this.onmessage({ data: {
+        results: [
+          { location: "guide/index.html#tokens", title: "Guide", text: "Getting started guide for tokens and setup." },
+          { location: "search/index.html", title: "Search", text: "Full-text search over the documentation." },
+        ]
+      }})
+    }
+  }
+  terminate() {}
+}
+
+// Phase 3: navigator.clipboard shim so share-button writeText can be asserted.
+let clipboardCaptured = ""
+const navigatorStub = { clipboard: { writeText: (text) => { clipboardCaptured = text; return Promise.resolve() } } }
+try {
+  Object.defineProperty(globalThis, "navigator", {
+    value: navigatorStub,
+    configurable: true,
+    writable: true,
+    enumerable: true
+  })
+} catch (_e) {
+  if (!globalThis.navigator) globalThis.navigator = {}
+  globalThis.navigator.clipboard = navigatorStub.clipboard
+}
+
 const code = fs.readFileSync(
   path.join(__dirname, "..", "neoabs", "templates", "assets", "javascripts", "neoabs.js"),
   "utf-8"
 )
 
-// Run the IIFE. It should attach onReady and run it immediately (readyState != loading).
-let bootRan = false
-try {
-  new Function("document", "window", "localStorage", "location", "Node", "URL", "getComputedStyle", "Blob", code)(
-    documentStub, windowStub, storageStub, globalThis.location, globalThis.Node,
-    globalThis.URL, globalThis.getComputedStyle, globalThis.Blob
-  )
-  bootRan = true
-} catch (e) {
-  console.error("BOOT THREW:", e.message)
-  process.exit(1)
+// ---- Helpers ----------------------------------------------------------------
+function bootIIFE(overrides) {
+  overrides = overrides || {}
+  if (overrides.location) globalThis.location = overrides.location
+  if (overrides.config) {
+    _configEl = makeNode()
+    _configEl.textContent = JSON.stringify(overrides.config)
+  } else {
+    _configEl = null
+  }
+  _searchDom = overrides.searchDom || null
+  if (overrides.stored !== undefined) stored = overrides.stored
+  if (overrides.clipboard !== undefined) clipboardCaptured = overrides.clipboard
+
+  try {
+    new Function(
+      "document", "window", "localStorage", "location", "Node",
+      "URL", "getComputedStyle", "Blob", "requestAnimationFrame", "Worker", "navigator",
+      code
+    )(
+      documentStub, windowStub, storageStub, globalThis.location, globalThis.Node,
+      globalThis.URL, globalThis.getComputedStyle, globalThis.Blob,
+      globalThis.requestAnimationFrame, globalThis.Worker, navigatorStub
+    )
+    return true
+  } catch (e) {
+    console.error("BOOT THREW:", e.message)
+    return false
+  }
 }
 
-// ---- Exercises -------------------------------------------------------------
+// ---- Assertions -------------------------------------------------------------
 let failures = 0
+let checks = 0
 function check(name, cond) {
+  checks++
   if (cond) console.log("PASS  " + name)
   else { console.error("FAIL  " + name); failures++ }
 }
 
-check("IIFE boot completes without throwing", bootRan)
+// ============================================================================
+// Test 1: IIFE boot completes without throwing (null search DOM, no config)
+// ============================================================================
+const boot1 = bootIIFE({ stored: {}, config: null, searchDom: null, location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" } })
+check("IIFE boot completes without throwing", boot1)
 
-// Boot's initNotes -> notesReapply() runs a TTL purge on load. Seed an expired
-// note (1 year old, far beyond the 3-day window) and confirm it is removed.
+// ============================================================================
+// Test 2 + 3: Notes TTL purge (unchanged from original harness)
+// ============================================================================
 const now = Date.now()
-stored = {
-  "neoabs-notes": JSON.stringify([
-    { id: "expired", url: "/page/", ts: now - 31536000000 }
-  ])
-}
-// Re-run boot so initNotes sees the seeded data.
-try {
-  new Function("document","window","localStorage","location","Node","URL","getComputedStyle","Blob","requestAnimationFrame",
-    code)(documentStub, windowStub, storageStub, globalThis.location, globalThis.Node,
-    globalThis.URL, globalThis.getComputedStyle, globalThis.Blob,
-    globalThis.requestAnimationFrame)
-} catch (e) {
-  console.error("SECOND BOOT THREW:", e.message)
-  process.exit(1)
-}
 
+// Expired note should be purged after boot.
+const expiredBoot = bootIIFE({
+  stored: { "neoabs-notes": JSON.stringify([{ id: "expired", url: "/page/", ts: now - 31536000000 }]) },
+  config: null,
+  searchDom: null,
+})
 let expiredPurged = true
 try { expiredPurged = JSON.parse(storageStub.getItem("neoabs-notes")).length === 0 }
 catch { expiredPurged = false }
-
 check("expired (1-year-old) note purged after 3-day TTL on load", expiredPurged)
 
-// A fresh note (created now) survives the same purge.
-stored = {
-  "neoabs-notes": JSON.stringify([
-    { id: "fresh", url: "/page/", ts: now }
-  ])
-}
-try {
-  new Function("document","window","localStorage","location","Node","URL","getComputedStyle","Blob","requestAnimationFrame",
-    code)(documentStub, windowStub, storageStub, globalThis.location, globalThis.Node,
-    globalThis.URL, globalThis.getComputedStyle, globalThis.Blob,
-    globalThis.requestAnimationFrame)
-} catch {}
+// Fresh note survives the purge.
+const freshBoot = bootIIFE({
+  stored: { "neoabs-notes": JSON.stringify([{ id: "fresh", url: "/page/", ts: now }]) },
+  config: null,
+  searchDom: null,
+})
 let freshKept = false
 try { freshKept = JSON.parse(storageStub.getItem("neoabs-notes")).length === 1 }
 catch {}
-
 check("fresh note retained after TTL purge", freshKept)
 
+// ============================================================================
+// Test 4: Shared search deep link (?q=) re-opens search with the query
+// ============================================================================
+const dlDom = searchDomFixture()
+const dlBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/docs/getting-started/", search: "?q=tokens", href: "https://x/docs/getting-started/?q=tokens", hash: "" },
+  config: {
+    base: "/docs/",
+    neoabs_search: { enabled: true, min_chars: 2 },
+    translations: { clipboard: { copy: "Copy link", copied: "Copied" } },
+    components: {},
+    content: {},
+  },
+  searchDom: dlDom,
+  stored: {},
+})
+
+check(
+  "?q= deep link auto-opens search with the query pre-filled",
+  dlBoot &&
+    dlDom.checkbox.checked === true &&
+    dlDom.input.value === "tokens" &&
+    dlDom.searchEl.classList.contains("neoabs-search--active")
+)
+
+// ============================================================================
+// Test 5: Per-result share button writes a correct deep-link URL
+// ============================================================================
+// The auto-open above triggers runSearch; the Worker shim fires results which
+// render two rows in the list. Find the share button and click it.
+const shareRows = dlDom.list._children
+const firstRow = shareRows[0] || null
+const firstChild = firstRow && firstRow._children[1] || null
+const firstShare = firstChild && String(firstChild.tagName).toUpperCase() === "BUTTON"
+  ? firstChild
+  : null
+
+// Reset clipboard before clicking.
+clipboardCaptured = ""
+
+if (firstShare && Array.isArray(firstShare.listeners.click)) {
+  firstShare.listeners.click.forEach((fn) => fn({ preventDefault() {}, stopPropagation() {} }))
+}
+
+check(
+  "copy link writes the exact resolved deep-link URL (no stale dot, no #fragment)",
+  typeof clipboardCaptured === "string" &&
+    clipboardCaptured === "https://x/docs/guide/index.html?q=tokens"
+)
+
+check(
+  "copy link keeps ?q= after the path and drops any #fragment",
+  typeof clipboardCaptured === "string" &&
+    clipboardCaptured.indexOf("#") === -1 &&
+    clipboardCaptured.indexOf("?q=tokens") === clipboardCaptured.length - 9
+)
+
+// ============================================================================
+// Report
+// ============================================================================
 console.log("\n" + (failures === 0
-  ? "All JS smoke checks passed (" + (4 - 0) + " checks)."
+  ? "All JS smoke checks passed (" + checks + " checks)."
   : failures + " check(s) FAILED."))
 process.exit(failures === 0 ? 0 : 1)

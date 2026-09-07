@@ -446,6 +446,18 @@
     const remembered = sessionGet().search
     if (remembered) input.value = remembered
 
+    // Phase 3: shared search deep links (?q=…). When present, win over any
+    // remembered session and re-open search with the query on page load.
+    let deepLink = null
+    const urlParams = new URLSearchParams(location.search)
+    if (urlParams.has("q")) {
+      deepLink = String(urlParams.get("q") || "").trim()
+      if (deepLink) {
+        input.value = deepLink
+        sessionMutate((s) => { s.search = deepLink })
+      }
+    }
+
     const resCfg = sc.result || {}
     const sExplicitMin = typeof sc.min_chars === "number" || typeof sc.min_chars === "string"
     const sMinChars = Math.max(1, parseInt(sc.min_chars, 10) || 2)
@@ -550,6 +562,16 @@
 
     const RESULT_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L17.5 8H13V3.5zM12 12v1.5h5V15h-5v1.5h-1.5V15h-5v-1.5h5V12h1.5zm0 3v3H7v-3h5z"/></svg>'
 
+    // Phase 3: per-result "copy link" button. Markup comes from the
+    // #neoabs-search-share <template> in partials/search.html when present, so
+    // the icon/labels stay a single source of truth; fall back inline.
+    const shareTpl = document.getElementById("neoabs-search-share")
+    const shareIcon = (shareTpl && shareTpl.innerHTML) ||
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>'
+    const shareLabels = ((config && config.translations && config.translations.clipboard) || {})
+    const shareTitle = shareLabels.copy || "Copy link"
+    const shareCopiedTitle = shareLabels.copied || "Link copied"
+
     const clearSuggestions = () => {
       if (suggestionsEl && suggestionsEl.parentNode) suggestionsEl.parentNode.removeChild(suggestionsEl)
     }
@@ -588,17 +610,22 @@
       for (let i = 0; i < results.length; i++) {
         const doc = results[i]
         const href = joinUrl(base, doc.location || "")
-        const el = document.createElement("a")
-        el.className = "neoabs-search__result"
-        el.href = href
-        el.setAttribute("role", "option")
-        el.id = "neoabs-search-result-" + i
+
+        // Phase 3: outer container holds the link + per-result share button.
+        const row = document.createElement("div")
+        row.className = "neoabs-search__result"
+        row.setAttribute("role", "option")
+        row.id = "neoabs-search-result-" + i
+
+        const link = document.createElement("a")
+        link.className = "neoabs-search__result-link"
+        link.href = href
 
         if (sShowIcon) {
           const icon = document.createElement("div")
           icon.className = "neoabs-search__result-icon"
           icon.innerHTML = RESULT_ICON_SVG
-          el.appendChild(icon)
+          link.appendChild(icon)
         }
 
         const body = document.createElement("div")
@@ -623,8 +650,44 @@
           body.appendChild(path)
         }
 
-        el.appendChild(body)
-        list.push(el)
+        link.appendChild(body)
+        row.appendChild(link)
+
+        // Phase 3: per-result copy-link — re-opens search via ?q= when visited.
+        const shareBtn = document.createElement("button")
+        shareBtn.type = "button"
+        shareBtn.className = "neoabs-search__result-share"
+        shareBtn.title = shareTitle
+        shareBtn.setAttribute("aria-label", shareTitle)
+        shareBtn.innerHTML = shareIcon
+        shareBtn.addEventListener("click", (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const q = (input.value || "").trim()
+          // Build the deep link from the row's resolved browser URL (link.href is
+          // absolute in the real DOM, so "./result/" or "../result/" hosts are
+          // gone), drop any #fragment, then append ?q= so the query survives
+          // server-side and re-opens search on the shared page.
+          let abs = link.href || href
+          const fragIdx = abs.indexOf("#")
+          if (fragIdx !== -1) abs = abs.slice(0, fragIdx)
+          const url = abs + (q ? "?q=" + encodeURIComponent(q) : "")
+          copyToClipboard(url).then(() => {
+            shareBtn.title = shareCopiedTitle
+            shareBtn.setAttribute("aria-label", shareCopiedTitle)
+            shareBtn.classList.add("neoabs-search__result-share--copied")
+            neoabsToast(shareCopiedTitle, "success")
+            setTimeout(() => {
+              shareBtn.title = shareTitle
+              shareBtn.setAttribute("aria-label", shareTitle)
+              shareBtn.classList.remove("neoabs-search__result-share--copied")
+            }, 1600)
+          }).catch(() => {
+            neoabsToast("Copy link failed — clipboard unavailable", "error")
+          })
+        })
+        row.appendChild(shareBtn)
+        list.push(row)
       }
       return list
     }
@@ -692,6 +755,17 @@
       searchToken++
       input.value = ""
       showStatus("Start typing to search...")
+      // Phase 3: clean the shared deep-link (?q=) from the URL so re-opening
+      // search does not re-inject a stale query.
+      try {
+        if (window.history && window.history.replaceState && new URLSearchParams(location.search).has("q")) {
+          const cleaned = new URLSearchParams(location.search)
+          cleaned.delete("q")
+          const qs = cleaned.toString()
+          const cleanUrl = location.pathname + (qs ? "?" + qs : "") + (location.hash || "")
+          window.history.replaceState(null, "", cleanUrl)
+        }
+      } catch (_err) { /* noop — environment may not support history */ }
       if (searchTrigger && typeof searchTrigger.focus === "function") {
         searchTrigger.focus()
       }
@@ -794,7 +868,10 @@
         const items = $$(".neoabs-search__result", listEl)
         if (items.length) {
           e.preventDefault()
-          items[activeIndex >= 0 ? activeIndex : 0].click()
+          const active = items[activeIndex >= 0 ? activeIndex : 0]
+          const target = active.querySelector && active.querySelector(".neoabs-search__result-link")
+          if (target && target.click) target.click()
+          else active.click()
         }
       }
     })
@@ -822,6 +899,9 @@
         first.focus()
       }
     })
+
+    // Phase 3: auto-open search when arriving via a shared deep link (?q=…).
+    if (deepLink) openSearch()
   }
 
   // ---------------------------------------------------------------------------
