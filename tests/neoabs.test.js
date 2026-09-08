@@ -132,17 +132,31 @@ function zoomImageFixture() {
   img.tabIndex = -1
   return img
 }
-function zoomOverlayFixture() {
+function zoomOverlayNode() {
   const ov = makeNode()
-  const view = makeNode()
-  view.tagName = "IMG"
+  const view = makeNode(); view.tagName = "IMG"
+  const stage = makeNode()
   const caption = makeNode()
-  const close = makeNode()
-  close.tagName = "BUTTON"
+  const state = makeNode(); state.textContent = "100%"
+  const close = makeNode(); close.tagName = "BUTTON"
+  const prev = makeNode(); prev.tagName = "BUTTON"; prev.disabled = true
+  const next = makeNode(); next.tagName = "BUTTON"; next.disabled = true
+  const zoomin = makeNode(); zoomin.tagName = "BUTTON"
+  const zoomout = makeNode(); zoomout.tagName = "BUTTON"
+  const copyBtn = makeNode(); copyBtn.tagName = "BUTTON"; copyBtn.innerHTML = "\u29c9"
+  const download = makeNode(); download.tagName = "BUTTON"
   ov.querySelector = (sel) => {
-    if (sel === "img") return view
+    if (sel === "img" || sel === ".neoabs-zoom__img") return view
+    if (sel === ".neoabs-zoom__stage") return stage
     if (sel === ".neoabs-zoom__caption") return caption
-    if (sel === "button") return close
+    if (sel === ".neoabs-zoom__close") return close
+    if (sel === ".neoabs-zoom__prev") return prev
+    if (sel === ".neoabs-zoom__next") return next
+    if (sel === ".neoabs-zoom__zoomin") return zoomin
+    if (sel === ".neoabs-zoom__zoomout") return zoomout
+    if (sel === ".neoabs-zoom__copy") return copyBtn
+    if (sel === ".neoabs-zoom__download") return download
+    if (sel === ".neoabs-zoom__state") return state
     return null
   }
   return ov
@@ -159,16 +173,9 @@ const documentStub = {
     const n = makeNode()
     n.tagName = tag
     if (tag === "div" && _zoomOverlayMode) {
-      // Phase 5 lightbox: the overlay div gets sub-query support.
-      n._zoomView = makeNode(); n._zoomView.tagName = "IMG"
-      n._zoomCap = makeNode()
-      n._zoomBtn = makeNode(); n._zoomBtn.tagName = "BUTTON"
-      n.querySelector = (sel) => {
-        if (sel === "img") return n._zoomView
-        if (sel === ".neoabs-zoom__caption") return n._zoomCap
-        if (sel === "button") return n._zoomBtn
-        return null
-      }
+      // Phase 5 lightbox: every div created while the overlay is active gets
+      // the overlay's sub-query support so bindOverlay can wire up controls.
+      return zoomOverlayNode()
     }
     if (tag === "a") {
       // Browser-accurate <a>.href: store the raw value but resolve it against
@@ -505,6 +512,98 @@ if (zoomBoot && Array.isArray(img1.listeners.click)) {
 }
 _zoomOverlayMode = false
 check("image lightbox opens an overlay on image click", zoomOpened)
+
+// Test 7b: image lightbox can be turned off via content.typography.image_lightbox.
+const offImg = zoomImageFixture()
+_zoomImgs = [offImg]
+body._children = []
+body.childNodes = []
+windowStub._handlers = {}
+
+const offBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    components: {},
+    content: { typography: { image_lightbox: false } },
+    neoabs_search: { enabled: false },
+    translations: {},
+  },
+  searchDom: null,
+  stored: {},
+})
+const offClicks = Array.isArray(offImg.listeners.click) ? offImg.listeners.click.length : 0
+const lightboxDisabled = offBoot && offImg.getAttribute("role") !== "button" && offClicks === 0
+check("image lightbox is disabled when contentType typography.image_lightbox is false", lightboxDisabled)
+
+// ============================================================================
+// Test 8: lightbox navigation, zoom, copy — and close still works after a
+// navigation (a stale-overlay stacking bug used to orphan the close button).
+// ============================================================================
+const navImg1 = zoomImageFixture()
+const navImg2 = zoomImageFixture()
+_zoomImgs = [navImg1, navImg2]
+body._children = []
+body.childNodes = []
+body.classList._c = new Set()
+windowStub._handlers = {}
+
+const navBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: {}, content: {}, neoabs_search: { enabled: false }, translations: {} },
+  searchDom: null,
+  stored: {},
+})
+_zoomOverlayMode = true // new overlay-node mocks are created as the user interacts
+
+let navArrows = false
+let navZoom = false
+let navCopy = false
+let navClose = false
+let navHasClose = false
+if (navBoot && Array.isArray(navImg1.listeners.click)) {
+  navImg1.listeners.click.forEach((fn) => fn({ preventDefault() {}, currentTarget: null }))
+  const overlay = body._children[body._children.length - 1] || null
+  const cap = overlay ? overlay.querySelector(".neoabs-zoom__caption") : null
+
+  // 1. Arrow right navigates to the second image (caption "2 / 2").
+  const keyFns = (windowStub._handlers.keydown || []).slice()
+  const arrow = keyFns[keyFns.length - 1]
+  if (arrow) arrow({ key: "ArrowRight", preventDefault() {} })
+  navArrows = cap ? cap.textContent === "2 / 2" : false
+
+  // 2. Zoom-in button scales the image (1x -> 1.25x).
+  const state = overlay ? overlay.querySelector(".neoabs-zoom__state") : null
+  const zoomin = overlay ? overlay.querySelector(".neoabs-zoom__zoomin") : null
+  if (zoomin && Array.isArray(zoomin.listeners.click)) {
+    zoomin.listeners.click.forEach((fn) => fn({ preventDefault() {}, stopPropagation() {} }))
+  }
+  navZoom = state ? state.textContent === "125%" : false
+
+  // 3. Copy button falls back to copying the image URL (no ClipboardItem).
+  clipboardCaptured = ""
+  const copyBtn = overlay ? overlay.querySelector(".neoabs-zoom__copy") : null
+  if (copyBtn && Array.isArray(copyBtn.listeners.click)) {
+    copyBtn.listeners.click.forEach((fn) => fn({ preventDefault() {}, stopPropagation() {} }))
+  }
+  navCopy = clipboardCaptured === "https://x/img.png"
+
+  // 4. Close still works after navigating (and removes every overlay layer).
+  const closeBtn = overlay ? overlay.querySelector(".neoabs-zoom__close") : null
+  if (closeBtn && Array.isArray(closeBtn.listeners.click)) {
+    closeBtn.listeners.click.forEach((fn) => fn({ preventDefault() {}, stopPropagation() {} }))
+  }
+  const leftovers = body._children.filter((c) => c.className === "neoabs-zoom")
+  navClose = leftovers.length === 0 && !body.classList.contains("neoabs-zoom--open")
+
+  // 5. The close button must be an actual child of the overlay — a null
+  // querySelector here used to crash `bindOverlay` before the overlay could
+  // attach to the document, so no lightbox ever appeared on click.
+  navHasClose = Array.isArray(overlay && overlay._children) &&
+    overlay._children.some((c) => String(c.className || "").split(" ").includes("neoabs-zoom__close"))
+}
+_zoomOverlayMode = false
+check("image lightbox navigates, zooms, copies, and stays closable after navigation", navArrows && navZoom && navCopy && navClose && navHasClose)
 
 // ============================================================================
 // Phase 6: feedback widget opens a prefilled GitHub issue (no tracking)

@@ -1727,17 +1727,41 @@
     }
   }
 
-  // Vanilla image lightbox: opens a full-viewport overlay when any content
-  // image without a wrapping link is clicked. Closes on overlay click, Escape,
-  // scroll, or keyboard arrow navigation when multiple images are present.
+  // Image lightbox: opens a full-viewport overlay when any content image
+  // without a wrapping link is clicked. One reusable overlay is created on
+  // first open and reused — navigating swaps the image in place instead of
+  // stacking overlays (which left stale layers behind and broke the close
+  // button after the first prev/next). Controls: close (button, Escape, tap
+  // on the backdrop), prev/next (buttons, arrow keys, swipe), zoom in/out
+  // (buttons, mouse wheel, pinch, double-click), pan while zoomed (mouse or
+  // touch drag), plus copy and download. Closes on page scroll/resize.
   // Opt out via theme.neoabs.content.typography.image_lightbox = false.
   function initImageZoom() {
     if (contentSetting("typography", "image_lightbox", true) === false) return
     const images = $$("article .neoabs-typeset img")
     if (!images.length) return
 
-    let openEl = null
+    let overlay = null
+    let stageEl = null
     let openIndex = -1
+    let zoom = 1
+    let panX = 0
+    let panY = 0
+    let drag = null
+    let touchMap = {}
+    let pinch = null
+    let pinching = false
+    const MIN_ZOOM = 0.5
+    const MAX_ZOOM = 6
+
+    function makeBtn(className, label, aria) {
+      const b = document.createElement("button")
+      b.className = className
+      b.setAttribute("type", "button")
+      b.setAttribute("aria-label", aria)
+      b.innerHTML = label
+      return b
+    }
 
     function buildOverlay() {
       const ov = document.createElement("div")
@@ -1745,66 +1769,414 @@
       ov.setAttribute("role", "dialog")
       ov.setAttribute("aria-modal", "true")
       ov.setAttribute("aria-label", "Image preview")
+
+      const stage = document.createElement("div")
+      stage.className = "neoabs-zoom__stage"
+
       const img = document.createElement("img")
       img.className = "neoabs-zoom__img"
       img.alt = ""
+      img.draggable = false
+      stage.appendChild(img)
+
       const caption = document.createElement("div")
       caption.className = "neoabs-zoom__caption"
-      const btn = document.createElement("button")
-      btn.className = "neoabs-zoom__close"
-      btn.setAttribute("aria-label", "Close preview")
-      btn.innerHTML = "&#215;"
-      ov.appendChild(img)
+
+      const close = makeBtn("neoabs-zoom__btn neoabs-zoom__close", "\u00d7", "Close preview")
+      const prev = makeBtn("neoabs-zoom__btn neoabs-zoom__prev", "\u2039", "Previous image")
+      const next = makeBtn("neoabs-zoom__btn neoabs-zoom__next", "\u203a", "Next image")
+
+      const tools = document.createElement("div")
+      tools.className = "neoabs-zoom__tools"
+      const zoomin = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomin", "\u002b", "Zoom in")
+      const zoomout = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomout", "\u2212", "Zoom out")
+      const copy = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__copy", "\u29c9", "Copy image")
+      const download = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__download", "\u2193", "Download image")
+      const state = document.createElement("span")
+      state.className = "neoabs-zoom__state"
+      state.textContent = "100%"
+      tools.appendChild(zoomin)
+      tools.appendChild(zoomout)
+      tools.appendChild(copy)
+      tools.appendChild(download)
+      tools.appendChild(state)
+
+      ov.appendChild(stage)
       ov.appendChild(caption)
-      ov.appendChild(btn)
+      ov.appendChild(close)
+      if (images.length > 1) {
+        ov.appendChild(prev)
+        ov.appendChild(next)
+      }
+      ov.appendChild(tools)
       return ov
     }
 
-    function show(index) {
-      const img = images[index]
-      openEl = buildOverlay()
-      openIndex = index
-      const view = openEl.querySelector("img")
-      view.src = img.currentSrc || img.src
-      view.alt = img.alt || ""
-      const cap = openEl.querySelector(".neoabs-zoom__caption")
-      cap.textContent = "" + (index + 1) + " / " + images.length
-      document.body.classList.add("neoabs-zoom--open")
-      document.body.appendChild(openEl)
-      openEl.addEventListener("click", close)
-      openEl.querySelector("button").addEventListener("click", function (e) {
+    function bindOverlay(ov) {
+      stageEl = ov.querySelector(".neoabs-zoom__stage")
+      ov.addEventListener("click", function (e) {
+        if (!overlay) return
+        if (zoom > 1) return
+        if (e.target === ov || (stageEl && e.target === stageEl)) close()
+      })
+      ov.querySelector(".neoabs-zoom__close").addEventListener("click", function (e) {
         e.stopPropagation()
         close()
       })
+      const prev = ov.querySelector(".neoabs-zoom__prev")
+      const next = ov.querySelector(".neoabs-zoom__next")
+      if (prev) prev.addEventListener("click", function (e) { e.stopPropagation(); navigate(-1) })
+      if (next) next.addEventListener("click", function (e) { e.stopPropagation(); navigate(1) })
+      ov.querySelector(".neoabs-zoom__zoomin").addEventListener("click", function (e) { e.stopPropagation(); zoomStep(1.25) })
+      ov.querySelector(".neoabs-zoom__zoomout").addEventListener("click", function (e) { e.stopPropagation(); zoomStep(1 / 1.25) })
+      ov.querySelector(".neoabs-zoom__copy").addEventListener("click", function (e) { e.stopPropagation(); copyImage() })
+      ov.querySelector(".neoabs-zoom__download").addEventListener("click", function (e) { e.stopPropagation(); downloadImage() })
+      if (stageEl) {
+        stageEl.addEventListener("wheel", onWheel, { passive: false })
+        stageEl.addEventListener("dblclick", onDblClick)
+        stageEl.addEventListener("pointerdown", onPointerDown)
+        stageEl.addEventListener("pointermove", onPointerMove)
+        stageEl.addEventListener("pointerup", onPointerUp)
+        stageEl.addEventListener("pointercancel", onPointerCancel)
+        stageEl.addEventListener("touchstart", onTouchStart, { passive: false })
+        stageEl.addEventListener("touchmove", onTouchMove, { passive: false })
+        stageEl.addEventListener("touchend", onTouchEnd, { passive: false })
+      }
       window.addEventListener("keydown", onKey)
       window.addEventListener("scroll", close, true)
       window.addEventListener("resize", close)
     }
 
+    function show(index) {
+      if (!overlay) {
+        overlay = buildOverlay()
+        bindOverlay(overlay)
+        document.body.appendChild(overlay)
+      }
+      openIndex = ((index % images.length) + images.length) % images.length
+      const img = images[openIndex]
+      const view = overlay.querySelector(".neoabs-zoom__img")
+      view.src = img.currentSrc || img.src
+      view.alt = img.alt || ""
+      const cap = overlay.querySelector(".neoabs-zoom__caption")
+      if (cap) cap.textContent = "" + (openIndex + 1) + " / " + images.length
+      document.body.classList.add("neoabs-zoom--open")
+      resetView()
+    }
+
     function close() {
-      if (!openEl) return
+      if (!overlay) return
       document.body.classList.remove("neoabs-zoom--open")
       window.removeEventListener("keydown", onKey)
       window.removeEventListener("scroll", close, true)
       window.removeEventListener("resize", close)
-      openEl.remove()
-      openEl = null
+      overlay.remove()
+      overlay = null
+      stageEl = null
       openIndex = -1
+      drag = null
+      touchMap = {}
+      pinch = null
+      pinching = false
+    }
+
+    function navigate(delta) {
+      if (!images.length) return
+      show(openIndex + delta)
+    }
+
+    function applyView() {
+      if (!overlay) return
+      const view = overlay.querySelector(".neoabs-zoom__img")
+      if (view) {
+        view.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + zoom + ") translateZ(0)"
+      }
+      if (stageEl) stageEl.classList.toggle("neoabs-zoom__stage--pan", zoom > 1)
+      const state = overlay.querySelector(".neoabs-zoom__state")
+      if (state) state.textContent = Math.round(zoom * 100) + "%"
+    }
+
+    function resetView() {
+      zoom = 1
+      panX = 0
+      panY = 0
+      applyView()
+    }
+
+    function rectOfStage() {
+      return stageEl && typeof stageEl.getBoundingClientRect === "function"
+        ? stageEl.getBoundingClientRect()
+        : null
+    }
+
+    function zoomAt(factor, cx, cy, rect) {
+      const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor))
+      const f = next / zoom
+      let nx = 0
+      let ny = 0
+      if (rect) {
+        nx = cx - rect.left - rect.width / 2
+        ny = cy - rect.top - rect.height / 2
+      }
+      panX = nx - (nx - panX) * f
+      panY = ny - (ny - panY) * f
+      zoom = next
+      applyView()
+    }
+
+    function zoomStep(factor) {
+      const rect = rectOfStage()
+      const cx = rect ? rect.left + rect.width / 2 : 0
+      const cy = rect ? rect.top + rect.height / 2 : 0
+      zoomAt(factor, cx, cy, rect)
+    }
+
+    function onWheel(e) {
+      if (!overlay) return
+      e.preventDefault()
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+      zoomAt(factor, e.clientX, e.clientY, rectOfStage())
+    }
+
+    function onDblClick(e) {
+      if (!overlay) return
+      if (zoom > 1) {
+        resetView()
+      } else {
+        zoomAt(2, e.clientX, e.clientY, rectOfStage())
+      }
+    }
+
+    function onPointerDown(e) {
+      if (pinching) return
+      drag = {
+        id: e.pointerId,
+        x0: e.clientX,
+        y0: e.clientY,
+        px: e.clientX,
+        py: e.clientY,
+        moved: false,
+      }
+      if (stageEl && stageEl.setPointerCapture) {
+        try {
+          if (stageEl.setPointerCapture) stageEl.setPointerCapture(e.pointerId)
+        } catch (_err) { /* capture can throw for unsupported pointers */ }
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!drag || pinching || drag.id !== e.pointerId) return
+      const dx = e.clientX - drag.px
+      const dy = e.clientY - drag.py
+      if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 4) drag.moved = true
+      drag.px = e.clientX
+      drag.py = e.clientY
+      if (zoom <= 1) return
+      panX += dx
+      panY += dy
+      applyView()
+    }
+
+    function onPointerUp(e) {
+      if (!drag || drag.id !== e.pointerId) return
+      const wasDrag = drag.moved
+      const dx = e.clientX - drag.x0
+      const dy = e.clientY - drag.y0
+      drag = null
+      if (pinching || zoom > 1 || wasDrag) return
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) close()
+    }
+
+    function onPointerCancel() {
+      drag = null
+    }
+
+    function touchDistance() {
+      const keys = Object.keys(touchMap)
+      if (keys.length < 2) return 0
+      const a = touchMap[keys[0]]
+      const b = touchMap[keys[1]]
+      return Math.max(0.001, Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)))
+    }
+
+    function onTouchStart(e) {
+      const changed = e.changedTouches || []
+      for (let i = 0; i < changed.length; i++) {
+        touchMap[changed[i].identifier] = { x: changed[i].clientX, y: changed[i].clientY }
+      }
+      const keys = Object.keys(touchMap)
+      if (keys.length < 2) return
+      e.preventDefault()
+      pinching = true
+      drag = null
+      pinch = { dist0: touchDistance(), zoom0: zoom }
+    }
+
+    function onTouchMove(e) {
+      const keys = Object.keys(touchMap)
+      if (keys.length < 2 || !pinch) return
+      const changed = e.changedTouches || []
+      for (let i = 0; i < changed.length; i++) {
+        if (touchMap[changed[i].identifier]) {
+          touchMap[changed[i].identifier] = { x: changed[i].clientX, y: changed[i].clientY }
+        }
+      }
+      e.preventDefault()
+      const a = touchMap[keys[0]]
+      const b = touchMap[keys[1]]
+      const rect = rectOfStage()
+      const cx = rect ? (a.x + b.x) / 2 : 0
+      const cy = rect ? (a.y + b.y) / 2 : 0
+      zoomAt(touchDistance() / pinch.dist0, cx, cy, rect)
+    }
+
+    function onTouchEnd(e) {
+      const changed = e.changedTouches || []
+      for (let i = 0; i < changed.length; i++) {
+        delete touchMap[changed[i].identifier]
+      }
+      const keys = Object.keys(touchMap)
+      if (keys.length === 2) {
+        pinch = { dist0: touchDistance(), zoom0: zoom }
+      } else if (pinch) {
+        e.preventDefault()
+        pinch = null
+        pinching = false
+      }
+    }
+
+    function copyImage() {
+      const view = overlay.querySelector(".neoabs-zoom__img")
+      const src = view ? view.src || "" : ""
+      const btn = overlay.querySelector(".neoabs-zoom__copy")
+      function feedback() {
+        if (!btn) return
+        const old = btn.innerHTML
+        btn.innerHTML = "\u2713"
+        setTimeout(function () { btn.innerHTML = old }, 1200)
+      }
+      const nav = (typeof navigator !== "undefined" && navigator) || {}
+      const clip = nav.clipboard || {}
+      function urlFallback() {
+        if (clip.writeText) {
+          try {
+            clip.writeText(src).then(feedback, function () {})
+          } catch (_err) {
+            feedback()
+          }
+        }
+      }
+      if (window.ClipboardItem && clip.write && src.indexOf("data:") !== 0) {
+        fetch(src)
+          .then(function (r) { return r.blob() })
+          .then(function (blob) {
+            const type = blob.type || "image/png"
+            return clip.write([new window.ClipboardItem({ [type]: blob })])
+          })
+          .then(feedback, urlFallback)
+      } else if (clip.writeText) {
+        urlFallback()
+      }
+    }
+
+    function fileNameFromUrl(src) {
+      let name = decodeURIComponent(src.split(/[?#]/)[0].split("/").pop() || "")
+      if (!name || name === "image") name = "image"
+      return name
+    }
+
+    function extFromMime(type) {
+      const m = /^image\/([a-z0-9.+-]+)/i.exec(type || "")
+      if (!m) return ""
+      const ext = m[1].toLowerCase().replace(/jpeg$/, "jpg").split("+")[0]
+      return "." + ext
+    }
+
+    function fileNameWithExt(name, type) {
+      if (String(name).indexOf(".") !== -1) return name
+      const ext = extFromMime(type)
+      return name + (ext || ".png")
+    }
+
+    function triggerDownload(href, name) {
+      const a = document.createElement("a")
+      a.href = href
+      a.download = name || "image"
+      a.rel = "noopener"
+      a.style.display = "none"
+      document.body.appendChild(a)
+      if (typeof a.click === "function") a.click()
+      window.setTimeout(function () { a.remove() }, 0)
+    }
+
+    function downloadImage() {
+      const view = overlay.querySelector(".neoabs-zoom__img")
+      const src = view ? view.src || "" : ""
+      if (!src) return
+      const name = fileNameFromUrl(src)
+
+      // The `download` attribute is ignored by browsers for cross-origin URLs,
+      // which then navigate to the raw image instead of downloading. Fetch the
+      // bytes and serve them from an object URL so the attribute is honored
+      // (and the filename sticks) for every same-origin or CORS-enabled image.
+      const hasFetch = typeof fetch === "function"
+      const hasObjectUrl = typeof URL !== "undefined" &&
+        typeof URL.createObjectURL === "function"
+
+      if (src.indexOf("blob:") === 0) {
+        triggerDownload(src, name)
+        return
+      }
+      if (!hasFetch || !hasObjectUrl) {
+        triggerDownload(src, name)
+        return
+      }
+
+      fetch(src)
+        .then(function (r) {
+          if (!r.ok) throw new Error("image fetch failed")
+          return r.blob()
+        })
+        .then(function (blob) {
+          const url = URL.createObjectURL(blob)
+          triggerDownload(url, fileNameWithExt(name, blob.type))
+          window.setTimeout(function () { URL.revokeObjectURL(url) }, 1000)
+        })
+        .catch(function () {
+          // Cross-origin image without CORS: we cannot force a download from
+          // this page, so fall back to the raw URL (may navigate).
+          triggerDownload(src, name)
+        })
     }
 
     function onKey(e) {
+      if (!overlay) return
       if (e.key === "Escape" || e.key === "Esc") {
         e.preventDefault()
         close()
         return
       }
-      if (!images.length || openIndex < 0) return
       if (e.key === "ArrowRight") {
         e.preventDefault()
-        show((openIndex + 1) % images.length)
+        navigate(1)
       } else if (e.key === "ArrowLeft") {
         e.preventDefault()
-        show((openIndex - 1 + images.length) % images.length)
+        navigate(-1)
+      } else if (e.key === "+" || e.key === "=") {
+        e.preventDefault()
+        zoomStep(1.25)
+      } else if (e.key === "-" || e.key === "_") {
+        e.preventDefault()
+        zoomStep(1 / 1.25)
+      } else if (e.key === "0") {
+        e.preventDefault()
+        resetView()
+      } else if (e.key.toLowerCase() === "c") {
+        e.preventDefault()
+        copyImage()
+      } else if (e.key.toLowerCase() === "d") {
+        e.preventDefault()
+        downloadImage()
       }
     }
 

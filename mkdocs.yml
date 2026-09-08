@@ -263,6 +263,7 @@ theme:
     #     anchor_symbol: ""            # Custom permalink symbol ("" = theme default)
     #     link_behavior: smooth        # smooth | instant, anchor scroll style
     #     image_behavior: normal       # normal | lazy (lazy-load images)
+    #     image_lightbox: true         # click-to-zoom image preview in the article (default true; set false to disable)
     #     video_behavior: responsive   # normal | responsive embeds/videos
     #   code:
     #     show_copy_button: true       # Copy button on code blocks
@@ -741,7 +742,7 @@ theme:
     #     include_version: true         #   theme version
 
 extra:
-  neoabs_version: 19
+  neoabs_version: 20
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

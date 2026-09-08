@@ -255,6 +255,9 @@ theme:
     dot_matrix: true
     animation: normal
     border: thin
+    content:
+      typography:
+        image_lightbox: true  # click-to-zoom image preview in the article (default true; set false to disable)
 
 plugins:
   - search
