@@ -65,6 +65,52 @@ theme:
       last_updated_label: Last updated
       edit_label: Edit this page
       date_source: auto            # auto | front_matter | git
+    # --- Phase 6: Engagement & privacy --------------------------------------
+    # "Was this page helpful?" feedback (opens a prefilled GitHub issue — no
+    # analytics), a dismissable announcement bar, a consent banner, and opt-in
+    # giscus comments. Feedback + announcement + consent (render: always) are
+    # enabled here so the widgets are visible in the docs; comments use the
+    # real giscus IDs for this repo (GitHub Discussions was enabled for it).
+    feedback:
+      enabled: true # Master on/off (default true)
+      show: true    # Render the widget under the article (default true)
+      title: Was this page helpful?
+      positive: Yes — thanks!
+      negative: No — open an issue
+      github_labels:
+        - feedback
+    announcement_bar:
+      enabled: true  # Master on/off (default true)
+      show: true     # Render the bar (default true)
+      text: "NeoAbs is live — glass design for MkDocs"
+      dismissable: true
+    # The privacy-first default (`render: auto`) shows the banner only when a
+    # The privacy-first default (`render: auto`) shows the banner only when a
+    # real integration (gtag analytics or giscus comments) is configured; this
+    # docs site forces it with `render: always` so the widget is visible. With
+    # giscus configured below the banner would also appear under `auto`.
+    cookie_consent:
+      enabled: true # Master on/off (default true)
+      show: true    # Render the banner (default true)
+      render: always # auto (only with an integration) | always | never (default auto)
+      message: This site stores nothing about you unless you enable integrations.
+      accept_label: Accept
+      decline_label: Decline
+      privacy_policy: ""
+    # comments use the real giscus IDs for this repository (GitHub Discussions
+    # was enabled on it for giscus).
+    comments:
+      enabled: true
+      provider: giscus
+      repo: "rkriad585/mkdocs-neoabs"
+      repo_id: "R_kgDOT6uASQ"
+      category: "Announcements"
+      category_id: "DIC_kwDOT6uASc4DFG1d"
+      mapping: pathname # pathname | url | title | og:title | specific
+      term: ""          # only used with mapping: specific
+      theme:
+        light: light
+        dark: dark
     # --- Phase 1: Design token overrides (optional) -------------------------
     # Uncomment any value to override the theme's default design token. Values
     # map to CSS custom properties and win against the compiled stylesheet.
@@ -789,6 +835,7 @@ nav:
     - Toast: components/toast.md
     - CSS Classes in Markdown: components/classes.md
     - Keyboard Shortcuts: components/shortcuts.md
+    - Feedback & Announcements: components/engagement.md
   - Plugins:
     - NeoAbs Plugin: plugins/neoabs.md
   - Architecture: architecture.md

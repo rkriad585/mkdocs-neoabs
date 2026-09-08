@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Phase 6 — engagement & privacy:
+  - "Was this page helpful?" feedback widget (`theme.neoabs.feedback`): GitHub-issue-backed, opens a prefilled positive/negative issue (`repo_url` + `github_labels`) in a new tab — no analytics, no tracking; rendered under the article only when `repo_url` is set
+  - Dismissable announcement bar (`theme.neoabs.announcement_bar`): one-line banner fixed to the bottom of the viewport that auto-hides after 4s; dismissal (manual or automatic) persists in `localStorage` keyed by the announcement text (so updating the text re-shows it); falls back to the legacy `extra.neoabs_announce` string
+  - Privacy-first cookie consent (`theme.neoabs.cookie_consent`): the banner renders **only** when a real integration is configured (`theme.analytics.gtag` or giscus comments with `repo` + `repo_id`), or always via `render: always` (demo sites); stores a single accept/decline flag; "Accept" unlocks delayed integrations
+  - Opt-in giscus comments (`theme.neoabs.comments`): the only supported provider; nothing loads until `repo` + `repo_id` are configured; defers the loader script behind consent accept when an integration is present; giscus theme follows the active palette (`theme.light`/`theme.dark`) and re-syncs on scheme change (`syncCommentsTheme`)
+- New `("feedback" | "announcement_bar" | "cookie_consent" | "comments", Type(dict))` config scheme entries with `_validate_feedback()`, `_validate_announcement_bar()`, `_validate_cookie_consent()`, `_validate_comments()` validators and `_NEOABS_DEFAULT_FEEDBACK`/`_NEOABS_DEFAULT_ANNOUNCEMENT_BAR`/`_NEOABS_DEFAULT_COOKIE_CONSENT`/`_NEOABS_DEFAULT_COMMENTS` defaults; computed `consent_needed` exported to `extra.neoabs_consent_needed`
 - Footer metadata bar (`theme.neoabs.meta`): per-page "Last updated" timestamp (git-revision-date-localized plugin when installed, falling back to `date:` front-matter) and "Edit on GitHub" link (configurable `repo_url`, `branch`, `source_dir`, labels); gracefully hidden on 404 pages
 - New `("meta", Type(dict))` schema for `theme.neoabs.meta` with `_validate_meta()` validation; default values in `_NEOABS_DEFAULT_META`; `_NEOABS_META_BOOLS` frozenset for safe key lookup
 - Vanilla image lightbox (`initImageZoom`): click to zoom any typeset image (skips images inside links) in a full-screen overlay with caption, Esc/scroll/resize close, ←/→ keyboard navigation, and `prefers-reduced-motion` support — zero external dependencies

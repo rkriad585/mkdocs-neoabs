@@ -199,8 +199,8 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 7 | Search `?q=` deep link + share | ✅ `?q=` restore auto-opens search; per-result "copy link" | done |
 | 8 | "Last updated" date + "Edit on GitHub" link | ✅ `neoabs.meta` footer config (git-revision-date, front-matter date fallback, configurable labels/branch/source_dir) | done |
 | 9 | Image lightbox, footnotes, code annotations | ✅ vanilla `initImageZoom` (overlay/keyboard), `footnotes` styled, custom `initCodeAnnotations` (text-node badge wrapping) | done |
-| 10 | Cookie consent, announcement bar, feedback ("was this helpful"?) | ❌ | P6 |
-| 11 | Comments (giscus) | ❌ | P6 |
+| 10 | Cookie consent, announcement bar, feedback ("was this helpful"?) | ✅ `feedback` (GitHub-issue-backed), `announcement_bar` (dismissable, localStorage), `cookie_consent` (privacy-first; banner only when a real integration is configured) | done |
+| 11 | Comments (giscus) | ✅ `comments` (opt-in giscus, consent-gated, palette-synced theme) | done |
 | 12 | i18n of UI strings, translations of chrome | 🟡 `language` + partial `translations`; no override merge | P7 |
 | 13 | Dark-aware images, breadcrumbs, nav icons | ❌ | P7 |
 | 14 | Auto PWA manifest + app meta | 🟡 optional `<link>`; no auto-gen, no iOS meta | P7 |
@@ -577,7 +577,15 @@ document.querySelectorAll(".neoabs-typeset img").forEach((img) => {
 **Why it wins.** Feedback / announcement / comments are well-trodden adoption
 drivers; GDPR-first cookie flow differentiates.
 
-**Already shipped (verified).** Nothing in this phase is done yet.
+**Already shipped (verified).** Feedback widget (`initFeedback`) opens a
+prefilled GitHub issue (positive label + page title/URL body; `github_labels`
+applied; `noopener` window); announcement bar (`initAnnouncement`) with
+localStorage dismissal keyed by text; consent (`initConsent`) rendered only when
+`consent_needed` (gtag or giscus configured), storing a single accept/decline
+flag and unlocking deferred integrations; giscus comments (`initComments`,
+`loadGiscusScript`) with `repo`/`repo_id`/`category`/`mapping`/`term`/`lang`,
+palette-synced theme (`syncCommentsTheme`), consent-gated loading, and SPA
+re-injection.
 
 #### 6a. "Was this page helpful?" — GitHub-issue-backed (no tracking)
 
@@ -640,6 +648,15 @@ theme:
 **Acceptance.** Feedback links exist only when enabled; consent banner appears
 only when an integration is on; giscus injects only when configured; build +
 tests green.
+
+**Done (verified).** Phase 6 implemented (uncommitted, per directive): plugin
+`("feedback"|"announcement_bar"|"cookie_consent"|"comments", Type(dict))`
+scheme + validators + defaults + computed `consent_needed`; `base.html`
+`__config` serialization; `neoabs.js` initFeedback/initAnnouncement/initConsent/
+initComments (+ consent-gated loading, palette-synced giscus theme, SPA wiring);
+`components.scss` Phase 6 section; `tools/emit_config_reference.py` + regenerated
+reference; docs (configuration.md, plugins/neoabs.md, components/engagement.md);
+`npm test` 21/21; `mkdocs build --strict` and `ruff check` clean. Rows 10/11 ✅.
 
 ---
 

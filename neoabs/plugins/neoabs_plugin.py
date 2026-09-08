@@ -152,6 +152,18 @@ _NEOABS_DEFAULT_COMPONENTS = {
     "keyboard_help": {
         "show": True,
     },
+    "feedback": {
+        "show": True,
+    },
+    "announcement_bar": {
+        "show": True,
+    },
+    "cookie_consent": {
+        "show": True,
+    },
+    "giscus": {
+        "show": True,
+    },
 }
 
 # Phase 7 - Keyboard shortcuts.
@@ -493,6 +505,60 @@ _NEOABS_DEFAULT_META = {
 }
 
 _NEOABS_META_BOOLS = ("enabled", "show_last_updated", "show_edit_on_github")
+
+# Phase 6 - engagement & privacy surfaces. Feedback opens a prefilled GitHub
+# issue (no tracking); the announcement bar is a dismissable one-liner; cookie
+# consent only shows when an integration that could touch personal data is
+# configured; comments are opt-in via giscus (the only supported provider).
+_NEOABS_DEFAULT_FEEDBACK = {
+    "enabled": True,
+    "show": True,
+    "title": "Was this page helpful?",
+    "positive": "Yes — thanks!",
+    "negative": "No — open an issue",
+    "github_labels": ["feedback"],
+}
+
+_NEOABS_FEEDBACK_BOOLS = ("enabled", "show")
+
+_NEOABS_DEFAULT_ANNOUNCEMENT_BAR = {
+    "enabled": True,
+    "show": True,
+    "text": "",
+    "dismissable": True,
+}
+
+_NEOABS_ANNOUNCEMENT_BAR_BOOLS = ("enabled", "show", "dismissable")
+
+_NEOABS_DEFAULT_COOKIE_CONSENT = {
+    "enabled": True,
+    "show": True,
+    "render": "auto",
+    "message": "This site stores nothing about you unless you enable integrations.",
+    "accept_label": "Accept",
+    "decline_label": "Decline",
+    "privacy_policy": "",
+}
+
+_NEOABS_COOKIE_CONSENT_BOOLS = ("enabled", "show")
+_NEOABS_COOKIE_CONSENT_RENDER = ("auto", "always", "never")
+
+_NEOABS_DEFAULT_COMMENTS = {
+    "enabled": True,
+    "provider": "giscus",
+    "repo": "",
+    "repo_id": "",
+    "category": "",
+    "category_id": "",
+    "mapping": "pathname",
+    "term": "",
+    "language": "",
+    "theme": {"light": "light", "dark": "dark"},
+}
+
+_NEOABS_COMMENTS_BOOLS = ("enabled",)
+_NEOABS_COMMENTS_PROVIDERS = ("", "giscus")
+_NEOABS_COMMENTS_MAPPINGS = ("pathname", "url", "title", "og:title", "specific")
 
 # Allowed enums / key sets for the AI reader so a typo fails the build loudly.
 _NEOABS_AI_READER_URL_STYLES = ("sidecar", "inline")
@@ -1057,6 +1123,140 @@ def _validate_meta(meta):
             raise ConfigurationError(f"theme.neoabs.meta.{field} must be a string.")
 
 
+def _validate_feedback(feedback):
+    """Validate a merged `theme.neoabs.feedback` mapping, raising a clear MkDocs
+    configuration error for malformed entries instead of silently dropping the
+    shared-issue feedback widget."""
+    if not isinstance(feedback, dict):
+        raise ConfigurationError("theme.neoabs.feedback must be a mapping.")
+
+    for field in _NEOABS_FEEDBACK_BOOLS:
+        value = feedback.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.feedback.{field} must be a boolean."
+            )
+
+    for field in ("title", "positive", "negative"):
+        value = feedback.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.feedback.{field} must be a string.")
+
+    labels = feedback.get("github_labels")
+    if labels is not None:
+        if not isinstance(labels, list):
+            raise ConfigurationError(
+                "theme.neoabs.feedback.github_labels must be a list of "
+                "GitHub label strings."
+            )
+        for label in labels:
+            if not isinstance(label, str) or not label.strip():
+                raise ConfigurationError(
+                    "theme.neoabs.feedback.github_labels entries must be "
+                    "non-empty strings."
+                )
+
+
+def _validate_announcement_bar(announcement_bar):
+    """Validate a merged `theme.neoabs.announcement_bar` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently dropping
+    the announcement bar."""
+    if not isinstance(announcement_bar, dict):
+        raise ConfigurationError("theme.neoabs.announcement_bar must be a mapping.")
+
+    for field in _NEOABS_ANNOUNCEMENT_BAR_BOOLS:
+        value = announcement_bar.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.announcement_bar.{field} must be a boolean."
+            )
+
+    text = announcement_bar.get("text")
+    if text is not None and not isinstance(text, str):
+        raise ConfigurationError("theme.neoabs.announcement_bar.text must be a string.")
+
+
+def _validate_cookie_consent(cookie_consent):
+    """Validate a merged `theme.neoabs.cookie_consent` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently dropping
+    the consent banner."""
+    if not isinstance(cookie_consent, dict):
+        raise ConfigurationError("theme.neoabs.cookie_consent must be a mapping.")
+
+    for field in _NEOABS_COOKIE_CONSENT_BOOLS:
+        value = cookie_consent.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.cookie_consent.{field} must be a boolean."
+            )
+
+    for field in ("message", "accept_label", "decline_label", "privacy_policy"):
+        value = cookie_consent.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(
+                f"theme.neoabs.cookie_consent.{field} must be a string."
+            )
+
+    render = cookie_consent.get("render")
+    if render not in (None,) + _NEOABS_COOKIE_CONSENT_RENDER:
+        raise ConfigurationError(
+            "theme.neoabs.cookie_consent.render must be one of "
+            f"{sorted(_NEOABS_COOKIE_CONSENT_RENDER)}; got {render!r}."
+        )
+
+
+def _validate_comments(comments):
+    """Validate a merged `theme.neoabs.comments` mapping, raising a clear MkDocs
+    configuration error for malformed entries instead of silently dropping the
+    giscus comments integration."""
+    if not isinstance(comments, dict):
+        raise ConfigurationError("theme.neoabs.comments must be a mapping.")
+
+    for field in _NEOABS_COMMENTS_BOOLS:
+        value = comments.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.comments.{field} must be a boolean."
+            )
+
+    provider = comments.get("provider")
+    if provider not in (None, "") and provider not in _NEOABS_COMMENTS_PROVIDERS:
+        raise ConfigurationError(
+            "theme.neoabs.comments.provider must be one of "
+            f"{sorted(_NEOABS_COMMENTS_PROVIDERS)}; got {provider!r}."
+        )
+
+    mapping = comments.get("mapping")
+    if mapping not in (None, "") and mapping not in _NEOABS_COMMENTS_MAPPINGS:
+        raise ConfigurationError(
+            "theme.neoabs.comments.mapping must be one of "
+            f"{sorted(_NEOABS_COMMENTS_MAPPINGS)}; got {mapping!r}."
+        )
+
+    for field in ("repo", "repo_id", "category", "category_id", "term", "language"):
+        value = comments.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.comments.{field} must be a string.")
+
+    repo = comments.get("repo") or ""
+    if isinstance(repo, str) and repo.strip() and "/" not in repo:
+        raise ConfigurationError(
+            "theme.neoabs.comments.repo must be in the 'owner/repo' form "
+            "(e.g. 'user/mkdocs-docs')."
+        )
+
+    theme = comments.get("theme")
+    if isinstance(theme, dict):
+        for field in ("light", "dark"):
+            value = theme.get(field)
+            if value is not None and not isinstance(value, str):
+                raise ConfigurationError(
+                    f"theme.neoabs.comments.theme.{field} must be a string."
+                )
+    elif theme is not None:
+        raise ConfigurationError("theme.neoabs.comments.theme must be a mapping.")
+
+
 _NEOABS_GLASS_VALUES = ("light", "medium", "heavy", "none")
 _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
@@ -1174,6 +1374,10 @@ class NeoAbsPlugin(BasePlugin):
         ("ai_reader", Type(dict)),
         ("social_cards", Type(dict)),
         ("meta", Type(dict)),
+        ("feedback", Type(dict)),
+        ("announcement_bar", Type(dict)),
+        ("cookie_consent", Type(dict)),
+        ("comments", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -1322,6 +1526,81 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["meta"] = meta
         theme["neoabs"] = neoabs
 
+        # Phase 6 - engagement & privacy: shared-issue feedback widget. The PRD
+        # config uses `show: true`; the master `enabled` switch keeps the surface
+        # consistent with every other NeoAbs feature that ships ON by default.
+        provided_feedback = neoabs.get("feedback")
+        if not isinstance(provided_feedback, dict):
+            provided_feedback = {}
+        feedback = _deep_merge(_NEOABS_DEFAULT_FEEDBACK, provided_feedback)
+        _validate_feedback(feedback)
+        neoabs["feedback"] = feedback
+        theme["neoabs"] = neoabs
+
+        # Phase 6 - announcement bar. `announcement_bar.text` is the primary
+        # source; the legacy `extra.neoabs_announce` string from the PRD config
+        # block is honored as a convenience alias when the dict text is unset.
+        provided_announcement_bar = neoabs.get("announcement_bar")
+        if not isinstance(provided_announcement_bar, dict):
+            provided_announcement_bar = {}
+        announcement_bar = _deep_merge(
+            _NEOABS_DEFAULT_ANNOUNCEMENT_BAR, provided_announcement_bar
+        )
+        _validate_announcement_bar(announcement_bar)
+        if not announcement_bar["text"]:
+            legacy_announce = (config.get("extra") or {}).get("neoabs_announce")
+            if isinstance(legacy_announce, str) and legacy_announce.strip():
+                announcement_bar["text"] = legacy_announce.strip()
+        neoabs["announcement_bar"] = announcement_bar
+        theme["neoabs"] = neoabs
+
+        # Phase 6 - cookie consent. The banner is purely informational and
+        # stores no data itself; `consent_needed` (computed below) ties its
+        # appearance to an actual third-party integration being configured.
+        provided_cookie_consent = neoabs.get("cookie_consent")
+        if not isinstance(provided_cookie_consent, dict):
+            provided_cookie_consent = {}
+        cookie_consent = _deep_merge(
+            _NEOABS_DEFAULT_COOKIE_CONSENT, provided_cookie_consent
+        )
+        _validate_cookie_consent(cookie_consent)
+        neoabs["cookie_consent"] = cookie_consent
+        theme["neoabs"] = neoabs
+
+        # Phase 6 - comments. giscus is injected only when `repo` + `repo_id`
+        # are configured; everything else (labels, mapping, theme sync) is
+        # additive and optional.
+        provided_comments = neoabs.get("comments")
+        if not isinstance(provided_comments, dict):
+            provided_comments = {}
+        comments = _deep_merge(_NEOABS_DEFAULT_COMMENTS, provided_comments)
+        _validate_comments(comments)
+        neoabs["comments"] = comments
+        theme["neoabs"] = neoabs
+
+        # Phase 6 - consent gating. NeoAbs ships no trackers, so the consent
+        # banner renders only when an integration that could collect personal
+        # data is actually configured: `theme.analytics.gtag` (Google Analytics)
+        # or a configured giscus comments provider. A site with neither is never
+        # disturbed by a consent dialog (the privacy-first default).
+        analytics = theme.get("analytics") if hasattr(theme, "get") else None
+        gtag = ""
+        if isinstance(analytics, Mapping):
+            gtag = str(analytics.get("gtag") or "")
+        giscus_configured = bool(
+            comments.get("enabled")
+            and comments.get("provider") == "giscus"
+            and str(comments.get("repo") or "").strip()
+            and str(comments.get("repo_id") or "").strip()
+        )
+        consent_on = bool(cookie_consent.get("enabled") and cookie_consent.get("show"))
+        render = cookie_consent.get("render") or "auto"
+        consent_needed = bool(
+            consent_on
+            and render != "never"
+            and (render == "always" or bool(gtag.strip()) or giscus_configured)
+        )
+
         # Mirror bookkeeping for the Phase 19 build hooks (a fresh build always
         # resets both so a plugin instance is never reused across builds).
         self._ai_mirrors = []
@@ -1430,6 +1709,11 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_ai_reader"] = ai_reader
         extra["neoabs_social_cards"] = social_cards
         extra["neoabs_meta"] = meta
+        extra["neoabs_feedback"] = feedback
+        extra["neoabs_announcement_bar"] = announcement_bar
+        extra["neoabs_cookie_consent"] = cookie_consent
+        extra["neoabs_comments"] = comments
+        extra["neoabs_consent_needed"] = consent_needed
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.

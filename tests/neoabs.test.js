@@ -64,6 +64,9 @@ function makeNode() {
       if (this.parentNode) this.parentNode.removeChild(this)
     },
     insertBefore(child, ref) {
+      if (!child) return child
+      child.parentNode = this
+      child.parentElement = this
       this._children.push(child)
       this.childNodes.push(child)
       return child
@@ -149,6 +152,8 @@ const documentStub = {
   readyState: "complete",
   body,
   documentElement: makeNode(),
+  head: makeNode(),
+  title: "",
   _els: [],
   createElement(tag) {
     const n = makeNode()
@@ -198,6 +203,7 @@ const documentStub = {
       if (sel === ".neoabs-search__list") return _searchDom.list
       if (sel === ".neoabs-search__close") return _searchDom.closeBtn
     }
+    if (sel === "article .neoabs-typeset") return _typesetNode
     return null
   },
   querySelectorAll(sel) {
@@ -230,13 +236,16 @@ const windowStub = {
   innerWidth: 1024,
   innerHeight: 768,
   _scriptsLoaded: [],
+  _opened: [],
+  open(url, name, features) { this._opened.push({ url: String(url), name: String(name), features: features || "" }) },
   matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
   getSelection() { return { toString: () => "", removeAllRanges: () => {}, anchorNode: null } },
-  setTimeout() { return 0 },
+  setTimeout(fn, ms) { (this._timers = this._timers || []).push({ fn, ms: Number(ms) }); return this._timers.length - 1 },
   clearTimeout() {},
 }
 
 let _configEl = null
+let _typesetNode = null
 
 // Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
 // harness can resolve relative paths the way a real browser does.
@@ -496,6 +505,268 @@ if (zoomBoot && Array.isArray(img1.listeners.click)) {
 }
 _zoomOverlayMode = false
 check("image lightbox opens an overlay on image click", zoomOpened)
+
+// ============================================================================
+// Phase 6: feedback widget opens a prefilled GitHub issue (no tracking)
+// ============================================================================
+function resetPhase6() {
+  _typesetNode = makeNode()
+  documentStub.head = makeNode()
+  windowStub._opened = []
+  body._children = []
+  body.childNodes = []
+  body._classes = new Set()
+  documentStub.title = "Feedback Test Page"
+}
+
+const phase6BaseConfig = (extra) => Object.assign({
+  base: "/",
+  repo_url: "https://github.com/neoabs/mkdocs-docs",
+  components: {},
+  content: {},
+  neoabs_search: { enabled: false },
+  translations: {},
+  feedback: { enabled: true, show: true },
+  announcement_bar: { enabled: true, show: true, text: "", dismissable: true },
+  cookie_consent: { enabled: true, show: true },
+  comments: { enabled: true, provider: "giscus", repo: "", repo_id: "" },
+  consent_needed: false,
+}, extra)
+
+// Depth-first search for the first descendant whose className contains a token
+// (the Phase 6 widgets nest their buttons in ".neoabs-feedback__actions" /
+// ".neoabs-consent__actions", so a shallow scan of the widget's children misses
+// them).
+function findClass(root, token) {
+  if (!root) return null
+  if (String(root.className).indexOf(token) !== -1) return root
+  const kids = root._children || []
+  for (let i = 0; i < kids.length; i++) {
+    const hit = findClass(kids[i], token)
+    if (hit) return hit
+  }
+  return null
+}
+
+resetPhase6()
+const fbBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    feedback: { enabled: true, show: true, title: "Was this page helpful?", positive: "Yes!", negative: "No!", github_labels: ["feedback", "docs"] },
+  }),
+  searchDom: null,
+  stored: {},
+})
+
+const feedbackWidget = fbBoot
+  ? (_typesetNode._children || []).find((c) => String(c.className).indexOf("neoabs-feedback") !== -1)
+  : null
+const yesBtn = findClass(feedbackWidget, "neoabs-feedback__btn--yes")
+check("feedback widget renders under the article when enabled + repo_url", fbBoot && !!feedbackWidget && !!yesBtn)
+
+if (yesBtn && Array.isArray(yesBtn.listeners.click)) {
+  yesBtn.listeners.click.forEach((fn) => fn({ preventDefault() {} }))
+}
+const openedIssue = (windowStub._opened[0] || {}).url || ""
+check(
+  "feedback Yes opens a prefilled /issues/new URL with labels + title + body",
+  fbBoot &&
+    openedIssue.indexOf("/issues/new?labels=") !== -1 &&
+    openedIssue.indexOf("feedback,docs") !== -1 &&
+    decodeURIComponent(openedIssue).indexOf("Feedback: Feedback Test Page") !== -1 &&
+    decodeURIComponent(openedIssue).indexOf("Positive feedback") !== -1 &&
+    openedIssue !== ""
+)
+
+resetPhase6()
+const fbHiddenBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({ feedback: { enabled: false, show: true } }),
+  searchDom: null,
+  stored: {},
+})
+check(
+  "feedback widget is hidden when enabled: false",
+  fbHiddenBoot && (_typesetNode._children || []).length === 0
+)
+
+// ============================================================================
+// Phase 6: announcement bar renders, dismisses, and remembers
+// ============================================================================
+const announceText = "New in v0.2 — glass components!"
+resetPhase6()
+const annBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({ announcement_bar: { enabled: true, show: true, text: announceText, dismissable: true } }),
+  searchDom: null,
+  stored: {},
+})
+const annBar = annBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-announcement") !== -1)
+  : null
+const annClose = findClass(annBar, "neoabs-announcement__close")
+const annKey = "announcement-dismissed-" + encodeURIComponent(announceText).slice(0, 80)
+check("announcement bar renders (bottom-fixed) when text is set", annBoot && !!annBar)
+
+const autoHideTimer = (windowStub._timers || []).find((t) => t.ms === 4000)
+if (autoHideTimer && annBar) autoHideTimer.fn()
+check(
+  "announcement bar auto-hides after 4s and persists the dismissal",
+  annBoot &&
+    !!autoHideTimer &&
+    !(body._children || []).some((c) => String(c.className).indexOf("neoabs-announcement") !== -1) &&
+    storageStub.getItem("neoabs-" + annKey) === "1"
+)
+
+resetPhase6()
+const dismissBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({ announcement_bar: { enabled: true, show: true, text: announceText, dismissable: true } }),
+  searchDom: null,
+  stored: {},
+})
+const dismissBar = dismissBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-announcement") !== -1)
+  : null
+const dismissClose = findClass(dismissBar, "neoabs-announcement__close")
+if (dismissClose && Array.isArray(dismissClose.listeners.click)) {
+  dismissClose.listeners.click.forEach((fn) => fn({}))
+}
+check(
+  "announcement dismiss persists a storage key and removes the bar",
+  dismissBoot &&
+    storageStub.getItem("neoabs-" + annKey) === "1" &&
+    !(body._children || []).some((c) => String(c.className).indexOf("neoabs-announcement") !== -1)
+)
+
+resetPhase6()
+const annBoot2 = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({ announcement_bar: { enabled: true, show: true, text: announceText, dismissable: true } }),
+  searchDom: null,
+  stored: { ["neoabs-" + annKey]: "1" },
+})
+check(
+  "already-dismissed announcement is not rendered again",
+  annBoot2 && !(body._children || []).some((c) => String(c.className).indexOf("neoabs-announcement") !== -1)
+)
+
+// ============================================================================
+// Phase 6: cookie consent — privacy-first, gated on a real integration
+// ============================================================================
+resetPhase6()
+const noConsentBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({ cookie_consent: { enabled: true, show: true }, consent_needed: false }),
+  searchDom: null,
+  stored: {},
+})
+check(
+  "consent banner is absent when no integration is configured (consent_needed: false)",
+  noConsentBoot && !(body._children || []).some((c) => String(c.className).indexOf("neoabs-consent") !== -1)
+)
+
+resetPhase6()
+const consentBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    cookie_consent: { enabled: true, show: true, message: "Opt in?", accept_label: "Accept", decline_label: "Decline" },
+    consent_needed: true,
+  }),
+  searchDom: null,
+  stored: {},
+})
+const consentPanel = consentBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-consent") !== -1)
+  : null
+const consentAccept = findClass(consentPanel, "neoabs-consent__accept")
+check("consent banner renders when an integration is configured", consentBoot && !!consentPanel && !!consentAccept)
+
+if (consentAccept && Array.isArray(consentAccept.listeners.click)) {
+  consentAccept.listeners.click.forEach((fn) => fn({}))
+}
+check(
+  "accept persists the consent flag and removes the banner",
+  consentBoot && storageStub.getItem("neoabs-consent") === "accepted"
+)
+
+resetPhase6()
+const consentDeclineBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    cookie_consent: { enabled: true, show: true, message: "Opt in?", accept_label: "Accept", decline_label: "Decline" },
+    consent_needed: true,
+  }),
+  searchDom: null,
+  stored: {},
+})
+const consentPanel2 = consentDeclineBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-consent") !== -1)
+  : null
+const consentDecline = findClass(consentPanel2, "neoabs-consent__decline")
+if (consentDecline && Array.isArray(consentDecline.listeners.click)) {
+  consentDecline.listeners.click.forEach((fn) => fn({}))
+}
+check(
+  "decline persists the consent flag",
+  consentDeclineBoot && storageStub.getItem("neoabs-consent") === "declined"
+)
+
+// ============================================================================
+// Phase 6: giscus comments — configured repo loads the loader script
+// ============================================================================
+resetPhase6()
+const giscusBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    comments: { enabled: true, provider: "giscus", repo: "neoabs/mkdocs-docs", repo_id: "R_kg", category: "Announcements", category_id: "DIC_1", mapping: "pathname", theme: { light: "light", dark: "dark" } },
+    consent_needed: false,
+  }),
+  searchDom: null,
+  stored: {},
+})
+const giscusScript = giscusBoot
+  ? (documentStub.head._children || []).find((c) => c.dataset && c.dataset.giscus === "loaded")
+  : null
+const giscusBox = findClass(_typesetNode, "neoabs-giscus")
+check(
+  "giscus loader script is injected when repo + repo_id are configured",
+  giscusBoot && !!giscusScript && !!giscusBox &&
+    giscusScript.src === "https://giscus.app/client.js" &&
+    giscusBox.getAttribute("data-repo") === "neoabs/mkdocs-docs"
+)
+
+// ============================================================================
+// Phase 6: giscus defers behind consent when an integration serves
+// ============================================================================
+resetPhase6()
+const giscusDeferredBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    comments: { enabled: true, provider: "giscus", repo: "neoabs/mkdocs-docs", repo_id: "R_kg", category: "Announcements", category_id: "DIC_1", mapping: "pathname" },
+    consent_needed: true,
+  }),
+  searchDom: null,
+  stored: {},
+})
+const deferredScriptBefore = (documentStub.head._children || []).find((c) => c.dataset && c.dataset.giscus === "loaded")
+const consentPanel3 = giscusDeferredBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-consent") !== -1)
+  : null
+const consentAccept2 = findClass(consentPanel3, "neoabs-consent__accept")
+check(
+  "giscus does not load before consent is accepted",
+  giscusDeferredBoot && !deferredScriptBefore && !!consentPanel3
+)
+
+if (consentAccept2 && Array.isArray(consentAccept2.listeners.click)) {
+  consentAccept2.listeners.click.forEach((fn) => fn({}))
+}
+const deferredScriptAfter = (documentStub.head._children || []).find((c) => c.dataset && c.dataset.giscus === "loaded")
+check(
+  "giscus loads only after the reader accepts consent",
+  giscusDeferredBoot && !!deferredScriptAfter
+)
 
 // ============================================================================
 // Report

@@ -664,6 +664,11 @@
         "action_cluster": {{ config.extra.neoabs_action_cluster | default({}) | tojson }},
         "timer": {{ config.extra.neoabs_timer | default({}) | tojson }},
         "ai_reader": {{ config.extra.neoabs_ai_reader | default({}) | tojson }},
+        "feedback": {{ config.extra.neoabs_feedback | default({}) | tojson }},
+        "announcement_bar": {{ config.extra.neoabs_announcement_bar | default({}) | tojson }},
+        "cookie_consent": {{ config.extra.neoabs_cookie_consent | default({}) | tojson }},
+        "comments": {{ config.extra.neoabs_comments | default({}) | tojson }},
+        "consent_needed": {{ config.extra.neoabs_consent_needed | default(false) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
         "translations": {
           "clipboard": {

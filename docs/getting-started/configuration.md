@@ -265,6 +265,108 @@ neoabs:
 ---
 ```
 
+### `neoabs.feedback`
+
+Phase 6 "Was this page helpful?" widget. Renders under the article and opens a
+prefilled GitHub issue (positive/negative) in a new tab — a plain issue link, no
+analytics. Only appears when `config.repo_url` is set.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for the feedback widget |
+| `show` | `true` | Render the widget under the article |
+| `title` | `"Was this page helpful?"` | Widget heading |
+| `positive` | `"Yes — thanks!"` | "Yes" button label |
+| `negative` | `"No — open an issue"` | "No" button label |
+| `github_labels` | `["feedback"]` | GitHub issue labels applied to each opened issue |
+
+```yaml
+theme:
+  neoabs:
+    feedback:
+      enabled: true
+      github_labels: [feedback]
+```
+
+### `neoabs.announcement_bar`
+
+Phase 6 announcement bar: one line fixed to the bottom of the viewport that
+auto-hides after 4s. The text comes from `announcement_bar.text` (wins) or the
+legacy `extra.neoabs_announce` string. Dismissal (manual or automatic) persists
+in `localStorage` keyed by the text, so changing the announcement re-shows it.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for the bar |
+| `show` | `true` | Render the bar |
+| `text` | `""` | Announcement text; empty falls back to `extra.neoabs_announce` |
+| `dismissable` | `true` | Show the × dismiss button |
+
+```yaml
+theme:
+  neoabs:
+    announcement_bar:
+      text: New in v0.2 — glass components are here!
+```
+
+### `neoabs.cookie_consent`
+
+Phase 6 consent banner. Privacy-first: NeoAbs never tracks readers, so the
+banner is rendered **only** when the build detects a configured integration
+(`theme.analytics.gtag` or giscus comments with `repo` + `repo_id`) — unless you
+opt in to always showing it with `render: always` (for demo sites). The banner
+itself stores just an accept/decline flag in `localStorage`; "Accept" unlocks
+delayed integrations like giscus.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for the banner |
+| `show` | `true` | Render the banner |
+| `render` | `"auto"` | When to show: `auto` (only with a configured integration), `always`, or `never` |
+| `message` | `"This site stores nothing about you unless you enable integrations."` | Banner text |
+| `accept_label` | `"Accept"` | Accept button label |
+| `decline_label` | `"Decline"` | Decline button label |
+| `privacy_policy` | `""` | Optional privacy policy path; rendered when set |
+
+```yaml
+theme:
+  neoabs:
+    cookie_consent:
+      message: We only store your explicit choices.
+      privacy_policy: /privacy/
+      render: always          # demo sites: force-show without an integration
+```
+
+### `neoabs.comments`
+
+Phase 6 opt-in comments via [giscus](https://giscus.app) (the only supported
+provider). Nothing loads until both `repo` and `repo_id` are configured; when a
+consent-serving integration is present, the giscus script is deferred until the
+reader clicks "Accept". The giscus theme follows the active palette.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for comments |
+| `provider` | `"giscus"` | Provider (only `giscus` today) |
+| `repo` | `""` | GitHub `owner/repo`; required to enable |
+| `repo_id` | `""` | giscus repo ID from the setup page |
+| `category` | `""` | Discussion category (must be an "Announcements"-type) |
+| `category_id` | `""` | giscus category ID |
+| `mapping` | `"pathname"` | `pathname`, `url`, `title`, `og:title`, or `specific` |
+| `term` | `""` | Term used with the `specific` mapping |
+| `language` | `""` | giscus language code (falls back to giscus default) |
+| `theme.light` / `theme.dark` | `"light"` / `"dark"` | giscus themes for each palette |
+
+```yaml
+theme:
+  neoabs:
+    comments:
+      repo: "user/mkdocs-docs"
+      repo_id: "R_kgxxxx"
+      category: "Announcements"
+      category_id: "DIC_xxxx"
+```
+
 ## Generated reference
 
 The canonical reference below is emitted from the plugin's own source tables

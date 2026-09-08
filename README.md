@@ -70,6 +70,10 @@ NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics 
 - **Task Lists** — Interactive checkbox lists
 - **Reading Progress Bar** — Visual indicator of scroll position
 - **Back-to-Top Button** — Appears on scroll for quick navigation
+- **Page Feedback** — "Was this page helpful?" widget that opens a prefilled GitHub issue (no analytics, no tracking)
+- **Announcement Bar** — Dismissable one-line banner above the header, remembered per site
+- **Privacy-First Cookie Consent** — Banner appears only when a real integration is configured; a single accept/decline flag, nothing tracked
+- **Opt-in Comments (giscus)** — Consent-gated comments with palette-synced theme
 - **Keyboard Navigation** — Shortcuts for search (`/`), help (`?`), and close (`Esc`)
 - **Reduced Motion Support** — Animations disabled when `prefers-reduced-motion` is active
 - **SCSS Build Pipeline** — Sass compilation with PostCSS autoprefixer and cssnano minification

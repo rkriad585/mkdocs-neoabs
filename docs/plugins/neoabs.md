@@ -133,6 +133,89 @@ theme:
       source_dir: docs
 ```
 
+### `feedback`
+
+Phase 6 "Was this page helpful?" widget. Renders under the article and opens a
+prefilled GitHub issue in a new tab (`repo_url` + `github_labels` are read from
+the site config) — a plain issue link, no analytics, no tracking. Only appears
+when `config.repo_url` is set.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    feedback:
+      enabled: true                # master on/off
+      title: Was this page helpful?
+      positive: Yes — thanks!
+      negative: No — open an issue
+      github_labels: [feedback]
+```
+
+### `announcement_bar`
+
+Phase 6 announcement bar: a single line fixed to the bottom of the viewport,
+auto-hiding after 4s. Text comes from `announcement_bar.text`, falling back to
+the legacy `extra.neoabs_announce` string. Dismissal is remembered in
+`localStorage` (keyed by the text), so changing the announcement re-shows it.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    announcement_bar:
+      text: New release! Check the changelog.
+      dismissable: true
+```
+
+### `cookie_consent`
+
+Phase 6 consent banner. Privacy-first: NeoAbs ships no trackers, so the banner
+renders by default only when a real integration is configured (`theme.analytics.gtag`
+or giscus comments with `repo` + `repo_id`). Set `render: always` to force-show
+it on a demo site (and `render: never` to hide it even with integrations). It
+stores nothing but an accept/decline flag; clicking **Accept** unlocks delayed
+integrations (giscus) that are otherwise never loaded.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    cookie_consent:
+      message: This site stores nothing about you unless you enable integrations.
+      accept_label: Accept
+      decline_label: Decline
+      privacy_policy: ""
+      render: always         # auto (default) | always | never
+```
+
+### `comments`
+
+Phase 6 opt-in comments via [giscus](https://giscus.app) — the only supported
+provider. Both `repo` and `repo_id` are required before anything loads; when a
+consent-serving integration is present, the scripts are deferred until the
+reader accepts. The giscus theme follows the active palette with per-scheme
+themes in `theme.light` / `theme.dark`. Grab the exact IDs on the [giscus setup
+page](https://giscus.app) for your repository.
+
+```yaml
+theme:
+  name: neoabs
+  neoabs:
+    comments:
+      enabled: true
+      provider: giscus
+      repo: "user/mkdocs-docs"
+      repo_id: "R_kgxxxx"
+      category: "Announcements"    # must be an Announcements-type category
+      category_id: "DIC_xxxx"
+      mapping: pathname            # pathname | url | title | og:title | specific
+      term: ""                     # used with mapping: specific
+      theme:
+        light: light
+        dark: dark
+```
+
 ## Full Example
 
 ```yaml

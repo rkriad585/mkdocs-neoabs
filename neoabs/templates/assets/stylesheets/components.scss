@@ -6432,3 +6432,191 @@ img.neoabs-repo-pop__avatar {
 	user-select: none;
 	pointer-events: none;
 }
+
+// ============================================================================
+// 13. FEEDBACK / ANNOUNCEMENT / CONSENT / COMMENTS  (Phase 6)
+// ============================================================================
+
+// --- "Was this page helpful?" widget (GitHub-issue-backed) -------------------
+
+.neoabs-feedback {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--neoabs-space-3);
+	margin-top: var(--neoabs-space-8);
+	padding: var(--neoabs-space-4) var(--neoabs-space-5);
+	background: var(--neoabs-content-glass-bg);
+	border: 1px solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-md);
+}
+
+.neoabs-feedback__title {
+	font-family: var(--neoabs-font-display);
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--neoabs-text-primary);
+}
+
+.neoabs-feedback__actions {
+	display: inline-flex;
+	gap: var(--neoabs-space-2);
+	flex-wrap: wrap;
+}
+
+// --- Dismissable announcement bar (fixed to the bottom, auto-hides after 4s) --
+
+.neoabs-announcement {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: var(--neoabs-announce-height, 44px);
+	padding: 0 var(--neoabs-space-16);
+	background: linear-gradient(
+		90deg,
+		var(--neoabs-accent-dim, rgba(196, 145, 40, 0.18)),
+		var(--neoabs-accent-glow, rgba(196, 145, 40, 0.35)),
+		var(--neoabs-accent-dim, rgba(196, 145, 40, 0.18))
+	);
+	color: var(--neoabs-text-primary);
+	border-top: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	font-size: 13px;
+	text-align: center;
+	z-index: var(--neoabs-z-modal);
+}
+
+.neoabs-announcement__inner {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-3);
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.neoabs-announcement__text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.neoabs-announcement__close {
+	position: absolute;
+	right: var(--neoabs-space-4);
+	top: 50%;
+	transform: translateY(-50%);
+	width: 26px;
+	height: 26px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	line-height: 1;
+	color: var(--neoabs-text-secondary);
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--neoabs-radius-sm);
+	cursor: pointer;
+	transition: color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast);
+
+	&:hover {
+		color: var(--neoabs-text-primary);
+		background: var(--neoabs-glass-bg);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--neoabs-accent-dim);
+		outline-offset: 2px;
+	}
+}
+
+// --- Cookie consent banner (privacy-first; only when an integration serves) ---
+
+.neoabs-consent {
+	position: fixed;
+	left: var(--neoabs-space-4);
+	right: var(--neoabs-space-4);
+	bottom: var(--neoabs-space-4);
+	z-index: var(--neoabs-z-modal);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--neoabs-space-4);
+	flex-wrap: wrap;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: var(--neoabs-space-4) var(--neoabs-space-5);
+	background: var(--neoabs-glass-bg-strong);
+	border: 1px solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-lg);
+	box-shadow: var(--neoabs-shadow-glass);
+	backdrop-filter: blur(var(--neoabs-glass-blur-medium, 12px)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-medium, 12px)) saturate(var(--neoabs-glass-saturation));
+	font-size: 13px;
+	color: var(--neoabs-text-secondary);
+}
+
+.neoabs-consent__message {
+	flex: 1 1 260px;
+	min-width: 0;
+}
+
+.neoabs-consent__actions {
+	display: inline-flex;
+	gap: var(--neoabs-space-2);
+	flex-shrink: 0;
+}
+
+// --- Opt-in giscus comments ----------------------------------------------------
+
+.neoabs-comments {
+	margin-top: var(--neoabs-space-12);
+	padding-top: var(--neoabs-space-6);
+	border-top: 1px solid var(--neoabs-glass-border);
+}
+
+.neoabs-comments__title {
+	font-family: var(--neoabs-font-display);
+	font-size: 18px;
+	font-weight: 700;
+	margin: 0 0 var(--neoabs-space-4);
+	color: var(--neoabs-text-primary);
+}
+
+.neoabs-comments .giscus-frame,
+.neoabs-comments iframe[title~="comments"] {
+	width: 100%;
+	max-width: 100%;
+}
+
+.neoabs-comments .giscus {
+	margin-top: var(--neoabs-space-2);
+}
+
+// --- Light scheme ---------------------------------------------------------------
+
+html[data-md-color-scheme~="default"] .neoabs-feedback,
+html[data-md-color-scheme~="light"] .neoabs-feedback {
+	background: var(--neoabs-content-glass-bg);
+	border-color: var(--neoabs-glass-border);
+}
+
+html[data-md-color-scheme~="default"] .neoabs-consent,
+html[data-md-color-scheme~="light"] .neoabs-consent {
+	background: var(--neoabs-glass-bg-strong);
+	border-color: var(--neoabs-glass-border-strong);
+}
+
+// --- Accessibility -------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+	.neoabs-announcement,
+	.neoabs-consent {
+		transition: none !important;
+	}
+}

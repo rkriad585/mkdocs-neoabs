@@ -304,6 +304,7 @@
     syncSchemeImages(scheme)
     syncHighlightTheme(scheme)
     syncFavicon(scheme)
+    syncCommentsTheme()
     if (typeof _mermaidGenericInit === "function") _mermaidGenericInit()
   }
 
@@ -1823,6 +1824,284 @@
         }
       })
     })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 6 — Engagement & privacy
+  // ---------------------------------------------------------------------------
+
+  // Consent memory. The theme never stores anything but a binary accept/decline
+  // flag in localStorage; `null` (nothing stored) means undecided.
+  function consentState() {
+    return storageGet("consent")
+  }
+  function consentAccepted() { return consentState() === "accepted" }
+  function consentDeclined() { return consentState() === "declined" }
+
+  // Deferred-integration handlers: run now when consent was already accepted,
+  // otherwise once the reader clicks "Accept". Used by giscus so no third-party
+  // request is made before the reader opts in.
+  let _consentAcceptHandlers = []
+  function onConsentAccept(fn) {
+    if (consentAccepted()) { try { fn() } catch (e) {} return }
+    _consentAcceptHandlers.push(fn)
+  }
+  function runConsentAcceptHandlers() {
+    const pending = _consentAcceptHandlers
+    _consentAcceptHandlers = []
+    pending.forEach(function (fn) { try { fn() } catch (e) {} })
+  }
+
+  // "Was this page helpful?" — GitHub-issue-backed feedback. A short widget is
+  // appended to the article; "Yes" and "No" both open a prefilled issue in a new
+  // tab (positive/negative body). No analytics, no tracking — the click is a
+  // plain issue link.
+  function openFeedbackIssue(config, f, vote) {
+    const repo = String((config && config.repo_url) || "").replace(/\/+$/, "")
+    if (!repo) return
+    const labels = Array.isArray(f.github_labels) && f.github_labels.length
+      ? f.github_labels.map(encodeURIComponent).join(",")
+      : "feedback"
+    const who = vote === "yes" ? "Positive" : "Negative"
+    const pageUrl = (typeof location !== "undefined" && location.href) || ""
+    const body = "## " + who + " feedback\n\n" + "Page: " + pageUrl + "\n"
+    const title = (typeof document !== "undefined" && document.title) || ""
+    const issueUrl =
+      repo + "/issues/new?labels=" + labels +
+      "&title=" + encodeURIComponent("Feedback: " + title) +
+      "&body=" + encodeURIComponent(body)
+    if (typeof window !== "undefined" && typeof window.open === "function") {
+      window.open(issueUrl, "_blank", "noopener")
+    }
+    if (vote === "yes" && typeof neoabsToast === "function") {
+      neoabsToast(f.thanks || "Thanks for the feedback!", "success")
+    }
+  }
+
+  function initFeedback(config) {
+    if (!componentShow("feedback", "show")) return
+    const f = (config && config.feedback) || {}
+    if (f.enabled === false || f.show === false) return
+    const repo = String((config && config.repo_url) || "").replace(/\/+$/, "")
+    if (!repo) return
+    const typeset = $("article .neoabs-typeset")
+    if (!typeset || typeset.querySelector(".neoabs-feedback")) return
+
+    const widget = document.createElement("div")
+    widget.className = "neoabs-feedback"
+    const title = document.createElement("div")
+    title.className = "neoabs-feedback__title"
+    title.textContent = f.title || "Was this page helpful?"
+    const actions = document.createElement("div")
+    actions.className = "neoabs-feedback__actions"
+    const yes = document.createElement("button")
+    yes.type = "button"
+    yes.className = "neoabs-btn neoabs-btn--ghost neoabs-feedback__btn neoabs-feedback__btn--yes"
+    yes.dataset.feedback = "yes"
+    yes.textContent = f.positive || "Yes — thanks!"
+    const no = document.createElement("button")
+    no.type = "button"
+    no.className = "neoabs-btn neoabs-btn--accent neoabs-feedback__btn neoabs-feedback__btn--no"
+    no.dataset.feedback = "no"
+    no.textContent = f.negative || "No — open an issue"
+    actions.appendChild(yes)
+    actions.appendChild(no)
+    widget.appendChild(title)
+    widget.appendChild(actions)
+    typeset.appendChild(widget)
+
+    yes.addEventListener("click", function (e) {
+      if (e && e.preventDefault) e.preventDefault()
+      openFeedbackIssue(config, f, "yes")
+    })
+    no.addEventListener("click", function (e) {
+      if (e && e.preventDefault) e.preventDefault()
+      openFeedbackIssue(config, f, "no")
+    })
+  }
+
+  // Dismissable announcement bar. A one-line bar is fixed to the bottom of the
+  // viewport; it auto-dismisses after 4s. Dismissal (manual or automatic)
+  // persists in localStorage keyed by the bar text, so updating the announcement
+  // re-shows it. `extra.neoabs_announce` and
+  // `theme.neoabs.announcement_bar.text` both work (dict wins).
+  const _ANNOUNCE_AUTO_HIDE_MS = 4000
+  function dismissAnnouncement(bar, key) {
+    storageSet(key, "1")
+    bar.remove()
+  }
+  function initAnnouncement(config) {
+    if (!componentShow("announcement_bar", "show")) return
+    const a = (config && config.announcement_bar) || {}
+    if (a.enabled === false || a.show === false) return
+    const text = String(a.text || "").trim()
+    if (!text) return
+    if ($(".neoabs-announcement")) return
+
+    const key = "announcement-dismissed-" + encodeURIComponent(text).slice(0, 80)
+    if (storageGet(key) === "1") return
+
+    const bar = document.createElement("div")
+    bar.className = "neoabs-announcement"
+    const inner = document.createElement("div")
+    inner.className = "neoabs-announcement__inner"
+    const label = document.createElement("span")
+    label.className = "neoabs-announcement__text"
+    label.textContent = text
+    inner.appendChild(label)
+    bar.appendChild(inner)
+    if (a.dismissable !== false) {
+      const close = document.createElement("button")
+      close.type = "button"
+      close.className = "neoabs-announcement__close"
+      close.setAttribute("aria-label", "Dismiss")
+      close.dataset.announceDismiss = ""
+      close.textContent = "\u00d7"
+      bar.appendChild(close)
+      close.addEventListener("click", function () {
+        dismissAnnouncement(bar, key)
+      })
+    }
+    document.body.appendChild(bar)
+    window.setTimeout(function () {
+      dismissAnnouncement(bar, key)
+    }, _ANNOUNCE_AUTO_HIDE_MS)
+  }
+
+  // Privacy-first cookie consent. NeoAbs ships no trackers, so the banner only
+  // renders when `config.consent_needed` is true (an actual integration like
+  // gtag or giscus is configured). Accept/decline is a plain localStorage flag;
+  // accepting also unlocks delayed integrations via runConsentAcceptHandlers().
+  function initConsent(config) {
+    if (!componentShow("cookie_consent", "show")) return
+    const c = (config && config.cookie_consent) || {}
+    if (c.enabled === false || c.show === false) return
+    if (!(config && config.consent_needed)) return
+    if (consentAccepted() || consentDeclined()) return
+    if ($(".neoabs-consent")) return
+
+    const panel = document.createElement("div")
+    panel.className = "neoabs-consent"
+    const message = document.createElement("span")
+    message.className = "neoabs-consent__message"
+    message.textContent = c.message ||
+      "This site stores nothing about you unless you enable integrations."
+    const actions = document.createElement("div")
+    actions.className = "neoabs-consent__actions"
+    const accept = document.createElement("button")
+    accept.type = "button"
+    accept.className = "neoabs-btn neoabs-consent__btn neoabs-consent__accept"
+    accept.dataset.consent = "accept"
+    accept.textContent = c.accept_label || "Accept"
+    const decline = document.createElement("button")
+    decline.type = "button"
+    decline.className = "neoabs-btn neoabs-btn--ghost neoabs-consent__btn neoabs-consent__decline"
+    decline.dataset.consent = "decline"
+    decline.textContent = c.decline_label || "Decline"
+    actions.appendChild(accept)
+    actions.appendChild(decline)
+    panel.appendChild(message)
+    panel.appendChild(actions)
+    document.body.appendChild(panel)
+
+    accept.addEventListener("click", function () {
+      storageSet("consent", "accepted")
+      runConsentAcceptHandlers()
+      panel.remove()
+    })
+    decline.addEventListener("click", function () {
+      storageSet("consent", "declined")
+      panel.remove()
+    })
+  }
+
+  // Opt-in comments via giscus (the only supported provider). The container and
+  // loader script are created client-side so the cookie-consent flow holds:
+  // when an integration is configured, nothing loads until "Accept".
+  let _giscusLoaded = false
+
+  function currentScheme() {
+    return document.documentElement.getAttribute("data-md-color-scheme") || ""
+  }
+
+  function giscusThemeFor(config) {
+    const cm = (config && config.comments) || {}
+    const conf = (cm.theme && typeof cm.theme === "object") ? cm.theme : {}
+    const scheme = currentScheme()
+    const isLight = scheme === "default" || scheme === "light"
+    return isLight ? (conf.light || "light") : (conf.dark || "dark")
+  }
+
+  function syncCommentsTheme() {
+    const theme = giscusThemeFor(_config)
+    $$(".neoabs-giscus").forEach(function (el) {
+      if (el.getAttribute("data-theme") !== theme) el.setAttribute("data-theme", theme)
+    })
+  }
+
+  function commentsAllowed(config) {
+    const c = (config && config.cookie_consent) || {}
+    const consentOn = c.enabled !== false && c.show !== false &&
+      !!(config && config.consent_needed)
+    return !consentOn || consentAccepted()
+  }
+
+  function loadGiscusScript(config) {
+    if (_giscusLoaded) return
+    if (document.querySelector('script[data-giscus="loaded"]')) {
+      _giscusLoaded = true
+      return
+    }
+    const cm = (config && config.comments) || {}
+    const typeset = $("article .neoabs-typeset")
+
+    const wrap = document.createElement("div")
+    wrap.className = "neoabs-comments"
+    const heading = document.createElement("h2")
+    heading.className = "neoabs-comments__title"
+    heading.textContent = (config && config.translations &&
+      config.translations.comments && config.translations.comments.title) ||
+      "Comments"
+    const giscus = document.createElement("div")
+    giscus.className = "giscus neoabs-giscus"
+    giscus.setAttribute("data-repo", cm.repo || "")
+    giscus.setAttribute("data-repo-id", cm.repo_id || "")
+    if (cm.category) giscus.setAttribute("data-category", cm.category)
+    if (cm.category_id) giscus.setAttribute("data-category-id", cm.category_id)
+    giscus.setAttribute("data-mapping", cm.mapping || "pathname")
+    if (cm.term) giscus.setAttribute("data-term", cm.term)
+    giscus.setAttribute("data-input-position", "top")
+    giscus.setAttribute("data-loading", "lazy")
+    if (cm.language) giscus.setAttribute("data-lang", cm.language)
+    giscus.setAttribute("data-theme", giscusThemeFor(config))
+    wrap.appendChild(heading)
+    wrap.appendChild(giscus)
+    if (typeset) typeset.appendChild(wrap)
+
+    _giscusLoaded = true
+    const src = cdnUrlFor("giscus") || "https://giscus.app/client.js"
+    const s = document.createElement("script")
+    s.src = src
+    s.async = true
+    s.defer = true
+    s.crossOrigin = "anonymous"
+    s.dataset.giscus = "loaded"
+    document.head.appendChild(s)
+  }
+
+  function initComments(config) {
+    if (!componentShow("giscus", "show")) return
+    const cm = (config && config.comments) || {}
+    if (cm.enabled === false) return
+    if (cm.provider && cm.provider !== "giscus") return
+    if (!cm.repo || !cm.repo_id) return
+    if ($(".neoabs-comments")) return
+
+    if (commentsAllowed(config)) {
+      loadGiscusScript(config)
+    } else if (config && config.consent_needed) {
+      onConsentAccept(function () { loadGiscusScript(_config) })
+    }
   }
 
   // Responsive tables: wraps markdown <table> in a horizontally scrollable
@@ -4375,7 +4654,7 @@ actionClusterEnsureUi(cfg)
         initContentTables, initMermaid, initImageZoom, initCodeAnnotations,
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
         initUIExamples, () => initMath(_navConfig), initNavToggle,
-        initPermalinks,
+        initPermalinks, () => initFeedback(_navConfig), () => initComments(_navConfig),
         focusTimerEnsureUi
       ]
       inits.forEach(function (fn) {
@@ -4637,6 +4916,8 @@ actionClusterEnsureUi(cfg)
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),
+      () => initFeedback(config), () => initComments(config),
+      () => initAnnouncement(config), () => initConsent(config),
       () => initSPANavigation(config)]
     init.forEach(function (fn) {
       try { fn() } catch (e) {
