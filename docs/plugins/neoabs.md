@@ -154,11 +154,13 @@ theme:
 
 ### `announcement_bar`
 
-Phase 6 announcement bar: a single line fixed to the bottom of the viewport.
-**Off by default** — it renders only when `enabled: true` and a non-empty
-`text` are set. Text comes from `announcement_bar.text`, falling back to the
-legacy `extra.neoabs_announce` string. Dismissal is remembered in `localStorage`
-(keyed by the text), so changing the announcement re-shows it.
+Phase 6 announcement bar: one line in a floating glass card — **off by default**,
+it renders only when `enabled: true` and a non-empty `text` are set. Text comes
+from `announcement_bar.text`, falling back to the legacy `extra.neoabs_announce`
+string. Dismissal is remembered in `localStorage` (keyed by the text), so
+changing the announcement re-shows it. `position` floats the card
+(`top`/`right`/`bottom`/`left`) or opens it as a centered popup with a backdrop
+(`center`; clicking the backdrop dismisses).
 
 ```yaml
 theme:
@@ -168,6 +170,7 @@ theme:
       enabled: true    # opt-in — hidden by default
       text: New release! Check the changelog.
       dismissable: true
+      position: bottom # top | right | bottom | left | center (popup)
 ```
 
 ### `cookie_consent`
@@ -177,7 +180,9 @@ renders by default only when a real integration is configured (`theme.analytics.
 or giscus comments with `repo` + `repo_id`). Set `render: always` to force-show
 it on a demo site (and `render: never` to hide it even with integrations). It
 stores nothing but an accept/decline flag; clicking **Accept** unlocks delayed
-integrations (giscus) that are otherwise never loaded.
+integrations (giscus) that are otherwise never loaded. `position` floats the card
+(`top`/`right`/`bottom`/`left`) or opens it as a centered popup with a backdrop
+(`center`; the backdrop is inert — only Accept/Decline settle the prompt).
 
 ```yaml
 theme:
@@ -189,6 +194,7 @@ theme:
       decline_label: Decline
       privacy_policy: ""
       render: always         # auto (default) | always | never
+      position: bottom       # top | right | bottom | left | center (popup)
 ```
 
 ### `comments`

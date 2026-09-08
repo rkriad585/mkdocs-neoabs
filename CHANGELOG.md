@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - `neoabs.js` boot init order: `initContentMedia` → `initImageZoom` → `initHighlighting` (hljs callback now calls `applyCodeAnnotations()` after re-highlight)
 - SCSS additions: `.neoabs-zoom` overlay (slide-up entrance), `.neoabs-annotation` badge, `.neoabs-annotations` legend with `attr(data-index)` counters, `.neoabs-footer__meta` / `.neoabs-edit` / `.neoabs-last-updated` layout
 - `theme.neoabs.comments` and `theme.neoabs.announcement_bar` are now **off by default** (`enabled: false`): nothing renders unless a site opts in with `enabled: true` (the announcement bar additionally needs a non-empty `text`)
+- Announcement bar and cookie consent are now **floating cards** (position pinning) instead of full-width bars: new `position` key (`top` | `right` | `bottom` | `left` | `center`, default `bottom`) on both widgets; `center` renders a centered **popup** with a dimmed `.neoabs-popup-backdrop` (click-to-dismiss for the announcement, inert for consent — only Accept/Decline settle it), validated at build time by `_NEOABS_FIXED_POSITIONS`
 
 ### Fixed
 

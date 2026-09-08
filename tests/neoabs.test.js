@@ -642,6 +642,70 @@ check(
 )
 
 // ============================================================================
+// Phase 6: floating position variants (top/right/bottom/left/center popup)
+// ============================================================================
+resetPhase6()
+const topBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    announcement_bar: { enabled: true, show: true, text: announceText, dismissable: true, position: "top" },
+  }),
+  searchDom: null,
+  stored: {},
+})
+const topBar = topBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-announcement--top") !== -1)
+  : null
+check(
+  "announcement position top renders a floating --top card without a backdrop",
+  topBoot && !!topBar &&
+    !(body._children || []).some((c) => String(c.className).indexOf("neoabs-popup-backdrop") !== -1)
+)
+
+resetPhase6()
+const popupBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: phase6BaseConfig({
+    announcement_bar: { enabled: true, show: true, text: announceText, dismissable: true, position: "center" },
+    cookie_consent: { enabled: true, show: true, message: "Opt in?", accept_label: "Accept", decline_label: "Decline", position: "center" },
+    consent_needed: true,
+  }),
+  searchDom: null,
+  stored: {},
+})
+const popupBar = popupBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-announcement--center") !== -1)
+  : null
+const popupPanel = popupBoot
+  ? (body._children || []).find((c) => String(c.className).indexOf("neoabs-consent--center") !== -1)
+  : null
+const backdropCount = (popupBoot ? (body._children || []) : [])
+  .filter((c) => String(c.className).indexOf("neoabs-popup-backdrop") !== -1)
+  .length
+check(
+  "announcement + consent render as centered popups with a backdrop each",
+  popupBoot && !!popupBar && !!popupPanel && backdropCount === 2
+)
+
+const popupClose = findClass(popupBar, "neoabs-announcement__close")
+if (popupClose && Array.isArray(popupClose.listeners.click)) {
+  popupClose.listeners.click.forEach((fn) => fn({}))
+}
+check(
+  "closing the centered announcement also removes its backdrop",
+  popupBoot && (body._children || []).filter((c) => String(c.className).indexOf("neoabs-popup-backdrop") !== -1).length === 1
+)
+
+const popupAccept = findClass(popupPanel, "neoabs-consent__accept")
+if (popupAccept && Array.isArray(popupAccept.listeners.click)) {
+  popupAccept.listeners.click.forEach((fn) => fn({}))
+}
+check(
+  "accepting the centered consent popup removes its backdrop too",
+  popupBoot && !(body._children || []).some((c) => String(c.className).indexOf("neoabs-popup-backdrop") !== -1)
+)
+
+// ============================================================================
 // Phase 6: cookie consent — privacy-first, gated on a real integration
 // ============================================================================
 resetPhase6()

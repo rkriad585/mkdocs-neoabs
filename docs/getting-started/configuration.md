@@ -290,18 +290,21 @@ theme:
 
 ### `neoabs.announcement_bar`
 
-Phase 6 announcement bar: one line fixed to the bottom of the viewport. **Off
+Phase 6 announcement bar: a floating card pinned near an edge. **Off
 by default** — it renders only when `enabled: true` and a non-empty `text` are
 set. The text comes from `announcement_bar.text` (wins) or the legacy
 `extra.neoabs_announce` string. Dismissal persists in `localStorage` keyed by
-the text, so changing the announcement re-shows it.
+the text, so changing the announcement re-shows it. `position` picks where the
+card floats (`top`/`right`/`bottom`/`left`); `center` opens it as a popup with
+a dimmed backdrop that also dismisses on click.
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `enabled` | `false` | Master switch — hidden by default; set `true` to opt in |
 | `show` | `true` | Render the bar |
 | `text` | `""` | Announcement text; empty falls back to `extra.neoabs_announce` |
-| `dismissable` | `true` | Show the × dismiss button |
+| `dismissable` | `true` | Show the × dismiss button (false pins the card) |
+| `position` | `"bottom"` | Floating placement: `top`, `right`, `bottom`, `left`, or `center` (popup + backdrop) |
 
 ```yaml
 theme:
@@ -309,6 +312,7 @@ theme:
     announcement_bar:
       enabled: true    # opt-in — hidden by default
       text: New in v0.2 — glass components are here!
+      position: top    # top | right | bottom | left | center
 ```
 
 ### `neoabs.cookie_consent`
@@ -325,6 +329,7 @@ delayed integrations like giscus.
 | `enabled` | `true` | Master switch for the banner |
 | `show` | `true` | Render the banner |
 | `render` | `"auto"` | When to show: `auto` (only with a configured integration), `always`, or `never` |
+| `position` | `"bottom"` | Floating placement: `top`, `right`, `bottom`, `left`, or `center` (popup + backdrop) |
 | `message` | `"This site stores nothing about you unless you enable integrations."` | Banner text |
 | `accept_label` | `"Accept"` | Accept button label |
 | `decline_label` | `"Decline"` | Decline button label |
@@ -337,6 +342,7 @@ theme:
       message: We only store your explicit choices.
       privacy_policy: /privacy/
       render: always          # demo sites: force-show without an integration
+      position: bottom        # top | right | bottom | left | center
 ```
 
 ### `neoabs.comments`

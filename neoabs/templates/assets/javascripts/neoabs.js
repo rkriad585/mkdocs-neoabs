@@ -1939,8 +1939,20 @@
     const key = "announcement-dismissed-" + encodeURIComponent(text).slice(0, 80)
     if (storageGet(key) === "1") return
 
+    const positions = ["top", "right", "bottom", "left", "center"]
+    const pos = positions.indexOf(a.position) !== -1 ? a.position : "bottom"
+
+    // `center` turns the announcement into a popup: a dimmed backdrop is added
+    // behind the card and clicking it dismisses the announcement.
+    let backdrop = null
+    if (pos === "center") {
+      backdrop = document.createElement("div")
+      backdrop.className = "neoabs-popup-backdrop"
+      backdrop.addEventListener("click", function () { dismissAnnouncement(bar, key) })
+    }
+
     const bar = document.createElement("div")
-    bar.className = "neoabs-announcement"
+    bar.className = "neoabs-announcement neoabs-announcement--" + pos
     const inner = document.createElement("div")
     inner.className = "neoabs-announcement__inner"
     const label = document.createElement("span")
@@ -1958,8 +1970,10 @@
       bar.appendChild(close)
       close.addEventListener("click", function () {
         dismissAnnouncement(bar, key)
+        if (backdrop) backdrop.remove()
       })
     }
+    if (backdrop) document.body.appendChild(backdrop)
     document.body.appendChild(bar)
   }
 
@@ -2009,7 +2023,17 @@
     if ($(".neoabs-consent")) return
 
     const panel = document.createElement("div")
-    panel.className = "neoabs-consent"
+    const positions = ["top", "right", "bottom", "left", "center"]
+    const pos = positions.indexOf(c.position) !== -1 ? c.position : "bottom"
+    panel.className = "neoabs-consent neoabs-consent--" + pos
+    // `center` shows the consent card as a centered popup over a dimmed
+    // backdrop. The backdrop is intentionally inert: the Accept/Decline
+    // buttons are the only way to settle the prompt.
+    let backdrop = null
+    if (pos === "center") {
+      backdrop = document.createElement("div")
+      backdrop.className = "neoabs-popup-backdrop"
+    }
     const message = document.createElement("span")
     message.className = "neoabs-consent__message"
     message.textContent = c.message ||
@@ -2030,16 +2054,20 @@
     actions.appendChild(decline)
     panel.appendChild(message)
     panel.appendChild(actions)
+    if (backdrop) document.body.appendChild(backdrop)
     document.body.appendChild(panel)
 
-    accept.addEventListener("click", function () {
-      storageSet("consent", "accepted")
-      runConsentAcceptHandlers()
+    const settleConsent = function (choice) {
+      storageSet("consent", choice)
+      if (choice === "accepted") runConsentAcceptHandlers()
+      if (backdrop) backdrop.remove()
       panel.remove()
+    }
+    accept.addEventListener("click", function () {
+      settleConsent("accepted")
     })
     decline.addEventListener("click", function () {
-      storageSet("consent", "declined")
-      panel.remove()
+      settleConsent("declined")
     })
   }
 

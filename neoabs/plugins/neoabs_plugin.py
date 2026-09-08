@@ -528,6 +528,7 @@ _NEOABS_DEFAULT_ANNOUNCEMENT_BAR = {
     "show": True,
     "text": "",
     "dismissable": True,
+    "position": "bottom",
 }
 
 _NEOABS_ANNOUNCEMENT_BAR_BOOLS = ("enabled", "show", "dismissable")
@@ -540,10 +541,14 @@ _NEOABS_DEFAULT_COOKIE_CONSENT = {
     "accept_label": "Accept",
     "decline_label": "Decline",
     "privacy_policy": "",
+    "position": "bottom",
 }
 
 _NEOABS_COOKIE_CONSENT_BOOLS = ("enabled", "show")
 _NEOABS_COOKIE_CONSENT_RENDER = ("auto", "always", "never")
+# Floating placement for the announcement bar and cookie consent: top/right/
+# bottom/left pin a floating card to an edge; center shows a centered popup.
+_NEOABS_FIXED_POSITIONS = ("top", "right", "bottom", "left", "center")
 
 _NEOABS_DEFAULT_COMMENTS = {
     # Comments are opt-in: hidden by default. A site that configures `repo` +
@@ -1179,6 +1184,13 @@ def _validate_announcement_bar(announcement_bar):
     if text is not None and not isinstance(text, str):
         raise ConfigurationError("theme.neoabs.announcement_bar.text must be a string.")
 
+    position = announcement_bar.get("position")
+    if position is not None and position not in _NEOABS_FIXED_POSITIONS:
+        raise ConfigurationError(
+            "theme.neoabs.announcement_bar.position must be one of "
+            f"{sorted(_NEOABS_FIXED_POSITIONS)}; got {position!r}."
+        )
+
 
 def _validate_cookie_consent(cookie_consent):
     """Validate a merged `theme.neoabs.cookie_consent` mapping, raising a clear
@@ -1206,6 +1218,13 @@ def _validate_cookie_consent(cookie_consent):
         raise ConfigurationError(
             "theme.neoabs.cookie_consent.render must be one of "
             f"{sorted(_NEOABS_COOKIE_CONSENT_RENDER)}; got {render!r}."
+        )
+
+    position = cookie_consent.get("position")
+    if position is not None and position not in _NEOABS_FIXED_POSITIONS:
+        raise ConfigurationError(
+            "theme.neoabs.cookie_consent.position must be one of "
+            f"{sorted(_NEOABS_FIXED_POSITIONS)}; got {position!r}."
         )
 
 

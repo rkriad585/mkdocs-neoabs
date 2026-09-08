@@ -6465,18 +6465,16 @@ img.neoabs-repo-pop__avatar {
 	flex-wrap: wrap;
 }
 
-// --- Dismissable announcement bar (fixed to the bottom) -----------------------
+// --- Dismissable announcement (floating card; off by default, position opt-in) ---
 
 .neoabs-announcement {
 	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
+	z-index: var(--neoabs-z-modal);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	height: var(--neoabs-announce-height, 44px);
-	padding: 0 var(--neoabs-space-16);
+	max-width: min(560px, calc(100vw - var(--neoabs-space-8)));
+	padding: var(--neoabs-space-3) var(--neoabs-space-5);
 	background: linear-gradient(
 		90deg,
 		var(--neoabs-accent-dim, rgba(196, 145, 40, 0.18)),
@@ -6484,10 +6482,25 @@ img.neoabs-repo-pop__avatar {
 		var(--neoabs-accent-dim, rgba(196, 145, 40, 0.18))
 	);
 	color: var(--neoabs-text-primary);
-	border-top: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-lg);
+	box-shadow: var(--neoabs-shadow-glass);
+	backdrop-filter: blur(var(--neoabs-glass-blur-medium, 12px)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-medium, 12px)) saturate(var(--neoabs-glass-saturation));
 	font-size: 13px;
 	text-align: center;
-	z-index: var(--neoabs-z-modal);
+}
+
+.neoabs-announcement--bottom { left: 50%; right: auto; bottom: var(--neoabs-space-4); transform: translateX(-50%); }
+.neoabs-announcement--top { left: 50%; right: auto; top: var(--neoabs-space-4); transform: translateX(-50%); }
+.neoabs-announcement--left { left: var(--neoabs-space-4); right: auto; top: 50%; transform: translateY(-50%); }
+.neoabs-announcement--right { left: auto; right: var(--neoabs-space-4); top: 50%; transform: translateY(-50%); }
+.neoabs-announcement--center {
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	max-width: min(480px, calc(100vw - var(--neoabs-space-8)));
+	padding: var(--neoabs-space-5) var(--neoabs-space-6);
 }
 
 .neoabs-announcement__inner {
@@ -6539,17 +6552,15 @@ img.neoabs-repo-pop__avatar {
 
 .neoabs-consent {
 	position: fixed;
-	left: var(--neoabs-space-4);
-	right: var(--neoabs-space-4);
-	bottom: var(--neoabs-space-4);
 	z-index: var(--neoabs-z-modal);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--neoabs-space-4);
 	flex-wrap: wrap;
-	max-width: 720px;
-	margin: 0 auto;
+	width: min(720px, calc(100vw - var(--neoabs-space-8)));
+	max-width: 100%;
+	margin: 0;
 	padding: var(--neoabs-space-4) var(--neoabs-space-5);
 	background: var(--neoabs-glass-bg-strong);
 	border: 1px solid var(--neoabs-glass-border-strong);
@@ -6559,6 +6570,30 @@ img.neoabs-repo-pop__avatar {
 	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-medium, 12px)) saturate(var(--neoabs-glass-saturation));
 	font-size: 13px;
 	color: var(--neoabs-text-secondary);
+}
+
+.neoabs-consent--bottom { left: 50%; right: auto; bottom: var(--neoabs-space-4); transform: translateX(-50%); }
+.neoabs-consent--top { left: 50%; right: auto; top: var(--neoabs-space-4); transform: translateX(-50%); }
+.neoabs-consent--left { left: var(--neoabs-space-4); right: auto; top: 50%; transform: translateY(-50%); width: min(420px, calc(100vw - var(--neoabs-space-8))); }
+.neoabs-consent--right { left: auto; right: var(--neoabs-space-4); top: 50%; transform: translateY(-50%); width: min(420px, calc(100vw - var(--neoabs-space-8))); }
+.neoabs-consent--center {
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: min(480px, calc(100vw - var(--neoabs-space-8)));
+	padding: var(--neoabs-space-5) var(--neoabs-space-6);
+}
+
+.neoabs-popup-backdrop {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: calc(var(--neoabs-z-modal) - 1);
+	background: rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
 }
 
 .neoabs-consent__message {
@@ -6616,7 +6651,8 @@ html[data-md-color-scheme~="light"] .neoabs-consent {
 
 @media (prefers-reduced-motion: reduce) {
 	.neoabs-announcement,
-	.neoabs-consent {
+	.neoabs-consent,
+	.neoabs-popup-backdrop {
 		transition: none !important;
 	}
 }

@@ -76,6 +76,7 @@ sections:
   announcement_bar:
     dismissable: true
     enabled: false
+    position: bottom
     show: true
     text: ''
   comments:
@@ -214,6 +215,7 @@ sections:
     decline_label: Decline
     enabled: true
     message: This site stores nothing about you unless you enable integrations.
+    position: bottom
     privacy_policy: ''
     render: auto
     show: true
