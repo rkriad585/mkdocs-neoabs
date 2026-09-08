@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Phase 6 — engagement & privacy:
   - "Was this page helpful?" feedback widget (`theme.neoabs.feedback`): GitHub-issue-backed, opens a prefilled positive/negative issue (`repo_url` + `github_labels`) in a new tab — no analytics, no tracking; rendered under the article only when `repo_url` is set
-  - Dismissable announcement bar (`theme.neoabs.announcement_bar`): one-line banner fixed to the bottom of the viewport that auto-hides after 4s; dismissal (manual or automatic) persists in `localStorage` keyed by the announcement text (so updating the text re-shows it); falls back to the legacy `extra.neoabs_announce` string
+  - Dismissable announcement bar (`theme.neoabs.announcement_bar`): one-line banner fixed to the bottom of the viewport; dismissal persists in `localStorage` keyed by the announcement text (so updating the text re-shows it); falls back to the legacy `extra.neoabs_announce` string
   - Privacy-first cookie consent (`theme.neoabs.cookie_consent`): the banner renders **only** when a real integration is configured (`theme.analytics.gtag` or giscus comments with `repo` + `repo_id`), or always via `render: always` (demo sites); stores a single accept/decline flag; "Accept" unlocks delayed integrations
   - Opt-in giscus comments (`theme.neoabs.comments`): the only supported provider; nothing loads until `repo` + `repo_id` are configured; defers the loader script behind consent accept when an integration is present; giscus theme follows the active palette (`theme.light`/`theme.dark`) and re-syncs on scheme change (`syncCommentsTheme`)
 - New `("feedback" | "announcement_bar" | "cookie_consent" | "comments", Type(dict))` config scheme entries with `_validate_feedback()`, `_validate_announcement_bar()`, `_validate_cookie_consent()`, `_validate_comments()` validators and `_NEOABS_DEFAULT_FEEDBACK`/`_NEOABS_DEFAULT_ANNOUNCEMENT_BAR`/`_NEOABS_DEFAULT_COOKIE_CONSENT`/`_NEOABS_DEFAULT_COMMENTS` defaults; computed `consent_needed` exported to `extra.neoabs_consent_needed`
@@ -20,16 +20,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Styled footnotes: `- footnotes` extension registered, `.footnote-ref` pill badges, `.footnotes` glass card, `.neoabs-backref` accent link
 - Code annotations (pymdownx.highlight-style): line-end marker `# (1)!` syntax converted client-side to red inline badges; adjacent `<ol>` legend auto-detected and wired for hover highlighting; annotation markers re-applied after highlight.js re-highlight via `applyCodeAnnotations()`
 - `tools/add_dates.py`: stamps every `docs/**/*.md` page with a `date:` front-matter key (`YYYY-MM-DD`, UTC-based); skips MkDocs `_`-prefixed generated files; idempotent, handles files with or without existing front matter, preserves line endings
+- `site_url` link rebasing (`initLinkRebase`): the plugin captures the production `site_url` at `on_config` (before `mkdocs serve` swaps it for the dev server) and exposes it in `#__config` as `site_url`; during localhost:{port} previews the JS rewrites anchors baked/hardcoded with the main site URL onto `location.origin` (production base path stripped, query/hash preserved), leaving relative and external links untouched — clicks never leave the preview, and it is a no-op on the deployed origin
 
 ### Changed
 
 - `neoabs/templates/partials/footer.html` now renders `.neoabs-footer__meta` conditionally from `config.extra.neoabs_meta` and per-page `_pg` override; `_meta_cfg` variable guards Jinja against missing page context
 - `neoabs.js` boot init order: `initContentMedia` → `initImageZoom` → `initHighlighting` (hljs callback now calls `applyCodeAnnotations()` after re-highlight)
 - SCSS additions: `.neoabs-zoom` overlay (slide-up entrance), `.neoabs-annotation` badge, `.neoabs-annotations` legend with `attr(data-index)` counters, `.neoabs-footer__meta` / `.neoabs-edit` / `.neoabs-last-updated` layout
+- `theme.neoabs.comments` and `theme.neoabs.announcement_bar` are now **off by default** (`enabled: false`): nothing renders unless a site opts in with `enabled: true` (the announcement bar additionally needs a non-empty `text`)
 
 ### Fixed
 
 - Phase 5 annotation legend rendering: live docs example uses raw `<ol>` after `div.highlight` (reliable sibling regardless of Python-Markdown extension-set), fixing the ordered-list-not-parsed issue when `pymdownx.highlight` anchor_linenums are active
+- The announcement block commented out in `mkdocs.yml` no longer leaves a stray serialized config: when absent, the plugin default (`enabled: false`) merges cleanly into `#__config`
 
 ## [0.1.2] - 2026-09-04
 

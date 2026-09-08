@@ -1,5 +1,8 @@
 site_name: NeoAbs Documentation
 site_description: Glass + NothingOS Design Language for MkDocs
+# The deployed URL. NeoAbs uses it as the production origin so links that are
+# baked/hardcoded with this address are automatically rebased to localhost:{port}
+# when you preview with `mkdocs serve` (see docs/getting-started/configuration.md).
 site_url: https://rkriad585.github.io/mkdocs-neoabs
 
 repo_url: https://github.com/rkriad585/mkdocs-neoabs
@@ -79,12 +82,17 @@ theme:
       negative: No — open an issue
       github_labels:
         - feedback
-    announcement_bar:
-      enabled: true  # Master on/off (default true)
-      show: true     # Render the bar (default true)
-      text: "NeoAbs is live — glass design for MkDocs"
-      dismissable: true
-    # The privacy-first default (`render: auto`) shows the banner only when a
+    # announcement_bar — a one-line, bottom-fixed notice. Off by default: the
+    # bar renders only when `enabled: true` AND `text` is set. Setting `text`
+    # (without enabled) is not enough anymore.
+    #   * show: render the bar when enabled (default true).
+    #   * dismissable: false pins the bar and removes the × close button; the
+    #     default (true) persists dismissal per bar text in localStorage.
+    # announcement_bar:
+      # enabled: true  # opt-in — hidden by default; set true to show
+      # show: true     # Render the bar (default true)
+      # text: "NeoAbs is live — glass design for MkDocs"
+      # dismissable: true
     # The privacy-first default (`render: auto`) shows the banner only when a
     # real integration (gtag analytics or giscus comments) is configured; this
     # docs site forces it with `render: always` so the widget is visible. With
@@ -97,14 +105,30 @@ theme:
       accept_label: Accept
       decline_label: Decline
       privacy_policy: ""
-    # comments use the real giscus IDs for this repository (GitHub Discussions
-    # was enabled on it for giscus).
+    # comments — opt-in giscus (GitHub Discussions). Hidden by default: even
+    # with repo + repo_id present, nothing renders unless `enabled: true`.
+    #   * provider: only "giscus" is supported today.
+    #   * repo / repo_id: owner/repo and the repo ID from the giscus setup page
+    #     (https://giscus.app).
+    #   * category / category_id: use an "Announcements"-type category. In that
+    #     category only maintainers (and the giscus bot) can start discussions,
+    #     so visitors can comment but never create threads. Grab the exact
+    #     category_id on the giscus setup page alongside the repo ID.
+    #   * mapping: how a page finds its thread. With `pathname` (default) each
+    #     page looks for a discussion whose TITLE equals the page pathname
+    #     without the leading slash — e.g. this home page (`/mkdocs-neoabs/`)
+    #     maps to a discussion titled `mkdocs-neoabs/`. Create/rename threads to
+    #     match, or let giscus create them automatically on first comment.
+    #   * term: only used with mapping: specific.
+    #   * theme.light / theme.dark: giscus themes per palette scheme.
+    #   * strict: true matches threads by title hash instead of GitHub's fuzzy
+    #     search (see giscus "strict title matching"). Default: false.
     comments:
-      enabled: true
-      provider: giscus
+      enabled: true          # opt-in — hidden by default; set true to show
+      provider: giscus       # only supported provider
       repo: "rkriad585/mkdocs-neoabs"
       repo_id: "R_kgDOT6uASQ"
-      category: "Announcements"
+      category: "Announcements"            # Announcements-type category
       category_id: "DIC_kwDOT6uASc4DFG1d"
       mapping: pathname # pathname | url | title | og:title | specific
       term: ""          # only used with mapping: specific
@@ -709,7 +733,7 @@ theme:
     #     include_version: true         #   theme version
 
 extra:
-  neoabs_version: 16
+  neoabs_version: 18
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

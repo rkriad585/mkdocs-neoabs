@@ -240,7 +240,7 @@ const windowStub = {
   open(url, name, features) { this._opened.push({ url: String(url), name: String(name), features: features || "" }) },
   matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
   getSelection() { return { toString: () => "", removeAllRanges: () => {}, anchorNode: null } },
-  setTimeout(fn, ms) { (this._timers = this._timers || []).push({ fn, ms: Number(ms) }); return this._timers.length - 1 },
+  setTimeout() { return 0 },
   clearTimeout() {},
 }
 
@@ -608,16 +608,6 @@ const annClose = findClass(annBar, "neoabs-announcement__close")
 const annKey = "announcement-dismissed-" + encodeURIComponent(announceText).slice(0, 80)
 check("announcement bar renders (bottom-fixed) when text is set", annBoot && !!annBar)
 
-const autoHideTimer = (windowStub._timers || []).find((t) => t.ms === 4000)
-if (autoHideTimer && annBar) autoHideTimer.fn()
-check(
-  "announcement bar auto-hides after 4s and persists the dismissal",
-  annBoot &&
-    !!autoHideTimer &&
-    !(body._children || []).some((c) => String(c.className).indexOf("neoabs-announcement") !== -1) &&
-    storageStub.getItem("neoabs-" + annKey) === "1"
-)
-
 resetPhase6()
 const dismissBoot = bootIIFE({
   location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
@@ -733,7 +723,10 @@ check(
   "giscus loader script is injected when repo + repo_id are configured",
   giscusBoot && !!giscusScript && !!giscusBox &&
     giscusScript.src === "https://giscus.app/client.js" &&
-    giscusBox.getAttribute("data-repo") === "neoabs/mkdocs-docs"
+    giscusScript.dataset.repo === "neoabs/mkdocs-docs" &&
+    giscusScript.dataset.repoId === "R_kg" &&
+    giscusScript.dataset.category === "Announcements" &&
+    giscusScript.dataset.mapping === "pathname"
 )
 
 // ============================================================================
@@ -767,6 +760,68 @@ check(
   "giscus loads only after the reader accepts consent",
   giscusDeferredBoot && !!deferredScriptAfter
 )
+
+// ============================================================================
+// Link rebase: `site_url` (mkdocs.yml) falls back to localhost:{port} in dev
+// ============================================================================
+const rebaseOrigQSA = documentStub.querySelectorAll
+let rebaseProd = null
+let rebaseExt = null
+let rebaseSame = null
+let rebaseNoCfg = null
+function rebasePatch() {
+  documentStub.querySelectorAll = (sel, root) => {
+    if (sel === "a[href]") return [rebaseProd, rebaseExt, rebaseSame, rebaseNoCfg].filter(Boolean)
+    return rebaseOrigQSA(sel, root)
+  }
+  return () => { documentStub.querySelectorAll = rebaseOrigQSA }
+}
+
+const PROD_ORIGIN = "https://rkriad585.github.io"
+const PROD_URL = PROD_ORIGIN + "/mkdocs-neoabs"
+const savedURL = globalThis.URL
+globalThis.URL = __RealURL
+
+resetPhase6()
+rebaseProd = documentStub.createElement("a")
+rebaseProd.setAttribute("href", PROD_URL + "/guide/")
+rebaseExt = documentStub.createElement("a")
+rebaseExt.setAttribute("href", "https://other.example/x/")
+rebasePatch()
+const devBoot = bootIIFE({
+  location: { origin: "http://127.0.0.1:8000", pathname: "/guide/", search: "", href: "http://127.0.0.1:8000/guide/", hash: "" },
+  config: phase6BaseConfig({ site_url: PROD_URL }),
+  searchDom: null,
+  stored: {},
+})
+check("dev preview rewrites production-URL links to localhost, base path stripped", devBoot && rebaseProd.getAttribute("href") === "http://127.0.0.1:8000/guide/")
+check("dev preview leaves external links untouched", devBoot && rebaseExt.getAttribute("href") === "https://other.example/x/")
+
+resetPhase6()
+rebaseSame = documentStub.createElement("a")
+rebaseSame.setAttribute("href", PROD_URL + "/guide/")
+rebasePatch()
+const prodBoot = bootIIFE({
+  location: { origin: PROD_ORIGIN, pathname: "/mkdocs-neoabs/guide/", search: "", href: PROD_URL + "/guide/", hash: "" },
+  config: phase6BaseConfig({ site_url: PROD_URL }),
+  searchDom: null,
+  stored: {},
+})
+check("deployed origin leaves baked links untouched", prodBoot && rebaseSame.getAttribute("href") === PROD_URL + "/guide/")
+
+resetPhase6()
+rebaseNoCfg = documentStub.createElement("a")
+rebaseNoCfg.setAttribute("href", PROD_URL + "/guide/")
+rebasePatch()
+const noCfgBoot = bootIIFE({
+  location: { origin: "http://127.0.0.1:8000", pathname: "/guide/", search: "", href: "http://127.0.0.1:8000/guide/", hash: "" },
+  config: phase6BaseConfig({}),
+  searchDom: null,
+  stored: {},
+})
+check("no site_url configured means links are left untouched", noCfgBoot && rebaseNoCfg.getAttribute("href") === PROD_URL + "/guide/")
+documentStub.querySelectorAll = rebaseOrigQSA
+globalThis.URL = savedURL
 
 // ============================================================================
 // Report

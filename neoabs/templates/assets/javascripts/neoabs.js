@@ -1921,11 +1921,9 @@
   }
 
   // Dismissable announcement bar. A one-line bar is fixed to the bottom of the
-  // viewport; it auto-dismisses after 4s. Dismissal (manual or automatic)
-  // persists in localStorage keyed by the bar text, so updating the announcement
-  // re-shows it. `extra.neoabs_announce` and
+  // viewport. Dismissal persists in localStorage keyed by the bar text, so
+  // updating the announcement re-shows it. `extra.neoabs_announce` and
   // `theme.neoabs.announcement_bar.text` both work (dict wins).
-  const _ANNOUNCE_AUTO_HIDE_MS = 4000
   function dismissAnnouncement(bar, key) {
     storageSet(key, "1")
     bar.remove()
@@ -1963,9 +1961,39 @@
       })
     }
     document.body.appendChild(bar)
-    window.setTimeout(function () {
-      dismissAnnouncement(bar, key)
-    }, _ANNOUNCE_AUTO_HIDE_MS)
+  }
+
+  // Rewrite anchor hrefs that carry the deployed `site_url` (from mkdocs.yml)
+  // onto the current origin. Navigation links are emitted relative and work on
+  // any origin; this only dishes out links that were baked/hardcoded with the
+  // main site URL. On a localhost:{port} preview such links are rewired to the
+  // dev server (production base path stripped) so a click never leaves the
+  // preview; on the deployed origin it is a no-op. Links that are already
+  // relative, fragmented, or target another host are left untouched.
+  function initLinkRebase(config) {
+    const prodUrl = (config && config.site_url) || ""
+    if (!prodUrl) return
+    let prod
+    try { prod = new URL(prodUrl, location.href) } catch (_) { return }
+    const prodOrigin = prod.origin
+    const here = location.origin
+    if (!here || prodOrigin === here) return
+    const prodBase = prod.pathname ? prod.pathname.replace(/\/+$/, "") : ""
+    const links = document.querySelectorAll("a[href]")
+    for (let i = 0; i < links.length; i++) {
+      const el = links[i]
+      const href = el.getAttribute("href")
+      if (!href || href.charAt(0) === "#") continue
+      if (href.indexOf("://") === -1 && href.charAt(0) !== "/") continue
+      let u
+      try { u = new URL(href, location.href) } catch (_) { continue }
+      if (u.origin !== prodOrigin) continue
+      let rel = u.pathname || "/"
+      if (prodBase && (rel === prodBase || rel.indexOf(prodBase + "/") === 0)) {
+        rel = rel === prodBase ? "/" : rel.slice(prodBase.length)
+      }
+      el.setAttribute("href", here + rel + u.search + u.hash)
+    }
   }
 
   // Privacy-first cookie consent. NeoAbs ships no trackers, so the banner only
@@ -2034,8 +2062,17 @@
 
   function syncCommentsTheme() {
     const theme = giscusThemeFor(_config)
-    $$(".neoabs-giscus").forEach(function (el) {
-      if (el.getAttribute("data-theme") !== theme) el.setAttribute("data-theme", theme)
+    // Keep the loader script's theme in sync for widgets mounted later, then
+    // push theme updates into already-rendered widgets via giscus' setConfig
+    // message (client.js reads config from the script tag, so updating its
+    // data-theme alone would not affect a live iframe).
+    $$("script[data-giscus='loaded']").forEach(function (s) {
+      if (s.dataset.theme !== theme) s.dataset.theme = theme
+    })
+    $$("iframe.giscus-frame").forEach(function (frame) {
+      let origin = "https://giscus.app"
+      try { origin = new URL(frame.src).origin } catch (e) {}
+      frame.contentWindow.postMessage({ giscus: { setConfig: { theme: theme } } }, origin)
     })
   }
 
@@ -2062,23 +2099,15 @@
     heading.textContent = (config && config.translations &&
       config.translations.comments && config.translations.comments.title) ||
       "Comments"
-    const giscus = document.createElement("div")
-    giscus.className = "giscus neoabs-giscus"
-    giscus.setAttribute("data-repo", cm.repo || "")
-    giscus.setAttribute("data-repo-id", cm.repo_id || "")
-    if (cm.category) giscus.setAttribute("data-category", cm.category)
-    if (cm.category_id) giscus.setAttribute("data-category-id", cm.category_id)
-    giscus.setAttribute("data-mapping", cm.mapping || "pathname")
-    if (cm.term) giscus.setAttribute("data-term", cm.term)
-    giscus.setAttribute("data-input-position", "top")
-    giscus.setAttribute("data-loading", "lazy")
-    if (cm.language) giscus.setAttribute("data-lang", cm.language)
-    giscus.setAttribute("data-theme", giscusThemeFor(config))
+    const box = document.createElement("div")
+    box.className = "giscus neoabs-giscus"
     wrap.appendChild(heading)
-    wrap.appendChild(giscus)
+    wrap.appendChild(box)
     if (typeset) typeset.appendChild(wrap)
 
-    _giscusLoaded = true
+    // giscus reads its configuration from the loader script's OWN data-*
+    // attributes (client.js uses `script.dataset`); the .giscus element is
+    // only the mount point for the widget iframe.
     const src = cdnUrlFor("giscus") || "https://giscus.app/client.js"
     const s = document.createElement("script")
     s.src = src
@@ -2086,6 +2115,18 @@
     s.defer = true
     s.crossOrigin = "anonymous"
     s.dataset.giscus = "loaded"
+    s.dataset.repo = cm.repo || ""
+    s.dataset.repoId = cm.repo_id || ""
+    if (cm.category) s.dataset.category = cm.category
+    if (cm.category_id) s.dataset.categoryId = cm.category_id
+    s.dataset.mapping = cm.mapping || "pathname"
+    if (cm.mapping === "specific" && cm.term) s.dataset.term = cm.term
+    s.dataset.inputPosition = "top"
+    s.dataset.loading = "lazy"
+    if (cm.language) s.dataset.lang = cm.language
+    if (cm.strict) s.dataset.strict = "1"
+    s.dataset.theme = giscusThemeFor(config)
+    _giscusLoaded = true
     document.head.appendChild(s)
   }
 
@@ -4918,6 +4959,7 @@ actionClusterEnsureUi(cfg)
       () => initMath(config), () => initRepoPopover(config),
       () => initFeedback(config), () => initComments(config),
       () => initAnnouncement(config), () => initConsent(config),
+      () => initLinkRebase(config),
       () => initSPANavigation(config)]
     init.forEach(function (fn) {
       try { fn() } catch (e) {

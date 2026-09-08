@@ -522,7 +522,9 @@ _NEOABS_DEFAULT_FEEDBACK = {
 _NEOABS_FEEDBACK_BOOLS = ("enabled", "show")
 
 _NEOABS_DEFAULT_ANNOUNCEMENT_BAR = {
-    "enabled": True,
+    # Off by default: the bar renders only for sites that opt in with
+    # `enabled: true` (plus a non-empty `text`).
+    "enabled": False,
     "show": True,
     "text": "",
     "dismissable": True,
@@ -544,7 +546,9 @@ _NEOABS_COOKIE_CONSENT_BOOLS = ("enabled", "show")
 _NEOABS_COOKIE_CONSENT_RENDER = ("auto", "always", "never")
 
 _NEOABS_DEFAULT_COMMENTS = {
-    "enabled": True,
+    # Comments are opt-in: hidden by default. A site that configures `repo` +
+    # `repo_id` but never sets `enabled: true` renders no comment section.
+    "enabled": False,
     "provider": "giscus",
     "repo": "",
     "repo_id": "",
@@ -1398,6 +1402,19 @@ class NeoAbsPlugin(BasePlugin):
         if not isinstance(neoabs, dict):
             neoabs = {}
 
+        # Production `site_url` captured at on_config time. `mkdocs serve`
+        # overwrites `config.site_url` with the live server URL only after the
+        # plugins run, so this is the one place the deployed URL is still
+        # visible. It powers the JS link rebase: links baked with the main site
+        # URL fall back to localhost:{port} during previews. If the configured
+        # value already points at a local server, keep it empty so nothing is
+        # rewritten.
+        raw_site_url = (config.get("site_url") or "").strip().rstrip("/")
+        if raw_site_url.startswith(
+            ("http://localhost", "http://127.0.0.1", "http://[::1]", "file://")
+        ):
+            raw_site_url = ""
+
         # Phase 14: the `- neoabs:` plugin options are a first-class settings
         # surface. Keys supplied inline in the plugin dict are deep-merged over
         # `theme.neoabs` (the plugin wins), then the merged result is validated
@@ -1714,6 +1731,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_cookie_consent"] = cookie_consent
         extra["neoabs_comments"] = comments
         extra["neoabs_consent_needed"] = consent_needed
+        extra["neoabs_site_url"] = raw_site_url
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.

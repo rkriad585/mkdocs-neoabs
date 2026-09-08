@@ -8,7 +8,7 @@ title: Feedback & Announcements
 Phase 6 adds three engagement surfaces and one privacy rule to a NeoAbs site — all of them opt-in, none of them ship tracking:
 
 - The **feedback widget** asks "Was this page helpful?" and opens a prefilled GitHub issue (positive or negative) in a new tab.
-- The **announcement bar** is a single line pinned to the bottom of the viewport that auto-hides after 4s; dismissal is remembered in `localStorage` and re-shows when the text changes.
+- The **announcement bar** is a single line pinned to the bottom of the viewport; dismissal is remembered in `localStorage` and re-shows when the text changes.
 - The **cookie consent banner** renders by default (**`render: auto`**) only
   when an actual integration that could collect personal data is configured
   (`theme.analytics.gtag` or giscus comments), never otherwise — but you can
@@ -45,7 +45,7 @@ Clicking **Yes** opens `repo/issues/new` with a `Positive feedback` body; clicki
 
 ## Announcement bar
 
-The bar is fixed to the bottom of the viewport and auto-hides after 4s. Set the text either on `announcement_bar.text` or with the legacy `extra.neoabs_announce` string (the dict wins).
+The bar is fixed to the bottom of the viewport. Set the text either on `announcement_bar.text` or with the legacy `extra.neoabs_announce` string (the dict wins).
 
 ```yaml
 extra:
@@ -60,7 +60,7 @@ theme:
       dismissable: true    # Show the × button
 ```
 
-Dismissal — manual or the automatic 4s auto-hide — is stored per site under a key derived from the announcement text, so updating the announcement re-shows it. The bar is fixed to the bottom of the viewport, above the consent banner, and never covers content.
+Dismissal is stored per site under a key derived from the announcement text, so updating the announcement re-shows it. The bar is fixed to the bottom of the viewport, above the consent banner, and never covers content.
 
 ## Cookie consent banner
 

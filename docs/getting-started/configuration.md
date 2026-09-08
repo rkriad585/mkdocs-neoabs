@@ -290,14 +290,15 @@ theme:
 
 ### `neoabs.announcement_bar`
 
-Phase 6 announcement bar: one line fixed to the bottom of the viewport that
-auto-hides after 4s. The text comes from `announcement_bar.text` (wins) or the
-legacy `extra.neoabs_announce` string. Dismissal (manual or automatic) persists
-in `localStorage` keyed by the text, so changing the announcement re-shows it.
+Phase 6 announcement bar: one line fixed to the bottom of the viewport. **Off
+by default** — it renders only when `enabled: true` and a non-empty `text` are
+set. The text comes from `announcement_bar.text` (wins) or the legacy
+`extra.neoabs_announce` string. Dismissal persists in `localStorage` keyed by
+the text, so changing the announcement re-shows it.
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `enabled` | `true` | Master switch for the bar |
+| `enabled` | `false` | Master switch — hidden by default; set `true` to opt in |
 | `show` | `true` | Render the bar |
 | `text` | `""` | Announcement text; empty falls back to `extra.neoabs_announce` |
 | `dismissable` | `true` | Show the × dismiss button |
@@ -306,6 +307,7 @@ in `localStorage` keyed by the text, so changing the announcement re-shows it.
 theme:
   neoabs:
     announcement_bar:
+      enabled: true    # opt-in — hidden by default
       text: New in v0.2 — glass components are here!
 ```
 
@@ -313,7 +315,7 @@ theme:
 
 Phase 6 consent banner. Privacy-first: NeoAbs never tracks readers, so the
 banner is rendered **only** when the build detects a configured integration
-(`theme.analytics.gtag` or giscus comments with `repo` + `repo_id`) — unless you
+(`theme.analytics.gtag` or giscus comments enabled with `repo` + `repo_id`) — unless you
 opt in to always showing it with `render: always` (for demo sites). The banner
 itself stores just an accept/decline flag in `localStorage`; "Accept" unlocks
 delayed integrations like giscus.
@@ -340,13 +342,22 @@ theme:
 ### `neoabs.comments`
 
 Phase 6 opt-in comments via [giscus](https://giscus.app) (the only supported
-provider). Nothing loads until both `repo` and `repo_id` are configured; when a
-consent-serving integration is present, the giscus script is deferred until the
-reader clicks "Accept". The giscus theme follows the active palette.
+provider). Comments are **hidden by default** — nothing renders unless you set
+`enabled: true`. Even then, nothing loads until both `repo` and `repo_id` are
+configured; when a consent-serving integration is present, the giscus script is
+deferred until the reader clicks "Accept". The giscus theme follows the active
+palette.
+
+Use an **Announcements**-type category: in it only maintainers and the giscus
+bot can start discussions, so visitors can comment but never create threads.
+With `mapping: pathname` (default), each page maps to a discussion whose title
+equals that page's pathname without the leading slash — e.g. this repo's home
+page (`/mkdocs-neoabs/`) maps to a discussion titled `mkdocs-neoabs/`. Grab the
+exact `repo_id` / `category_id` on the [giscus setup page](https://giscus.app).
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `enabled` | `true` | Master switch for comments |
+| `enabled` | `false` | Master switch — comments are hidden by default; set `true` to opt in |
 | `provider` | `"giscus"` | Provider (only `giscus` today) |
 | `repo` | `""` | GitHub `owner/repo`; required to enable |
 | `repo_id` | `""` | giscus repo ID from the setup page |
@@ -361,11 +372,29 @@ reader clicks "Accept". The giscus theme follows the active palette.
 theme:
   neoabs:
     comments:
+      enabled: true          # opt-in — comments are hidden by default
       repo: "user/mkdocs-docs"
       repo_id: "R_kgxxxx"
-      category: "Announcements"
+      category: "Announcements"    # Announcements-type so only you/giscus post
       category_id: "DIC_xxxx"
+      mapping: pathname            # each page maps to a discussion named by pathname
 ```
+
+## `site_url` & link rebasing
+
+Set `site_url` to your deployed address (e.g. `https://user.github.io/project`).
+Navigation, TOC, and content links are always emitted **relative**, so they work
+unchanged on any origin. Absolute URLs are only produced where they are required
+(canonical, `og:url`, share) and MkDocs itself rewrites them to the live server
+URL during `mkdocs serve`.
+
+On top of that, the plugin captures the *production* `site_url` before the dev
+server overrides it and hands it to the theme as `config.site_url`. When you
+preview on `localhost:{port}` and the page contains a link that was baked or
+hardcoded with the main site URL (e.g. `[x](https://user.github.io/project/guide/)`),
+the theme re-targets that link to `localhost:{port}/guide/` at runtime, so a
+click never leaves the preview. External links, relative links, and the deployed
+origin itself are never touched.
 
 ## Generated reference
 

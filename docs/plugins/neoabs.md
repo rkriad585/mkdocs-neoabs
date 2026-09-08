@@ -154,16 +154,18 @@ theme:
 
 ### `announcement_bar`
 
-Phase 6 announcement bar: a single line fixed to the bottom of the viewport,
-auto-hiding after 4s. Text comes from `announcement_bar.text`, falling back to
-the legacy `extra.neoabs_announce` string. Dismissal is remembered in
-`localStorage` (keyed by the text), so changing the announcement re-shows it.
+Phase 6 announcement bar: a single line fixed to the bottom of the viewport.
+**Off by default** — it renders only when `enabled: true` and a non-empty
+`text` are set. Text comes from `announcement_bar.text`, falling back to the
+legacy `extra.neoabs_announce` string. Dismissal is remembered in `localStorage`
+(keyed by the text), so changing the announcement re-shows it.
 
 ```yaml
 theme:
   name: neoabs
   neoabs:
     announcement_bar:
+      enabled: true    # opt-in — hidden by default
       text: New release! Check the changelog.
       dismissable: true
 ```
@@ -192,22 +194,28 @@ theme:
 ### `comments`
 
 Phase 6 opt-in comments via [giscus](https://giscus.app) — the only supported
-provider. Both `repo` and `repo_id` are required before anything loads; when a
+provider. Comments are **hidden by default**; set `enabled: true` to show them.
+Both `repo` and `repo_id` are required before anything loads; when a
 consent-serving integration is present, the scripts are deferred until the
 reader accepts. The giscus theme follows the active palette with per-scheme
 themes in `theme.light` / `theme.dark`. Grab the exact IDs on the [giscus setup
 page](https://giscus.app) for your repository.
+
+Use an **Announcements**-type category so only maintainers and the giscus bot
+can start discussions. With `mapping: pathname` each page maps to a discussion
+whose title equals the page pathname without the leading slash (e.g. the home
+page `/mkdocs-neoabs/` → a discussion titled `mkdocs-neoabs/`).
 
 ```yaml
 theme:
   name: neoabs
   neoabs:
     comments:
-      enabled: true
+      enabled: true          # opt-in — comments are hidden by default
       provider: giscus
       repo: "user/mkdocs-docs"
       repo_id: "R_kgxxxx"
-      category: "Announcements"    # must be an Announcements-type category
+      category: "Announcements"    # Announcements-type so only you/giscus post
       category_id: "DIC_xxxx"
       mapping: pathname            # pathname | url | title | og:title | specific
       term: ""                     # used with mapping: specific

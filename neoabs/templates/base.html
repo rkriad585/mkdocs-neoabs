@@ -646,6 +646,7 @@
           "enabled": {{ ((config.extra.neoabs_math | default(true)) and (_comp.math.show | default(true))) | tojson }}
         },
         "components": {{ config.extra.neoabs_components | default({}) | tojson }},
+        "site_url": {{ config.extra.neoabs_site_url | default('', true) | tojson }},
         "content": {{ config.extra.neoabs_content | default({}) | tojson }},
         "page": { "neoabs": {{ _pg | tojson }} },
         "sidebar": {
