@@ -10,6 +10,7 @@ import os
 import posixpath
 import re
 import struct
+import urllib.parse
 import urllib.request
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime, timezone
@@ -142,12 +143,24 @@ _NEOABS_DEFAULT_COMPONENTS = {
     "math": {
         "show": True,
         "cdn_url": "",
+        "cdn_css_url": "",
     },
     "highlighting": {
         "show": True,
         "cdn_url": "",
+        "cdn_css_url": "",
         "theme_dark": "github-dark",
         "theme_light": "github",
+    },
+    "prefetch": {
+        # Phase 8 - prefetch-on-hover (InstantLoading-style). ON by default.
+        # The hostname-relative check means on-site links are previewed as the
+        # pointer hovers them; `external: true` optionally opts into off-site
+        # links too, and `exclude` holds URL substrings that must never be
+        # prefetched. `show: false` disables the whole feature.
+        "show": True,
+        "external": False,
+        "exclude": [],
     },
     "repo_popover": {
         # Default ON: hover the header repo icon to preview the project. Every
@@ -792,6 +805,36 @@ _NEOABS_DEFAULT_PWA = {
 }
 _NEOABS_PWA_BOOLS = ("manifest", "icons")
 _NEOABS_PWA_DISPLAYS = ("standalone", "fullscreen", "minimal-ui", "browser")
+
+# Phase 8 - asset referencing (`cdn | local | bundle`) + inline critical CSS.
+#
+# `cdn` (the default) keeps today's runtime CDN loading exactly as-is: builds
+# stay deterministic and need no network. `local` and `bundle` are opt-in: the
+# plugin vendors the three lazy libraries (highlight.js, KaTeX, Mermaid) into
+# `site/<vendor_dir>` at build time and points the component loaders at the
+# local copies, so the built site is self-hosted and offline-capable. `bundle`
+# additionally concatenates the vendored JS into a single file (each loader
+# then dedupes onto the same URL). Google Fonts stay external in every mode.
+_NEOABS_ASSET_MODES = frozenset({"cdn", "local", "bundle"})
+_NEOABS_DEFAULT_ASSETS = {
+    "mode": "cdn",
+    "inline_critical_css": False,
+    "vendor_dir": "assets/vendor",
+    "timeout": 20,
+}
+_NEOABS_ASSET_BOOLS = ("inline_critical_css",)
+
+# The exact CDN URLs the theme would request at runtime in `cdn` mode. `mode:
+# local`/`bundle` fetches precisely these files so the vendored output matches
+# what a `cdn` build would have loaded (the same strings `neoabs.js` and
+# `base.html` fall back to when no component `cdn_url` is set).
+_NEOABS_ASSET_CDN = {
+    "highlighting_js": "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js",
+    "highlighting_css": "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/",
+    "mermaid_js": "https://cdn.jsdelivr.net/npm/mermaid@10.9.8/dist/mermaid.min.js",
+    "math_css": "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css",
+    "math_js": "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js",
+}
 
 # Allowed enums / key sets for the AI reader so a typo fails the build loudly.
 _NEOABS_AI_READER_URL_STYLES = ("sidecar", "inline")
@@ -1624,6 +1667,38 @@ def _validate_pwa(pwa):
             raise ConfigurationError(f"theme.neoabs.pwa.{field} must be a string.")
 
 
+def _validate_assets(assets):
+    """Validate a merged `theme.neoabs.assets` mapping. `mode` gates how the
+    lazy libraries (highlight.js, KaTeX, Mermaid) are referenced at runtime;
+    `vendor_dir` is the site-relative directory vendored copies are stored under
+    in `local`/`bundle` mode; `timeout` bounds the build-time downloads."""
+    if not isinstance(assets, dict):
+        raise ConfigurationError("theme.neoabs.assets must be a mapping.")
+
+    for field in _NEOABS_ASSET_BOOLS:
+        value = assets.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(f"theme.neoabs.assets.{field} must be a boolean.")
+
+    mode = assets.get("mode")
+    if mode not in (None,) + tuple(sorted(_NEOABS_ASSET_MODES)):
+        raise ConfigurationError(
+            "theme.neoabs.assets.mode must be one of "
+            f"{sorted(_NEOABS_ASSET_MODES)}; got {mode!r}."
+        )
+
+    for field in ("vendor_dir",):
+        value = assets.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.assets.{field} must be a string.")
+
+    timeout = assets.get("timeout")
+    if timeout is not None and (not isinstance(timeout, int) or timeout <= 0):
+        raise ConfigurationError(
+            "theme.neoabs.assets.timeout must be a positive integer."
+        )
+
+
 def _coerce_bool(value, label):
     """Coerce YAML-ish booleans (true/false, 1/0, on/off, yes/no) to ``bool``."""
     if isinstance(value, bool):
@@ -1743,6 +1818,7 @@ class NeoAbsPlugin(BasePlugin):
         ("i18n", Type(dict)),
         ("breadcrumbs", Type(dict)),
         ("pwa", Type(dict)),
+        ("assets", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -1991,6 +2067,57 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["pwa"] = pwa
         theme["neoabs"] = neoabs
 
+        # Phase 8 - asset referencing (`cdn | local | bundle`) + inline critical
+        # CSS. Default `cdn` keeps today's runtime CDN loading exactly as-is;
+        # `local`/`bundle` (opt-in) point the highlighting/mermaid/math loaders
+        # at vendored copies that on_pre_build downloads under `vendor_dir`. The
+        # original (author-supplied or empty) component URLs are snapshotted so
+        # a failed download can restore the CDN fallback instead of leaving a
+        # dangling local reference. `inline_critical_css` only makes sense with
+        # vendored CSS, so it is ignored with a warning under `cdn`.
+        provided_assets = neoabs.get("assets")
+        if not isinstance(provided_assets, dict):
+            provided_assets = {}
+        assets = _deep_merge(_NEOABS_DEFAULT_ASSETS, provided_assets)
+        _validate_assets(assets)
+        neoabs["assets"] = assets
+        theme["neoabs"] = neoabs
+
+        mode = assets["mode"]
+        self._asset_originals = {}
+        if mode in ("local", "bundle"):
+            vendor = str(assets["vendor_dir"] or "").strip().strip("/")
+            if not vendor:
+                vendor = str(_NEOABS_DEFAULT_ASSETS["vendor_dir"]).strip("/")
+            vendor = vendor + "/"
+            hljs_cfg = components["highlighting"]
+            mermaid_cfg = components["mermaid"]
+            math_cfg = components["math"]
+            self._asset_originals = {
+                ("highlighting", "cdn_url"): hljs_cfg.get("cdn_url"),
+                ("highlighting", "cdn_css_url"): hljs_cfg.get("cdn_css_url"),
+                ("mermaid", "cdn_url"): mermaid_cfg.get("cdn_url"),
+                ("math", "cdn_url"): math_cfg.get("cdn_url"),
+                ("math", "cdn_css_url"): math_cfg.get("cdn_css_url"),
+            }
+            bundle_js = f"{vendor}bundle/neoabs-offline.js"
+            hljs_cfg["cdn_url"] = (
+                bundle_js if mode == "bundle" else f"{vendor}highlight/highlight.min.js"
+            )
+            mermaid_cfg["cdn_url"] = (
+                bundle_js if mode == "bundle" else f"{vendor}mermaid/mermaid.min.js"
+            )
+            math_cfg["cdn_url"] = (
+                bundle_js if mode == "bundle" else f"{vendor}katex/dist/katex.min.js"
+            )
+            hljs_cfg["cdn_css_url"] = f"{vendor}highlight/styles/"
+            math_cfg["cdn_css_url"] = f"{vendor}katex/dist/katex.min.css"
+        elif assets.get("inline_critical_css"):
+            _AI_LOGGER.warning(
+                "neoabs assets: inline_critical_css only applies when "
+                "assets.mode is 'local' or 'bundle'; ignored under 'cdn'."
+            )
+
         # Phase 6 - consent gating. NeoAbs ships no trackers, so the consent
         # banner renders only when an integration that could collect personal
         # data is actually configured: `theme.analytics.gtag` (Google Analytics)
@@ -2130,6 +2257,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_i18n"] = i18n
         extra["neoabs_breadcrumbs"] = breadcrumbs_cfg
         extra["neoabs_pwa"] = pwa
+        extra["neoabs_assets"] = assets
         extra["neoabs_site_url"] = raw_site_url
 
         # Phase 1: collect user-supplied design tokens. Only values the author
@@ -2178,6 +2306,288 @@ class NeoAbsPlugin(BasePlugin):
             config["extra_javascript"] = [p for p in extra_js if p != "search/main.js"]
 
         return config
+
+    # -- Phase 8: asset vendoring -------------------------------------------------
+
+    def _asset_fetch(self, url, site_abs_path, timeout):
+        """Download ``url`` into an absolute path under the site dir.
+
+        Never raises: a failed (or timed-out) fetch logs a warning and returns
+        ``False`` so the caller can fall back to the component's CDN URL. This
+        keeps a docs build resilient to transient network problems — the build
+        itself never fails because a CDN was unreachable at build time."""
+        try:
+            request = urllib.request.Request(
+                url, headers={"User-Agent": "mkdocs-neoabs/{}/+assets".format("1")}
+            )
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                data = response.read()
+            if not data:
+                return False
+        except (OSError, ValueError):
+            _AI_LOGGER.warning(
+                "neoabs assets: could not vendor %s at build time — the "
+                "component falls back to its CDN URL in the built site.",
+                url,
+            )
+            return False
+        if site_abs_path is None:
+            return False
+        os.makedirs(os.path.dirname(site_abs_path), exist_ok=True)
+        with open(site_abs_path, "wb") as handle:
+            handle.write(data)
+        return True
+
+    def _asset_rebase_urls(self, text, css_url, dest_dir, site_dir, timeout):
+        """Store the KaTeX stylesheet and fetch every font it references.
+
+        KaTeX's ``katex.min.css`` references its glyphs with relative
+        ``url(fonts/...)`` paths. Copying the file keeps those relative
+        references valid only if the font files keep the same relative layout,
+        so this helper downloads each referenced font next to the stylesheet.
+        Returns ``True`` only when the stylesheet and all of its font files were
+        stored successfully (offline math needs the glyphs, not just the CSS).
+        """
+        try:
+            decoded = text.decode("utf-8")
+        except UnicodeDecodeError:
+            decoded = text.decode("latin-1")
+        base_url = urllib.parse.urljoin(css_url, ".")
+        refs = re.findall(r"url\(\s*(['\"]?)([^'\")\s]+)\1\s*\)", decoded)
+        ok = True
+        for _, ref in refs:
+            ref = ref.strip().strip("'\"")
+            if not ref or ref.startswith(("data:", "#")):
+                continue
+            if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", ref):
+                font_url = ref
+                rel = urllib.parse.urlsplit(ref).path.lstrip("/")
+            else:
+                font_url = urllib.parse.urljoin(base_url, ref)
+                rel = ref.lstrip("/")
+            if not rel or not rel.lower().endswith(
+                (".woff2", ".woff", ".ttf", ".otf", ".eot")
+            ):
+                continue
+            dest = os.path.abspath(os.path.join(dest_dir, *rel.split("/")))
+            site_abs = os.path.abspath(site_dir)
+            if not dest.startswith(site_abs + os.sep):
+                _AI_LOGGER.warning(
+                    "neoabs assets: refusing to store vendored font outside the "
+                    "site dir (%s).",
+                    dest,
+                )
+                ok = False
+                continue
+            if not self._asset_fetch(font_url, dest, timeout):
+                ok = False
+        return ok
+
+    def on_pre_build(self, *, config):
+        """Vendor the lazy CDN libraries when ``assets.mode`` is ``local``/``bundle``.
+
+        MkDocs runs ``on_pre_build`` *before* it cleans the site directory, so a
+        vendored tree written here would immediately be wiped by the clean step
+        that follows. The downloads therefore happen in ``on_files`` (which runs
+        after the site dir is cleaned and before any page renders); this hook
+        only reverts the component URL overrides when there is no site dir to
+        vendor into (e.g. a config-only run), so nothing references a local path
+        that could never exist."""
+        extra = config.get("extra") or {}
+        assets = extra.get("neoabs_assets") or {}
+        mode = assets.get("mode") or _NEOABS_DEFAULT_ASSETS["mode"]
+        if mode not in ("local", "bundle"):
+            return
+
+        components = extra.get("neoabs_components") or {}
+        hljs = components.get("highlighting") or {}
+        mermaid = components.get("mermaid") or {}
+        math = components.get("math") or {}
+        originals = getattr(self, "_asset_originals", {}) or {}
+        if not str(config.get("site_dir") or ""):
+            self._asset_revert(hljs, mermaid, math, originals)
+
+    def _asset_revert(self, hljs, mermaid, math, originals):
+        """Restore component CDN overrides to their pre-vendoring values."""
+        hljs["cdn_url"] = originals.get(("highlighting", "cdn_url")) or ""
+        hljs["cdn_css_url"] = originals.get(("highlighting", "cdn_css_url")) or ""
+        mermaid["cdn_url"] = originals.get(("mermaid", "cdn_url")) or ""
+        math["cdn_url"] = originals.get(("math", "cdn_url")) or ""
+        math["cdn_css_url"] = originals.get(("math", "cdn_css_url")) or ""
+
+    def on_files(self, files, *, config):
+        """Vendor the lazy CDN libraries after the site dir is cleaned.
+
+        MkDocs cleans ``site_dir`` *after* ``on_pre_build`` (so a tree written
+        there is wiped) and before ``on_files`` — this hook is the first point
+        where vendored files are guaranteed to survive to the end of the build,
+        and it runs before any page renders so inline critical CSS is ready
+        when templates are emitted. Only needs a network when the author opted
+        into vendoring; a failed download restores the component's original CDN
+        URL instead of leaving a dangling local reference, and the build still
+        succeeds with the CDN fallback."""
+        extra = config.get("extra") or {}
+        assets = extra.get("neoabs_assets") or {}
+        mode = assets.get("mode") or _NEOABS_DEFAULT_ASSETS["mode"]
+        if mode in ("local", "bundle"):
+            components = extra.get("neoabs_components") or {}
+            originals = getattr(self, "_asset_originals", {}) or {}
+            site_dir = str(config.get("site_dir") or "")
+            if site_dir:
+                self._asset_vendor(site_dir, extra, components, assets, originals)
+        return files
+
+    def _asset_vendor(self, site_dir, extra, components, assets, originals):
+        hljs = components.get("highlighting") or {}
+        mermaid = components.get("mermaid") or {}
+        math = components.get("math") or {}
+        mode = assets.get("mode") or _NEOABS_DEFAULT_ASSETS["mode"]
+        vendor = (
+            str(assets.get("vendor_dir") or _NEOABS_DEFAULT_ASSETS["vendor_dir"])
+            .strip()
+            .strip("/")
+        )
+        if not vendor:
+            vendor = str(_NEOABS_DEFAULT_ASSETS["vendor_dir"]).strip("/")
+        timeout = int(assets.get("timeout") or _NEOABS_DEFAULT_ASSETS["timeout"])
+        inline = bool(assets.get("inline_critical_css"))
+
+        hljs_js = (
+            originals.get(("highlighting", "cdn_url"))
+            or _NEOABS_ASSET_CDN["highlighting_js"]
+        )
+        hljs_css = (
+            originals.get(("highlighting", "cdn_css_url"))
+            or originals.get(("highlighting", "cdn_url"))
+            or _NEOABS_ASSET_CDN["highlighting_css"]
+        )
+        hljs_light = str(
+            hljs.get("theme_light")
+            or _NEOABS_DEFAULT_COMPONENTS["highlighting"]["theme_light"]
+        )
+        hljs_dark = str(
+            hljs.get("theme_dark")
+            or _NEOABS_DEFAULT_COMPONENTS["highlighting"]["theme_dark"]
+        )
+        mermaid_js = (
+            originals.get(("mermaid", "cdn_url")) or _NEOABS_ASSET_CDN["mermaid_js"]
+        )
+        math_js = originals.get(("math", "cdn_url")) or _NEOABS_ASSET_CDN["math_js"]
+        math_css = (
+            originals.get(("math", "cdn_css_url")) or _NEOABS_ASSET_CDN["math_css"]
+        )
+
+        dest_root = os.path.join(site_dir, *vendor.split("/"))
+
+        hljs_js_ok = self._asset_fetch(
+            hljs_js, os.path.join(dest_root, "highlight", "highlight.min.js"), timeout
+        )
+        hljs_light_ok = self._asset_fetch(
+            hljs_css + hljs_light + ".min.css",
+            os.path.join(dest_root, "highlight", "styles", f"{hljs_light}.min.css"),
+            timeout,
+        )
+        hljs_dark_ok = self._asset_fetch(
+            hljs_css + hljs_dark + ".min.css",
+            os.path.join(dest_root, "highlight", "styles", f"{hljs_dark}.min.css"),
+            timeout,
+        )
+        mermaid_ok = self._asset_fetch(
+            mermaid_js,
+            os.path.join(dest_root, "mermaid", "mermaid.min.js"),
+            timeout,
+        )
+        math_js_ok = self._asset_fetch(
+            math_js,
+            os.path.join(dest_root, "katex", "dist", "katex.min.js"),
+            timeout,
+        )
+        math_css_ok = False
+        try:
+            request = urllib.request.Request(
+                math_css,
+                headers={"User-Agent": "mkdocs-neoabs/{}/+assets".format("1")},
+            )
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                css_payload = response.read()
+        except (OSError, ValueError):
+            css_payload = None
+        if css_payload:
+            katex_dir = os.path.join(dest_root, "katex", "dist")
+            os.makedirs(katex_dir, exist_ok=True)
+            with open(os.path.join(katex_dir, "katex.min.css"), "wb") as handle:
+                handle.write(css_payload)
+            math_css_ok = self._asset_rebase_urls(
+                css_payload, math_css, katex_dir, site_dir, timeout
+            )
+
+        changed = False
+        if not hljs_js_ok:
+            hljs["cdn_url"] = originals.get(("highlighting", "cdn_url")) or ""
+            changed = True
+        if not (hljs_light_ok and hljs_dark_ok):
+            hljs["cdn_css_url"] = originals.get(("highlighting", "cdn_css_url")) or ""
+            changed = True
+        if not mermaid_ok:
+            mermaid["cdn_url"] = originals.get(("mermaid", "cdn_url")) or ""
+            changed = True
+        if not math_js_ok:
+            math["cdn_url"] = originals.get(("math", "cdn_url")) or ""
+            changed = True
+        if not math_css_ok:
+            math["cdn_css_url"] = originals.get(("math", "cdn_css_url")) or ""
+            changed = True
+        if changed:
+            _AI_LOGGER.warning(
+                "neoabs assets: at least one vendored asset failed to download — "
+                "affected components fall back to their CDN URLs. Use "
+                "assets.timeout or re-run with reachable libraries to vendor fully."
+            )
+
+        if mode == "bundle":
+            bundle_parts = []
+            for part in (
+                os.path.join(dest_root, "highlight", "highlight.min.js"),
+                os.path.join(dest_root, "katex", "dist", "katex.min.js"),
+                os.path.join(dest_root, "mermaid", "mermaid.min.js"),
+            ):
+                if os.path.isfile(part):
+                    with open(part, "rb") as handle:
+                        bundle_parts.append(handle.read())
+            if bundle_parts:
+                bundle_dir = os.path.join(dest_root, "bundle")
+                os.makedirs(bundle_dir, exist_ok=True)
+                with open(
+                    os.path.join(bundle_dir, "neoabs-offline.js"), "wb"
+                ) as handle:
+                    handle.write(b"\n\n".join(bundle_parts))
+
+        if inline:
+            light_path = os.path.join(
+                dest_root, "highlight", "styles", f"{hljs_light}.min.css"
+            )
+            dark_path = os.path.join(
+                dest_root, "highlight", "styles", f"{hljs_dark}.min.css"
+            )
+            if os.path.isfile(light_path) and os.path.isfile(dark_path):
+                for key, path in (
+                    ("neoabs_hljs_css_inline_light", light_path),
+                    ("neoabs_hljs_css_inline_dark", dark_path),
+                ):
+                    with open(path, encoding="utf-8") as handle:
+                        extra[key] = handle.read()
+                katex_css_path = os.path.join(
+                    dest_root, "katex", "dist", "katex.min.css"
+                )
+                if math_css_ok and os.path.isfile(katex_css_path):
+                    with open(katex_css_path, encoding="utf-8") as handle:
+                        extra["neoabs_math_css_inline"] = handle.read()
+                    extra["neoabs_math_css_font_base"] = f"{vendor}/katex/dist/fonts/"
+            else:
+                _AI_LOGGER.warning(
+                    "neoabs assets: inline_critical_css skipped — vendored "
+                    "highlight.js theme stylesheets were not available."
+                )
 
     # -- Phase 4: social cards & structured data -------------------------------
 

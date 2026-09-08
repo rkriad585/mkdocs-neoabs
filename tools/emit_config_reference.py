@@ -42,6 +42,7 @@ DEFAULT_DICTS = (
     "_NEOABS_DEFAULT_I18N",
     "_NEOABS_DEFAULT_BREADCRUMBS",
     "_NEOABS_DEFAULT_PWA",
+    "_NEOABS_DEFAULT_ASSETS",
 )
 
 # Human titles for the default dicts, matching the config sections users know.
@@ -62,6 +63,7 @@ DEFAULT_TITLES = {
     "_NEOABS_DEFAULT_I18N": "i18n",
     "_NEOABS_DEFAULT_BREADCRUMBS": "breadcrumbs",
     "_NEOABS_DEFAULT_PWA": "pwa",
+    "_NEOABS_DEFAULT_ASSETS": "assets (cdn | local | bundle)",
 }
 
 

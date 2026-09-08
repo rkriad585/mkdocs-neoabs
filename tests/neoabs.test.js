@@ -253,6 +253,7 @@ const windowStub = {
   removeEventListener() {},
   innerWidth: 1024,
   innerHeight: 768,
+  location: { hostname: "x", href: "https://x/", pathname: "/" },
   _scriptsLoaded: [],
   _opened: [],
   open(url, name, features) { this._opened.push({ url: String(url), name: String(name), features: features || "" }) },
@@ -1236,6 +1237,99 @@ const noCfgBoot = bootIIFE({
 check("no site_url configured means links are left untouched", noCfgBoot && rebaseNoCfg.getAttribute("href") === PROD_URL + "/guide/")
 documentStub.querySelectorAll = rebaseOrigQSA
 globalThis.URL = savedURL
+
+// ============================================================================
+// Phase 8: prefetch-on-hover + asset URL resolution
+// ============================================================================
+// The prefetch handler is bound on document pointerover. We drive it with a
+// fake hover target and confirm the right prefetch <link> is appended — while
+// never issuing a real network fetch (the harness has no service worker, so the
+// low-priority fetch branch is skipped by design).
+globalThis.URL = __RealURL
+const _prefetchHeadChildren = () => (documentStub.head._children || []).filter((n) => n && n.rel === "prefetch")
+const clearPrefetchHead = () => {
+  const head = documentStub.head
+  if (head) { head._children = []; head.childNodes = [] }
+  if (documentStub._handlers) documentStub._handlers.pointerover = []
+}
+
+const prefetchTarget = (href) => {
+  const anchor = documentStub.createElement("a")
+  anchor.href = href
+  anchor.hostname = "x"
+  anchor.closest = () => anchor
+  return anchor
+}
+const firePointerOver = (target) => {
+  const handlers = documentStub._handlers && documentStub._handlers.pointerover
+  if (handlers) handlers.forEach((fn) => fn({ target: target }))
+}
+
+// Default: prefetch on hover for an internal link.
+clearPrefetchHead()
+const pfBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: { prefetch: { show: true, external: false, exclude: [] } }, assets: {}, content: {} },
+  searchDom: null,
+  stored: {},
+})
+firePointerOver(prefetchTarget("/next/"))
+const pfLinks = _prefetchHeadChildren()
+check("prefetch appends a single <link rel=prefetch> on hover of an internal link", pfBoot && pfLinks.length === 1 && pfLinks[0].href === "https://x/next/")
+firePointerOver(prefetchTarget("/next/"))
+check("hovering the same link twice does not duplicate the prefetch", pfBoot && _prefetchHeadChildren().length === 1)
+
+// External links are skipped unless `external: true`.
+clearPrefetchHead()
+const pfExtBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: { prefetch: { show: true, external: false, exclude: [] } }, assets: {}, content: {} },
+  searchDom: null,
+  stored: {},
+})
+const extAnchor = prefetchTarget("https://other.example/y/")
+extAnchor.hostname = "other.example"
+firePointerOver(extAnchor)
+check("off-site link is not prefetched when external: false", pfExtBoot && _prefetchHeadChildren().length === 0)
+
+clearPrefetchHead()
+const pfExtOnBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: { prefetch: { show: true, external: true, exclude: [] } }, assets: {}, content: {} },
+  searchDom: null,
+  stored: {},
+})
+const extOnAnchor = prefetchTarget("https://other.example/y/")
+extOnAnchor.hostname = "other.example"
+firePointerOver(extOnAnchor)
+check("off-site link IS prefetched when external: true", pfExtOnBoot && _prefetchHeadChildren().length === 1)
+
+// Disabled component => nothing is prefetched.
+clearPrefetchHead()
+const pfOffBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: { prefetch: { show: false, external: false, exclude: [] } }, assets: {}, content: {} },
+  searchDom: null,
+  stored: {},
+})
+firePointerOver(prefetchTarget("/next/"))
+check("prefetch is disabled when components.prefetch.show is false", pfOffBoot && _prefetchHeadChildren().length === 0)
+
+// assetUrl resolves a site-relative vendor path against config.base.
+const assetBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/guide/", search: "", href: "https://x/guide/", hash: "" },
+  config: { base: "/mkdocs-neoabs/", components: { highlighting: { cdn_url: "assets/vendor/highlight/highlight.min.js", cdn_css_url: "assets/vendor/highlight/styles/" } }, assets: { mode: "local" }, content: {} },
+  searchDom: null,
+  stored: {},
+})
+const assetBoot2 = bootIIFE({
+  location: { origin: "https://x", pathname: "/guide/", search: "", href: "https://x/guide/", hash: "" },
+  config: { base: "../", components: { highlighting: { cdn_url: "assets/vendor/bundle/neoabs-offline.js" } }, assets: { mode: "bundle" }, content: {} },
+  searchDom: null,
+  stored: {},
+})
+globalThis.URL = savedURL
+check("Phase 8 boots in local + bundle asset modes without throwing", assetBoot && assetBoot2)
 
 // ============================================================================
 // Report

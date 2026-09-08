@@ -345,14 +345,38 @@
     {% endblock %}
 
     {% block hljs_styles %}
-    {% set _hljs_base = _comp.highlighting.cdn_url | default("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/", true) %}
+    {% set _assets_cfg = config.extra.neoabs_assets | default({}) %}
+    {% set _assets_mode = _assets_cfg.mode | default('cdn', true) %}
+    {% set _hljs_css_inline_dark = config.extra.neoabs_hljs_css_inline_dark | default('', true) %}
+    {% set _hljs_css_inline_light = config.extra.neoabs_hljs_css_inline_light | default('', true) %}
     {% set _hljs_dark = _comp.highlighting.theme_dark | default("github-dark", true) %}
     {% set _hljs_light = _comp.highlighting.theme_light | default("github", true) %}
     {% if config.extra and config.extra.neoabs_highlight and (_comp.highlighting.show | default(true)) %}
+    {% set _hljs_base = _comp.highlighting.cdn_css_url | default(_comp.highlighting.cdn_url | default("", true), true) %}
+    {% if not _hljs_base %}
+    {% set _hljs_base = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/" %}
+    {% endif %}
+    {% if _assets_mode != 'cdn' and _hljs_css_inline_dark and _hljs_css_inline_light %}
+    <style id="neoabs-hljs-theme-dark">{{ _hljs_css_inline_dark | safe }}</style>
+    <style id="neoabs-hljs-theme-light" disabled>{{ _hljs_css_inline_light | safe }}</style>
+    {% else %}
+    {% set _hljs_dark_href = (_hljs_base ~ _hljs_dark ~ '.min.css') | url %}
+    {% set _hljs_light_href = (_hljs_base ~ _hljs_light ~ '.min.css') | url %}
     <link id="neoabs-hljs-theme-dark" rel="stylesheet"
-          href="{{ _hljs_base }}{{ _hljs_dark }}.min.css">
+          href="{{ _hljs_dark_href }}">
     <link id="neoabs-hljs-theme-light" rel="stylesheet" disabled
-          href="{{ _hljs_base }}{{ _hljs_light }}.min.css">
+          href="{{ _hljs_light_href }}">
+    {% endif %}
+    {% endif %}
+    {% endblock %}
+
+    {% block math_styles %}
+    {% set _math_css_inline = config.extra.neoabs_math_css_inline | default('', true) %}
+    {% set _math_css_font_base = config.extra.neoabs_math_css_font_base | default('', true) %}
+    {% set _math_on = (config.extra.neoabs_math | default(true)) and (_comp.math.show | default(true)) %}
+    {% set _math_on_page = page and page.content and (('katex' in page.content) or ('arithmatex' in page.content)) %}
+    {% if _math_on and _math_on_page and _math_css_inline and _math_css_font_base %}
+    <style id="neoabs-math-css">{{ _math_css_inline | replace('url(fonts/', 'url(' ~ base_url ~ '/' ~ _math_css_font_base) | replace('url("fonts/', 'url("' ~ base_url ~ '/' ~ _math_css_font_base) | replace("url('fonts/", "url('" ~ base_url ~ '/' ~ _math_css_font_base) | safe }}</style>
     {% endif %}
     {% endblock %}
 
@@ -674,6 +698,7 @@
           "enabled": {{ ((config.extra.neoabs_math | default(true)) and (_comp.math.show | default(true))) | tojson }}
         },
         "components": {{ config.extra.neoabs_components | default({}) | tojson }},
+        "assets": {{ config.extra.neoabs_assets | default({}) | tojson }},
         "site_url": {{ config.extra.neoabs_site_url | default('', true) | tojson }},
         "content": {{ config.extra.neoabs_content | default({}) | tojson }},
         "page": { "neoabs": {{ _pg | tojson }} },

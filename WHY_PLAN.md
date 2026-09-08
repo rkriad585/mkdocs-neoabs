@@ -208,8 +208,8 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 12 | i18n of UI strings, translations of chrome | 🟡 `language` + partial `translations`; no override merge | P7 |
 | 13 | Dark-aware images, breadcrumbs, nav icons | ❌ | P7 |
 | 14 | Auto PWA manifest + app meta | 🟡 optional `<link>`; no auto-gen, no iOS meta | P7 |
-| 15 | Prefetch on hover, lazy images, perf budget CI | 🟡 lazy images ✅; no prefetch/Lighthouse | P8 |
-| 16 | Asset bundling (cdn \| local \| bundle) / offline self-host | 🟡 per-component `cdn_url`; no vendoring recipe | P8 |
+| 15 | Prefetch on hover, lazy images, perf budget CI | ✅ prefetch 🟡 perf budget CI (`lighthouseci`+workflow shipped, needs runs) | P8 |
+| 16 | Asset bundling (cdn \| local \| bundle) / offline self-host | ✅ `assets.mode` cdn/local/bundle (on_files vendoring, inline critical CSS, revert-on-failure) | P8 |
 | 17 | Plugin compat guide + recipes | ❌ | P9 |
 | 18 | `neoabs new` scaffolding + `doctor` | 🟡 `neoabs new` ✅ (P2); `doctor` ❌ | P9 |
 | 19 | MkDocs 2.0 compat matrix + release automation | 🟡 GitHub Release ✅; no PyPI, no version matrix | P9 |
@@ -786,9 +786,11 @@ theme:
       inline_critical_css: true
 ```
 
-Plugin `on_post_build` downloads the three CDN libs into `site/assets/vendor/`
+Plugin `on_files` downloads the three CDN libs into `site/assets/vendor/`
 when `mode: local` — GDPR self-host + offline `site.zip` capability. (Per-component
-`cdn_url` already exists; add the vendoring mode on top.)
+`cdn_url` already exists; the vendoring mode is built on top. Vendoring runs in
+`on_files`, not `on_pre_build`: MkDocs 1.6 cleans `site_dir` *after*
+`on_pre_build`, which would wipe a tree written there.)
 
 #### 8c. Perf budget in CI
 

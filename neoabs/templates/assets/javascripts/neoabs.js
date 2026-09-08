@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "11"
+  var NEOABS_VERSION = "22"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -91,22 +91,29 @@
 
   // Lazy-load an external script exactly once; deduplicates concurrent requests.
   function ensureScript(src, onload, onerror) {
-    if (document.querySelector('script[src="' + src + '"]')) {
+    if (window._neoabsScriptsDone && window._neoabsScriptsDone.indexOf(src) !== -1) {
       if (onload) onload()
       return
     }
-    if (typeof window._neoabsScriptsLoaded !== "undefined" &&
-        window._neoabsScriptsLoaded.indexOf(src) !== -1) {
-      if (onload) onload()
+    var existing = document.querySelector('script[src="' + src + '"]')
+    if (existing) {
+      // Same library requested again before it finished loading (e.g. every
+      // loader in `assets.mode: bundle` shares one bundle file): attach the
+      // callbacks to the in-flight element rather than firing onload early.
+      if (onload) existing.addEventListener("load", onload)
+      if (onerror) existing.addEventListener("error", onerror)
       return
     }
-    window._neoabsScriptsLoaded = window._neoabsScriptsLoaded || []
-    window._neoabsScriptsLoaded.push(src)
+    window._neoabsScriptsDone = window._neoabsScriptsDone || []
     var s = document.createElement("script")
     s.src = src
     s.async = true
     s.defer = true
-    if (onload) s.addEventListener("load", onload)
+    var onLoad = function () {
+      if (window._neoabsScriptsDone.indexOf(src) === -1) window._neoabsScriptsDone.push(src)
+      if (onload) onload()
+    }
+    s.addEventListener("load", onLoad)
     if (onerror) s.addEventListener("error", onerror)
     document.head.appendChild(s)
   }
@@ -159,6 +166,34 @@
     const comp = _config.components ? _config.components[name] : null
     if (comp && comp.cdn_url) return comp.cdn_url
     return ""
+  }
+
+  // Phase 8 asset helpers. `assetUrl(path)` turns a site-relative path (set by
+  // `assets.mode: local|bundle`) into a page-correct absolute URL: absolute
+  // `http(s)://` and root-absolute `/...` paths pass through untouched, while a
+  // relative `assets/...` path is prefixed with `_config.base` (the relative
+  // path from this page to the site root, exactly like the template `url`
+  // filter). `componentSrc(name, fallback)` / `componentCss(name, fallback)`
+  // resolve a component's optional `cdn_url` / `cdn_css_url` override, falling
+  // back to the static default when the author left them empty.
+  function assetUrl(path) {
+    if (typeof path !== "string" || path === "") return path
+    if (/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(path) || path.indexOf("/") === 0) return path
+    const base = (_config && typeof _config.base === "string" && _config.base) || ""
+    return base ? base.replace(/\/?$/, "/") + path : path
+  }
+
+  function componentSrc(name, fallback) {
+    const override = cdnUrlFor(name)
+    return override ? assetUrl(override) : fallback
+  }
+
+  function componentCss(name, fallback) {
+    const comp = _config.components ? _config.components[name] : null
+    if (comp && comp.cdn_css_url) return assetUrl(comp.cdn_css_url)
+    const override = cdnUrlFor(name)
+    if (override) return assetUrl(override)
+    return fallback
   }
 
   // Phase 7 UI-string i18n. `t(path, fallback)` resolves a dotted path inside
@@ -1188,8 +1223,10 @@
       document.documentElement.getAttribute("data-md-color-scheme") || "slate"
     )
 
-    const src = cdnUrlFor("highlighting") ||
+    const src = componentSrc(
+      "highlighting",
       "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    )
     ensureScript(src, function () {
       if (!window.hljs) return
       try {
@@ -1597,8 +1634,10 @@
       mermaidUpgrade(el)
     })
 
-    const src = cdnUrlFor("mermaid") ||
+    const src = componentSrc(
+      "mermaid",
       "https://cdn.jsdelivr.net/npm/mermaid@10.9.8/dist/mermaid.min.js"
+    )
     ensureScript(src, function () { if (_mermaidGenericInit) _mermaidGenericInit() })
   }
 
@@ -4630,11 +4669,15 @@ actionClusterEnsureUi(cfg)
     const scope = document.querySelector(".arithmatex, .math, .neoabs-math")
     if (!scope) return
 
-    // Ensure CSS is present.
-    if (!$('link[data-neoabs-math-css]')) {
+    // Ensure CSS is present. With `assets.mode` local/bundle the href resolves
+    // to the vendored copy; with `inline_critical_css` the vendored styles are
+    // already inlined into `<style id="neoabs-math-css">` in the page head, so
+    // nothing is injected here.
+    const mathInline = _config.assets && _config.assets.inline_critical_css === true
+    if (!mathInline && !$('link[data-neoabs-math-css]')) {
       const link = document.createElement("link")
       link.rel = "stylesheet"
-      link.href = MATH_CDN_CSS
+      link.href = componentCss("math", MATH_CDN_CSS)
       link.setAttribute("data-neoabs-math-css", "")
       document.head.appendChild(link)
     }
@@ -4661,7 +4704,7 @@ actionClusterEnsureUi(cfg)
       })
     }
 
-    ensureScript(cdnUrlFor("math") || MATH_CDN_JS, renderMath, function () {
+    ensureScript(componentSrc("math", MATH_CDN_JS), renderMath, function () {
       // Optional retry after a short delay if CDN was slow.
       window.setTimeout(renderMath, 1200)
     })
@@ -5373,6 +5416,77 @@ actionClusterEnsureUi(cfg)
     })
   }
 
+  // Phase 8 - prefetch-on-hover. When the pointer lingers over an internal link
+  // the next page's documents are hinted for the browser (`<link rel="prefetch">`)
+  // so a click feels instant. A low-priority `fetch` pre-warms the page body too,
+  // but only when a service worker controls the page — that way full navigation
+  // goes through the SW cache and the prefetch never competes with the click's
+  // own request (and only that path issues a real network call at all). ON by
+  // default; everything is gated on `components.prefetch.show`.
+  //   - skips the current page, the search entry point, protocol/hash-only links,
+  //     and off-site links unless `components.prefetch.external`
+  //   - honours `components.prefetch.exclude` (URL substrings to never prefetch)
+  //   - never issues a network request when the user prefers reduced data
+  function prefetchCandidate(link) {
+    if (!link || !link.href) return ""
+    if ((_config.components &&
+        _config.components.prefetch &&
+        _config.components.prefetch.external) || link.hostname === (window.location && window.location.hostname)) {
+      return link.href
+    }
+    return ""
+  }
+
+  function prefetchAllowed(url) {
+    try { new URL(url) } catch { return false }
+    return /^https?:/i.test(url)
+  }
+
+  function initPrefetch(config) {
+    if (!componentShow("prefetch", "show")) return
+    const prefetchCfg = (config && config.components && config.components.prefetch) || {}
+    const external = prefetchCfg.external === true
+    const exclude = Array.isArray(prefetchCfg.exclude) ? prefetchCfg.exclude : []
+    const saveData = typeof navigator !== "undefined" && navigator.connection &&
+      navigator.connection.saveData === true
+    const swActive = typeof navigator !== "undefined" && navigator.serviceWorker &&
+      navigator.serviceWorker.controller
+
+    const prefetched = {}
+    const doPrefetch = function (url) {
+      if (prefetched[url]) return
+      prefetched[url] = true
+      const link = document.createElement("link")
+      link.rel = "prefetch"
+      link.href = url
+      document.head.appendChild(link)
+
+      if (swActive && typeof fetch === "function") {
+        fetch(url, { priority: "low", credentials: "same-origin" }).catch(function () {})
+      }
+    }
+
+    document.addEventListener("pointerover", function (e) {
+      if (saveData || !e || !e.target) return
+      const link = e.target.closest ? e.target.closest("a[href]") : null
+      if (!link) return
+      const href = prefetchCandidate(link)
+      if (!href || href === location.href.replace(/#.*$/, "")) return
+      for (let i = 0; i < exclude.length; i += 1) {
+        if (exclude[i] && href.indexOf(exclude[i]) !== -1) return
+      }
+      let url
+      try {
+        url = new URL(href, location.href).href
+      } catch { return }
+      if (!prefetchAllowed(url)) return
+      if (url.indexOf("/#") !== -1) return
+      const pathname = url.split("#")[0]
+      if (pathname === location.pathname) return
+      doPrefetch(url)
+    })
+  }
+
   // ---------------------------------------------------------------------------
   // Boot
   // ---------------------------------------------------------------------------
@@ -5400,6 +5514,7 @@ actionClusterEnsureUi(cfg)
       () => initFeedback(config), () => initComments(config),
       () => initAnnouncement(config), () => initConsent(config),
       () => initLinkRebase(config),
+      () => initPrefetch(config),
       () => initSPANavigation(config)]
     init.forEach(function (fn) {
       try { fn() } catch (e) {

@@ -774,9 +774,14 @@ theme:
     #   theme_color: ""               # Fallback: extra.neoabs_theme_color, then background_color
     #   background_color: "#111114"
     #   start_url: ""                 # Fallback: site_url, then "/"
+    # assets:
+    #   mode: cdn                     # cdn (default) | local | bundle
+    #   inline_critical_css: false    # inline vendored hljs + KaTeX CSS as <style> in <head>
+    #   vendor_dir: assets/vendor     # where local/bundle copies live under site/
+    #   timeout: 20                   # build-time fetch timeout (seconds) per file
 
 extra:
-  neoabs_version: 21
+  neoabs_version: 22
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg
@@ -907,6 +912,7 @@ nav:
   - Plugins:
     - NeoAbs Plugin: plugins/neoabs.md
   - Architecture: architecture.md
+  - Performance: performance.md
   - Development: development.md
   - Deployment: deployment.md
   - Troubleshooting: troubleshooting.md

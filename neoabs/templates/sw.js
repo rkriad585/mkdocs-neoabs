@@ -6,8 +6,8 @@
 ;(function () {
   "use strict"
 
-  var CACHE_STATIC = "neoabs-static-v3"
-  var CACHE_CDN = "neoabs-cdn-v3"
+  var CACHE_STATIC = "neoabs-static-v4"
+  var CACHE_CDN = "neoabs-cdn-v4"
 
   self.addEventListener("install", function (e) {
     e.waitUntil(self.skipWaiting())
@@ -58,7 +58,7 @@
   }
 
   function isStaticAsset(path) {
-    if (path.indexOf("/assets/") === 0 && /\.(css|js|svg|png|jpg|woff2?)$/.test(path)) return true
+    if (path.indexOf("/assets/") !== -1 && /\.(css|js|svg|png|jpg|woff2?)$/.test(path)) return true
     if (path.indexOf("neoabs.css") !== -1) return true
     if (path.indexOf("neoabs.js") !== -1) return true
     return false

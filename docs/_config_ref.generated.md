@@ -79,6 +79,11 @@ sections:
     position: bottom
     show: true
     text: ''
+  assets (cdn | local | bundle):
+    inline_critical_css: false
+    mode: cdn
+    timeout: 20
+    vendor_dir: assets/vendor
   breadcrumbs:
     show: true
   comments:
@@ -126,6 +131,7 @@ sections:
       show_search: true
       show_site_name: true
     highlighting:
+      cdn_css_url: ''
       cdn_url: ''
       show: true
       theme_dark: github-dark
@@ -133,12 +139,17 @@ sections:
     keyboard_help:
       show: true
     math:
+      cdn_css_url: ''
       cdn_url: ''
       show: true
     mermaid:
       cdn_url: ''
       show: true
     notes:
+      show: true
+    prefetch:
+      exclude: []
+      external: false
       show: true
     repo_popover:
       fields:
