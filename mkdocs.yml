@@ -239,6 +239,15 @@ theme:
     #     theme_light: github        # hljs theme used in light mode
     #   repo_popover:
     #     show: true                 # Show repo info popover on hover
+    #     fields:                    # Which info sections to show (default: ALL).
+    #       - description            #   Head + bio sections:
+    #       - owner_bio              #     description | owner_bio
+    #       - author                 #   Rows (omit a row to hide it):
+    #       - stars                  #     author | followers | public_repos | location
+    #       - forks                  #     stars | watchers | forks | open_issues
+    #       - open_issues            #     language | license | default_branch | commits
+    #       - created                #     tags | latest_commit | commit_msg
+    #       - pushed                 #     created | updated | pushed
     #   tags:
     #     show: true                 # Enable tag/pill styling
     #   toast:
@@ -742,7 +751,7 @@ theme:
     #     include_version: true         #   theme version
 
 extra:
-  neoabs_version: 20
+  neoabs_version: 21
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

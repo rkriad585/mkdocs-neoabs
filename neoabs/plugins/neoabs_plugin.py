@@ -141,7 +141,32 @@ _NEOABS_DEFAULT_COMPONENTS = {
         "theme_light": "github",
     },
     "repo_popover": {
+        # Default ON: hover the header repo icon to preview the project. Every
+        # info section is shipped by default; `fields` lets an author opt out
+        # of specific sections (only what they list is rendered).
         "show": True,
+        "fields": [
+            "description",
+            "owner_bio",
+            "author",
+            "followers",
+            "public_repos",
+            "location",
+            "stars",
+            "watchers",
+            "forks",
+            "open_issues",
+            "language",
+            "license",
+            "default_branch",
+            "commits",
+            "tags",
+            "latest_commit",
+            "commit_msg",
+            "created",
+            "updated",
+            "pushed",
+        ],
     },
     "tags": {
         "show": True,
@@ -549,6 +574,31 @@ _NEOABS_COOKIE_CONSENT_RENDER = ("auto", "always", "never")
 # Floating placement for the announcement bar and cookie consent: top/right/
 # bottom/left pin a floating card to an edge; center shows a centered popup.
 _NEOABS_FIXED_POSITIONS = ("top", "right", "bottom", "left", "center")
+
+# Repo popover (Phase 14) info sections. Every section ships by default; an
+# author opts out of individual sections via `components.repo_popover.fields`.
+_REPO_POPOVER_FIELDS = (
+    "description",
+    "owner_bio",
+    "author",
+    "followers",
+    "public_repos",
+    "location",
+    "stars",
+    "watchers",
+    "forks",
+    "open_issues",
+    "language",
+    "license",
+    "default_branch",
+    "commits",
+    "tags",
+    "latest_commit",
+    "commit_msg",
+    "created",
+    "updated",
+    "pushed",
+)
 
 _NEOABS_DEFAULT_COMMENTS = {
     # Comments are opt-in: hidden by default. A site that configures `repo` +
@@ -1228,6 +1278,37 @@ def _validate_cookie_consent(cookie_consent):
         )
 
 
+def _validate_repo_popover(repo_popover):
+    """Validate a merged `theme.neoabs.components.repo_popover` mapping. `show`
+    gates the whole feature (default on); `fields` picks which info sections are
+    rendered (default: every section)."""
+    if not isinstance(repo_popover, dict):
+        raise ConfigurationError(
+            "theme.neoabs.components.repo_popover must be a mapping."
+        )
+
+    show = repo_popover.get("show")
+    if show is not None and not isinstance(show, bool):
+        raise ConfigurationError(
+            "theme.neoabs.components.repo_popover.show must be a boolean."
+        )
+
+    fields = repo_popover.get("fields")
+    if fields is not None:
+        if not isinstance(fields, (list, tuple)):
+            raise ConfigurationError(
+                "theme.neoabs.components.repo_popover.fields must be a list of "
+                "field names."
+            )
+        for field in fields:
+            if not isinstance(field, str) or field not in _REPO_POPOVER_FIELDS:
+                raise ConfigurationError(
+                    "theme.neoabs.components.repo_popover.fields contains an "
+                    f"unknown field {field!r}; allowed fields: "
+                    f"{', '.join(_REPO_POPOVER_FIELDS)}."
+                )
+
+
 def _validate_comments(comments):
     """Validate a merged `theme.neoabs.comments` mapping, raising a clear MkDocs
     configuration error for malformed entries instead of silently dropping the
@@ -1459,6 +1540,7 @@ class NeoAbsPlugin(BasePlugin):
         if not isinstance(provided_components, dict):
             provided_components = {}
         components = _deep_merge(_NEOABS_DEFAULT_COMPONENTS, provided_components)
+        _validate_repo_popover(components.get("repo_popover"))
         neoabs["components"] = components
         theme["neoabs"] = neoabs
 

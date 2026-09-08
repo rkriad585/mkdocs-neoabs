@@ -47,6 +47,14 @@ function makeNode() {
       if (sel.includes("input:checked")) return null
       return null
     },
+    contains(node) {
+      let cursor = node
+      while (cursor) {
+        if (cursor === this) return true
+        cursor = cursor.parentNode
+      }
+      return false
+    },
     appendChild(child) {
       if (!child) return child
       child.parentNode = this
@@ -210,6 +218,7 @@ const documentStub = {
       if (sel === ".neoabs-search__list") return _searchDom.list
       if (sel === ".neoabs-search__close") return _searchDom.closeBtn
     }
+    if (_repoFixture && sel === ".neoabs-header__repo") return _repoFixture.link
     if (sel === "article .neoabs-typeset") return _typesetNode
     return null
   },
@@ -223,7 +232,7 @@ const documentStub = {
     if (id === "neoabs-search-share") return null
     return null
   },
-  addEventListener() {},
+  addEventListener(type, fn) { this._handlers = this._handlers || {}; (this._handlers[type] = this._handlers[type] || []).push(fn) },
   removeEventListener() {},
   get activeElement() { return null },
   getSelection() { return { toString: () => "", removeAllRanges: () => {} } },
@@ -253,6 +262,7 @@ const windowStub = {
 
 let _configEl = null
 let _typesetNode = null
+let _repoFixture = null
 
 // Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
 // harness can resolve relative paths the way a real browser does.
@@ -923,6 +933,175 @@ check(
   "giscus loads only after the reader accepts consent",
   giscusDeferredBoot && !!deferredScriptAfter
 )
+
+// ============================================================================
+// Phase 14: repo popover — dismissible (no auto-close timer), every info field
+// stays by default, `fields` narrows what renders
+// ============================================================================
+function repoPopoverFixture() {
+  const pop = makeNode()
+  pop.className = "neoabs-repo-pop"
+  const link = makeNode()
+  link.className = "neoabs-header__repo"
+  link.href = "https://github.com/neoabs/mkdocs-docs"
+  const wrap = makeNode()
+  wrap.className = "neoabs-header__repo-wrap"
+  wrap.appendChild(link)
+  wrap.appendChild(pop)
+  pop.querySelector = function () { return null }
+  wrap.querySelector = function (sel) { return sel === ".neoabs-repo-pop" ? pop : null }
+  return { wrap, link, pop }
+}
+
+const repoSeedData = {
+  full_name: "neoabs/mkdocs-docs",
+  description: "A test description",
+  stargazers_count: 1234,
+  watchers_count: 56,
+  forks_count: 7,
+  open_issues_count: 8,
+  language: "Python",
+  license: "MIT",
+  license_url: "https://github.com/neoabs/mkdocs-docs/blob/main/LICENSE",
+  default_branch: "main",
+  total_commits: 99,
+  latest_tag: "v1.0.0",
+  commit_sha: "abc1234",
+  commit_date: "2024-01-05",
+  commit_msg: "Initial commit",
+  created_at: "2020-01-01",
+  updated_at: "2020-02-01",
+  pushed_at: "2020-03-01",
+  html_url: "https://github.com/neoabs/mkdocs-docs",
+  owner: {
+    login: "neoabs", name: "Neo Abs", bio: "Owner bio",
+    followers: 10, public_repos: 3, location: "Earth",
+    html_url: "https://github.com/neoabs", avatar_url: "",
+  },
+}
+
+function repoPopoverBoot(fieldsList) {
+  const fixture = repoPopoverFixture()
+  _repoFixture = fixture
+  documentStub._handlers = {}
+  const config = {
+    base: "/",
+    components: { repo_popover: { show: true } },
+    repo_url: "https://github.com/neoabs/mkdocs-docs",
+    neoabs_search: { enabled: false },
+    translations: {},
+  }
+  if (fieldsList) config.components.repo_popover.fields = fieldsList
+  stored["neoabs-cache-repo-neoabs/mkdocs-docs"] =
+    JSON.stringify({ ts: Date.now(), data: repoSeedData })
+  const boot = bootIIFE({
+    location: { origin: "https://x", pathname: "/guide/", search: "", href: "https://x/guide/", hash: "" },
+    config: config,
+    searchDom: null,
+    stored: stored,
+    clipboard: false,
+  })
+  return { boot: boot, pop: fixture.pop, link: fixture.link, wrap: fixture.wrap }
+}
+
+const repoDefault = repoPopoverBoot(null)
+const repoPop = repoDefault.pop
+const repoWrap = repoDefault.wrap
+const repoDefaultBoot = repoDefault.boot
+
+const repoPopoverBooted = repoDefaultBoot && !!repoPop &&
+  typeof repoPop._neoabsRepoShow === "function" &&
+  typeof repoPop._neoabsRepoHide === "function" &&
+  Array.isArray(repoDefault.link.listeners.mouseenter) &&
+  Array.isArray(repoWrap.listeners.mouseleave) &&
+  Array.isArray(repoWrap.listeners.focusout) &&
+  typeof repoPop._neoabsCloseTimer === "undefined"
+check(
+  "repo popover boots with show/hide hooks + hover/wrap-dismiss bindings, no close timer",
+  repoPopoverBooted
+)
+
+const repoDismissible = repoDefaultBoot &&
+  Array.isArray(documentStub._handlers.pointerdown) && documentStub._handlers.pointerdown.length > 0 &&
+  Array.isArray(documentStub._handlers.keydown) && documentStub._handlers.keydown.length > 0
+check(
+  "repo popover wires Escape + click-outside dismissal (no auto-close timeout)",
+  repoDismissible
+)
+
+let repoPopToggle = ""
+let repoStayedInside = false
+let repoClosedOutside = false
+if (repoDefaultBoot && repoPop._neoabsRepoShow && repoPop._neoabsRepoHide) {
+  repoPop._neoabsRepoShow()
+  repoPopToggle = repoPop.classList.contains("neoabs-repo-pop--show") ? "open" : "closed"
+  if (documentStub._handlers.pointerdown && documentStub._handlers.pointerdown[0]) {
+    documentStub._handlers.pointerdown[0]({ target: repoDefault.link })
+    repoStayedInside = repoPop.classList.contains("neoabs-repo-pop--show")
+    documentStub._handlers.pointerdown[0]({ target: body })
+    repoClosedOutside = !repoPop.classList.contains("neoabs-repo-pop--show")
+  }
+  repoPop._neoabsRepoHide()
+}
+check("repo popover opens, stays open on inside press, closes on outside press", repoPopToggle === "open" && repoStayedInside && repoClosedOutside)
+
+const repoAllRows = repoDefaultBoot && repoPop && repoPop.innerHTML != null ? repoPop.innerHTML : ""
+const repoAllSections =
+  repoAllRows.indexOf("A test description") !== -1 &&
+  repoAllRows.indexOf("Owner bio") !== -1 &&
+  repoAllRows.indexOf(">Author<") !== -1 &&
+  repoAllRows.indexOf(">Followers<") !== -1 &&
+  repoAllRows.indexOf(">Public repos<") !== -1 &&
+  repoAllRows.indexOf(">Location<") !== -1 &&
+  repoAllRows.indexOf(">Stars<") !== -1 &&
+  repoAllRows.indexOf(">Watchers<") !== -1 &&
+  repoAllRows.indexOf(">Forks<") !== -1 &&
+  repoAllRows.indexOf(">Open issues<") !== -1 &&
+  repoAllRows.indexOf(">Language<") !== -1 &&
+  repoAllRows.indexOf(">License<") !== -1 &&
+  repoAllRows.indexOf(">Default branch<") !== -1 &&
+  repoAllRows.indexOf(">Commits<") !== -1 &&
+  repoAllRows.indexOf(">Tags<") !== -1 &&
+  repoAllRows.indexOf(">Latest commit<") !== -1 &&
+  repoAllRows.indexOf(">Last commit msg<") !== -1 &&
+  repoAllRows.indexOf(">Created<") !== -1 &&
+  repoAllRows.indexOf(">Last updated<") !== -1 &&
+  repoAllRows.indexOf(">Last pushed<") !== -1
+check("repo popover keeps EVERY info section by default", repoAllSections)
+
+const repoFiltered = repoPopoverBoot(["stars", "forks"])
+const repoFilteredPop = repoFiltered.pop
+const repoFilteredHtml = repoFiltered.boot && repoFilteredPop && repoFilteredPop._neoabsRepoShow
+  ? (repoFilteredPop._neoabsRepoShow(), repoFilteredPop.innerHTML || "")
+  : ""
+const repoFieldFilter = repoFilteredHtml.indexOf(">Stars<") !== -1 &&
+  repoFilteredHtml.indexOf(">Forks<") !== -1 &&
+  repoFilteredHtml.indexOf(">Open issues<") === -1 &&
+  repoFilteredHtml.indexOf("Owner bio") === -1 &&
+  repoFilteredHtml.indexOf("A test description") === -1
+check("repo popover fields: ['stars','forks'] hides every other section", repoFieldFilter)
+
+const repoDisabled = (() => {
+  const fixture = repoPopoverFixture()
+  _repoFixture = fixture
+  documentStub._handlers = {}
+  const boot = bootIIFE({
+    location: { origin: "https://x", pathname: "/guide/", search: "", href: "https://x/guide/", hash: "" },
+    config: {
+      base: "/",
+      components: { repo_popover: { show: false } },
+      repo_url: "https://github.com/neoabs/mkdocs-docs",
+      neoabs_search: { enabled: false },
+      translations: {},
+    },
+    searchDom: null,
+    stored: {},
+    clipboard: false,
+  })
+  return boot && !fixture.pop._neoabsRepoShow && !fixture.pop._neoabsRepoHide
+})()
+check("repo popover stays off when components.repo_popover.show is false", repoDisabled)
+_repoFixture = null
 
 // ============================================================================
 // Link rebase: `site_url` (mkdocs.yml) falls back to localhost:{port} in dev

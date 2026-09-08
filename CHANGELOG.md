@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Code annotations (pymdownx.highlight-style): line-end marker `# (1)!` syntax converted client-side to red inline badges; adjacent `<ol>` legend auto-detected and wired for hover highlighting; annotation markers re-applied after highlight.js re-highlight via `applyCodeAnnotations()`
 - `tools/add_dates.py`: stamps every `docs/**/*.md` page with a `date:` front-matter key (`YYYY-MM-DD`, UTC-based); skips MkDocs `_`-prefixed generated files; idempotent, handles files with or without existing front matter, preserves line endings
 - `site_url` link rebasing (`initLinkRebase`): the plugin captures the production `site_url` at `on_config` (before `mkdocs serve` swaps it for the dev server) and exposes it in `#__config` as `site_url`; during localhost:{port} previews the JS rewrites anchors baked/hardcoded with the main site URL onto `location.origin` (production base path stripped, query/hash preserved), leaving relative and external links untouched — clicks never leave the preview, and it is a no-op on the deployed origin
+- Repo popover info-field control (`theme.neoabs.components.repo_popover.fields`): pick which sections the GitHub popover shows — `author`, `followers`, `public_repos`, `location`, `stars`, `watchers`, `forks`, `open_issues`, `language`, `license`, `default_branch`, `commits`, `tags`, `latest_commit`, `commit_msg`, `created`, `updated`, `pushed`, `description`, `owner_bio` — **defaults to every section**, validated at build time by `_validate_repo_popover()`
 
 ### Changed
 
@@ -30,6 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - SCSS additions: `.neoabs-zoom` overlay (slide-up entrance), `.neoabs-annotation` badge, `.neoabs-annotations` legend with `attr(data-index)` counters, `.neoabs-footer__meta` / `.neoabs-edit` / `.neoabs-last-updated` layout
 - `theme.neoabs.comments` and `theme.neoabs.announcement_bar` are now **off by default** (`enabled: false`): nothing renders unless a site opts in with `enabled: true` (the announcement bar additionally needs a non-empty `text`)
 - Announcement bar and cookie consent are now **floating cards** (position pinning) instead of full-width bars: new `position` key (`top` | `right` | `bottom` | `left` | `center`, default `bottom`) on both widgets; `center` renders a centered **popup** with a dimmed `.neoabs-popup-backdrop` (click-to-dismiss for the announcement, inert for consent — only Accept/Decline settle it), validated at build time by `_NEOABS_FIXED_POSITIONS`
+- Repo popover open/close reworked into an animated **dismissible popover** (no auto-close timer): opens on hover/focus/click, closes when the pointer leaves the icon + card, focus leaves the wrapper, Escape is pressed, or a click lands outside; reveal/hide animates via the CSS opacity + transform transition and is disabled under `prefers-reduced-motion`
+- Repo popover is now **scrollable and responsive**: the card caps at `min(70vh, 480px)` with an independent scrollable body (`min(60vh, 420px)`, `overscroll-behavior: contain`), and narrows to `min(86vw, 320px)` on small screens so it never clips against the viewport edge
 
 ### Fixed
 

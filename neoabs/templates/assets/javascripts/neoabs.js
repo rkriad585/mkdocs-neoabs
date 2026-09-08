@@ -4732,6 +4732,21 @@ actionClusterEnsureUi(cfg)
     const cacheKey = "repo-" + slug.owner + "/" + slug.name
     const cached = cacheGet(cacheKey, 3600000)  // 1 hour TTL
 
+    // Which info sections to render (`theme.neoabs.components.repo_popover.fields`).
+    // Defaults to EVERY section — nothing is removed unless an author opts out.
+    const REPO_POPOVER_FIELDS_ALL = [
+      "description", "owner_bio", "author", "followers", "public_repos",
+      "location", "stars", "watchers", "forks", "open_issues", "language",
+      "license", "default_branch", "commits", "tags", "latest_commit",
+      "commit_msg", "created", "updated", "pushed"
+    ]
+    const _popCfg = (_config.components && _config.components.repo_popover) || {}
+    const desiredFields = Array.isArray(_popCfg.fields) ? _popCfg.fields : null
+    const popoverFields = new Set(desiredFields && desiredFields.length
+      ? desiredFields
+      : REPO_POPOVER_FIELDS_ALL)
+    const popoverFieldOn = function (id) { return popoverFields.has(id) }
+
     // Popover root lives in the header markup next to the icon (revealed by
     // CSS hover) — JS only upgrades its content.
     const wrap = link.parentElement
@@ -4750,7 +4765,7 @@ actionClusterEnsureUi(cfg)
     }
 
     const buildRows = function (rows) {
-      const out = rows.filter(function (r) { return r.v })
+      const out = rows.filter(function (r) { return popoverFieldOn(r.id) && r.v })
         .map(function (r) {
           return '<div class="neoabs-repo-pop__row">' +
             '<span class="neoabs-repo-pop__k">' + repoPopoverEscape(r.k) + "</span>" +
@@ -4768,24 +4783,25 @@ actionClusterEnsureUi(cfg)
         + '<span class="neoabs-repo-pop__v">' + repoPopoverEscape(msg || "No public data") + "</span></div></div>"
     }
 
-    let closeTimer = null
-
-    const cancelClose = function () {
-      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null }
-    }
-
+    // Dismissible popover: the card stays open until the visitor dismisses it —
+    // no auto-close timer. Close happens when the pointer leaves the icon and
+    // the card, focus leaves the wrapper, Escape is pressed, or a click/pointer
+    // lands outside. Open/close is animated through the CSS `--show` transition.
     const hide = function () {
       pop.classList.remove("neoabs-repo-pop--show")
     }
 
-    // Delay hiding so the user can move from the icon onto the popover.
-    const scheduleClose = function () {
-      cancelClose()
-      closeTimer = window.setTimeout(hide, 3000)
+    const hideIfOutside = function (e) {
+      const target = e && e.target
+      if (target && wrap && typeof wrap.contains === "function" && wrap.contains(target)) return
+      hide()
+    }
+
+    const hideOnEscape = function (e) {
+      if (e && (e.key === "Escape" || e.keyCode === 27)) hide()
     }
 
     const loadAndShow = function () {
-      cancelClose()
       pop.classList.add("neoabs-repo-pop--show")
       if (window.console && console.info && !pop._neoabsLoggedOpen) {
         pop._neoabsLoggedOpen = true
@@ -4916,35 +4932,35 @@ actionClusterEnsureUi(cfg)
         + '<span class="neoabs-repo-pop__title">'
         + '<a class="neoabs-repo-pop__name" href="' + repoPopoverEscape(d.html_url || "#") + '" target="_blank" rel="noopener">'
         + repoPopoverEscape(d.full_name || ownerLogin + "/" + slug.name) + "</a>"
-        + (d.description ? '<span class="neoabs-repo-pop__desc">' + repoPopoverEscape(d.description) + "</span>" : "")
+        + (popoverFieldOn("description") && d.description ? '<span class="neoabs-repo-pop__desc">' + repoPopoverEscape(d.description) + "</span>" : "")
         + "</span></div>"
         + '<div class="neoabs-repo-pop__body">'
-        + (ownerData.bio ? '<div class="neoabs-repo-pop__bio">' + repoPopoverEscape(ownerData.bio) + "</div>" : "")
+        + (popoverFieldOn("owner_bio") && ownerData.bio ? '<div class="neoabs-repo-pop__bio">' + repoPopoverEscape(ownerData.bio) + "</div>" : "")
         + buildRows([
-          { k: "Author", v: authorLink },
-          { k: "Followers", v: ownerData.followers != null ? fmtCount(ownerData.followers) + " (" + ownerData.followers + ")" : null },
-          { k: "Public repos", v: ownerData.public_repos != null ? fmtCount(ownerData.public_repos) : null },
-          { k: "Location", v: ownerData.location ? repoPopoverEscape(ownerData.location) : null },
-          { k: "Stars", v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
-          { k: "Watchers", v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
-          { k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
-          { k: "Open issues", v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
-          { k: "Language", v: d.language || "—" },
-          { k: "License", v: d.license
+          { id: "author", k: "Author", v: authorLink },
+          { id: "followers", k: "Followers", v: ownerData.followers != null ? fmtCount(ownerData.followers) + " (" + ownerData.followers + ")" : null },
+          { id: "public_repos", k: "Public repos", v: ownerData.public_repos != null ? fmtCount(ownerData.public_repos) : null },
+          { id: "location", k: "Location", v: ownerData.location ? repoPopoverEscape(ownerData.location) : null },
+          { id: "stars", k: "Stars", v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
+          { id: "watchers", k: "Watchers", v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
+          { id: "forks", k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
+          { id: "open_issues", k: "Open issues", v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
+          { id: "language", k: "Language", v: d.language || "—" },
+          { id: "license", k: "License", v: d.license
               ? (d.license_url
                   ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">' + repoPopoverEscape(d.license) + "</a>"
                   : repoPopoverEscape(d.license))
               : (d.license_url
                   ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">None</a>'
                   : "None") },
-          { k: "Default branch", v: d.default_branch || "—" },
-          { k: "Commits", v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
-          { k: "Tags", v: d.latest_tag ? "latest " + repoPopoverEscape(d.latest_tag) : "—" },
-          { k: "Latest commit", v: (d.commit_sha ? d.commit_sha : "—") + (d.commit_date ? " · " + d.commit_date : "") },
-          { k: "Last commit msg", v: d.commit_msg ? repoPopoverEscape(d.commit_msg) : "—" },
-          { k: "Created", v: fmtDate(d.created_at) },
-          { k: "Last updated", v: fmtDate(d.updated_at) },
-          { k: "Last pushed", v: fmtDate(d.pushed_at) }
+          { id: "default_branch", k: "Default branch", v: d.default_branch || "—" },
+          { id: "commits", k: "Commits", v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
+          { id: "tags", k: "Tags", v: d.latest_tag ? "latest " + repoPopoverEscape(d.latest_tag) : "—" },
+          { id: "latest_commit", k: "Latest commit", v: (d.commit_sha ? d.commit_sha : "—") + (d.commit_date ? " · " + d.commit_date : "") },
+          { id: "commit_msg", k: "Last commit msg", v: d.commit_msg ? repoPopoverEscape(d.commit_msg) : "—" },
+          { id: "created", k: "Created", v: fmtDate(d.created_at) },
+          { id: "updated", k: "Last updated", v: fmtDate(d.updated_at) },
+          { id: "pushed", k: "Last pushed", v: fmtDate(d.pushed_at) }
         ])
         + "</div>"
 
@@ -4952,21 +4968,24 @@ actionClusterEnsureUi(cfg)
       if (avImg) avImg.addEventListener("error", avatarFallback)
     }
 
-    // Hover / focus to open; leave / blur starts a 3s close timer so the user
-    // can move onto the popover. Hovering the popover itself cancels the timer.
+    // Open on hover / pointer / focus / click; close on pointer leave (icon and
+    // card), focus loss from the wrapper, Escape, or a click-outside. No
+    // auto-close timer — the card persists until the visitor dismisses it.
     // Clicking / Enter also opens it — some visitors click the icon rather
     // than hover (trackpad, touch) and the link still navigates to GitHub.
     link.addEventListener("mouseenter", loadAndShow)
     link.addEventListener("pointerenter", loadAndShow)
-    link.addEventListener("mouseleave", scheduleClose)
     link.addEventListener("focus", loadAndShow)
-    link.addEventListener("blur", scheduleClose)
     link.addEventListener("click", loadAndShow)
     link.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") loadAndShow()
     })
-    pop.addEventListener("mouseenter", cancelClose)
-    pop.addEventListener("mouseleave", scheduleClose)
+    if (wrap) {
+      wrap.addEventListener("mouseleave", hide)
+      wrap.addEventListener("focusout", hide)
+    }
+    document.addEventListener("pointerdown", hideIfOutside)
+    document.addEventListener("keydown", hideOnEscape)
 
     // Phase 20: expose the popover open/close so the keyboard shortcut
     // (`toggle_repo_popover`, default Ctrl/Cmd+Shift+G) can drive it without

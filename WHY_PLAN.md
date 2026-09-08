@@ -126,19 +126,23 @@ styles `neoabs.scss` (630 lines) + `components.scss` (6,104 lines), CI under
 
 ### What is currently *broken or dead* (verified 2026-09)
 
-- No JSON-LD structured data (OG/Twitter/theme-color are present; JSON-LD is not).
-- No auto-generated social-card image (`tools/social_card.py` does not exist).
+Shipped since the last audit (moved into "Current state audit" above): Article
+JSON-LD + auto social-card images (Phase 4, `e2dae82`), image lightbox /
+footnotes / code annotations / metadata bar (Phase 5, `f056514`), feedback
+widget, announcement bar, cookie consent, and giscus comments (Phase 6,
+`37d80dc`) — the "no JSON-LD / no social cards / no feedback / no consent" gaps
+below are **closed**.
+
 - Screenshot gallery ❌→✅ fixed: all 17 `Screenshots/*.png` exist as real
   Playwright captures (macOS/phone frames), including `light-mode.png`,
   `code-blocks.png`, `mobile.png`; `tools/screenshots_gen.py` emits all of them.
 - No page breadcrumbs, no nav icons, no dark-aware images.
-- No feedback widget, no announcement bar, no cookie consent, no comments.
 - No auto-generated PWA manifest (only an optional `<link>` via
   `extra.neoabs_manifest`); no iOS PWA meta tags.
 - No asset bundling mode (`cdn | local | bundle`) — CDN URLs are configurable per
   component but nothing is vendored into `site/`.
 - No prefetch-on-hover; no Lighthouse/perf-budget CI.
-- No CLI (`neoabs new` / `neoabs doctor`); no integrations guide; no MkDocs
+- No CLI (`neoabs doctor`; `neoabs new` ships); no integrations guide; no MkDocs
   1.5/1.6/2.0.dev compat matrix.
 - CI has GitHub Release automation but **no PyPI publish**; no benchmarks page;
   no `FUNDING.yml`; no showcase page.
@@ -525,7 +529,7 @@ annotations, footnotes, lightbox, freshness metadata.
 (`components.scss` L3737 + `initContentMedia`); lazy images (`image_behavior`);
 code line numbers / highlight lines.
 
-#### 5a. "Last updated" + "Edit on GitHub"
+#### 5a. "Last updated" + "Edit on GitHub" ✅ (done)
 
 Integrate cleanly with `mkdocs-git-revision-date-localized` *and* provide a
 theme-fallback (no plugin installed → omit the line, never break):
@@ -540,7 +544,7 @@ theme-fallback (no plugin installed → omit the line, never break):
 </a>
 ```
 
-#### 5b. Image lightbox + footnotes + code annotations
+#### 5b. Image lightbox + footnotes + code annotations ✅ (done)
 
 - Lightbox: document + theme-stylize `mkdocs-glightbox` OR ship a tiny vanilla
   zoom (preferred — priv-first, no extra pip):
@@ -566,7 +570,7 @@ document.querySelectorAll(".neoabs-typeset img").forEach((img) => {
 
 **Acceptance.** git-revision-date renders when plugin present, front-matter `date:` fallback works, no-op otherwise (page/404 safe); image zoom opens overlay on click with keyboard/close; footnotes styled in `.neoabs-typeset`; code annotations (line-end marker `# (N)!` + legend `<ol>`) apply at runtime after hljs re-highlight; strict build passes; `npm test` 8/8; `ruff check` clean; `tools/add_dates.py` stamps docs with date front matter.
 
-**Done (verified).** Phase 5 implemented and committed in `e2dae82`...`HEAD` (meta bar, lightbox, footnotes, code annotations, full docs, JS test). All acceptance criteria met.
+**Done (verified).** Phase 5 implemented and committed in `f056514` (meta bar, lightbox, footnotes, code annotations, full docs, JS test). All acceptance criteria met.
 
 ---
 
@@ -587,7 +591,7 @@ flag and unlocking deferred integrations; giscus comments (`initComments`,
 palette-synced theme (`syncCommentsTheme`), consent-gated loading, and SPA
 re-injection.
 
-#### 6a. "Was this page helpful?" — GitHub-issue-backed (no tracking)
+#### 6a. "Was this page helpful?" — GitHub-issue-backed (no tracking) ✅ (done)
 
 ```yaml
 theme:
@@ -614,7 +618,7 @@ document.querySelectorAll("[data-feedback]").forEach((b) => {
 })
 ```
 
-#### 6b. Dismissable announcement bar + cookie consent
+#### 6b. Dismissable announcement bar + cookie consent ✅ (done)
 
 - Announcement: `extra.neoabs_announce: "Version 0.2 is live"` → one-line bar
   stored as dismissed in localStorage.
@@ -629,7 +633,7 @@ theme:
       message: "This site stores nothing about you unless you enable integrations."
 ```
 
-#### 6c. Comments via giscus (opt-in)
+#### 6c. Comments via giscus (opt-in) ✅ (done)
 
 ```yaml
 theme:
@@ -649,14 +653,15 @@ theme:
 only when an integration is on; giscus injects only when configured; build +
 tests green.
 
-**Done (verified).** Phase 6 implemented (uncommitted, per directive): plugin
+**Done (verified).** Phase 6 implemented and committed (`37d80dc`, plus `35b3e78` opt-in comments/announcement + giscus loader fix and `fa46472` floating position config): plugin
 `("feedback"|"announcement_bar"|"cookie_consent"|"comments", Type(dict))`
 scheme + validators + defaults + computed `consent_needed`; `base.html`
 `__config` serialization; `neoabs.js` initFeedback/initAnnouncement/initConsent/
 initComments (+ consent-gated loading, palette-synced giscus theme, SPA wiring);
 `components.scss` Phase 6 section; `tools/emit_config_reference.py` + regenerated
 reference; docs (configuration.md, plugins/neoabs.md, components/engagement.md);
-`npm test` 21/21; `mkdocs build --strict` and `ruff check` clean. Rows 10/11 ✅.
+`npm test` green (21/21 at the time, 37/37 today); `mkdocs build --strict` and
+`ruff check` clean. Rows 10/11 ✅.
 
 ---
 
