@@ -39,6 +39,9 @@ DEFAULT_DICTS = (
     "_NEOABS_DEFAULT_ANNOUNCEMENT_BAR",
     "_NEOABS_DEFAULT_COOKIE_CONSENT",
     "_NEOABS_DEFAULT_COMMENTS",
+    "_NEOABS_DEFAULT_I18N",
+    "_NEOABS_DEFAULT_BREADCRUMBS",
+    "_NEOABS_DEFAULT_PWA",
 )
 
 # Human titles for the default dicts, matching the config sections users know.
@@ -56,6 +59,9 @@ DEFAULT_TITLES = {
     "_NEOABS_DEFAULT_ANNOUNCEMENT_BAR": "announcement_bar",
     "_NEOABS_DEFAULT_COOKIE_CONSENT": "cookie_consent",
     "_NEOABS_DEFAULT_COMMENTS": "comments",
+    "_NEOABS_DEFAULT_I18N": "i18n",
+    "_NEOABS_DEFAULT_BREADCRUMBS": "breadcrumbs",
+    "_NEOABS_DEFAULT_PWA": "pwa",
 }
 
 

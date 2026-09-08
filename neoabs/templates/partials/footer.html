@@ -38,7 +38,7 @@
           <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
         </svg>
         {% endif %}
-        Previous
+        {{ _i18n.get("footer", {}).get("previous", "Previous") if (_i18n is mapping) else "Previous" }}
       </span>
       {% if _ftr_prev_next_cfg.show_title | default(true) %}
       <span class="neoabs-footer__link-title">{{ page.previous_page.title }}</span>
@@ -51,7 +51,7 @@
     {% if page.next_page %}
     <a href="{{ page.next_page.url | url }}" class="neoabs-footer__link neoabs-footer__link--next" title="{{ page.next_page.title }}">
       <span class="neoabs-footer__link-label">
-        Next
+        {{ _i18n.get("footer", {}).get("next", "Next") if (_i18n is mapping) else "Next" }}
         {% if _ftr_prev_next_cfg.show_arrow | default(true) %}
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>

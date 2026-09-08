@@ -79,6 +79,8 @@ sections:
     position: bottom
     show: true
     text: ''
+  breadcrumbs:
+    show: true
   comments:
     category: ''
     category_id: ''
@@ -139,6 +141,27 @@ sections:
     notes:
       show: true
     repo_popover:
+      fields:
+      - description
+      - owner_bio
+      - author
+      - followers
+      - public_repos
+      - location
+      - stars
+      - watchers
+      - forks
+      - open_issues
+      - language
+      - license
+      - default_branch
+      - commits
+      - tags
+      - latest_commit
+      - commit_msg
+      - created
+      - updated
+      - pushed
       show: true
     search:
       placeholder: Search...
@@ -227,6 +250,106 @@ sections:
     positive: "Yes \u2014 thanks!"
     show: true
     title: Was this page helpful?
+  i18n:
+    a11y:
+      breadcrumb: Breadcrumb
+      skipToContent: Skip to content
+    clipboard:
+      copied: Copied to clipboard
+      copy: Copy to clipboard
+      copyLink: Copy link
+      copyLinkFailed: "Copy link failed \u2014 clipboard unavailable"
+      linkCopied: Link copied
+    comments:
+      title: Comments
+    footer:
+      next: Next
+      previous: Previous
+    help:
+      title: Keyboard shortcuts
+    navigation:
+      label: Navigation
+    notes:
+      add: + Add note
+      cancel: Cancel
+      close: Close notes
+      colorPrefix: 'Color '
+      delete: Delete
+      empty: No notes yet.
+      exportJson: Export .json
+      exportMd: Export .md
+      notes: Notes
+      placeholder: "Write a note\u2026"
+      save: Save
+      saveChanges: Save changes
+    repo:
+      author: Author
+      commitMsg: Last commit msg
+      commits: Commits
+      created: Created
+      defaultBranch: Default branch
+      followers: Followers
+      forks: Forks
+      language: Language
+      latestCommit: Latest commit
+      latestTag: 'latest '
+      license: License
+      licenseNone: None
+      loadError: Unable to load repo data
+      location: Location
+      noPublicData: No public data
+      openIssues: Open issues
+      publicRepos: Public repos
+      pushed: Last pushed
+      stars: Stars
+      status: Status
+      tags: Tags
+      updated: Last updated
+      watchers: Watchers
+    search:
+      loadError: Search index could not be loaded.
+      loading: Loading search...
+      noResults: No results found
+      placeholder: Search
+      results: Results
+      startTyping: Start typing to search...
+      suggestions: Search suggestions
+    timer:
+      bar: Bar
+      bottom: Bottom
+      cancel: Cancel
+      chime: Chime on completion
+      close: Close
+      complete: Focus session complete
+      controls: Timer controls
+      digits: Digits
+      focus: Focus
+      readingChip: Reading-mode chip
+      reset: Reset timer
+      restart: Restart timer
+      ring: Ring
+      sessionLength: Session length (minutes)
+      settings: Focus timer settings
+      start: Start timer
+      startSession: Start session
+      stop: Stop timer
+      title: Focus Timer
+      toastNotify: Toast on completion
+      tocPosition: TOC timer position
+      tocStyle: TOC timer style
+      top: Top
+    toc:
+      backToTop: Back to top
+      title: On this page
+    zoom:
+      close: Close preview
+      copyImage: Copy image
+      downloadImage: Download image
+      next: Next image
+      preview: Image preview
+      previous: Previous image
+      zoomIn: Zoom in
+      zoomOut: Zoom out
   keyboard (shortcuts):
     custom: []
     enabled: true
@@ -299,6 +422,13 @@ sections:
     show_edit_on_github: true
     show_last_updated: true
     source_dir: docs
+  pwa:
+    background_color: '#111114'
+    display: standalone
+    icons: true
+    manifest: true
+    start_url: ''
+    theme_color: ''
   reading_mode:
     enabled: true
     notes:

@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import fnmatch
+import json
 import logging
+import mimetypes
 import os
 import posixpath
 import re
+import struct
+import urllib.request
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime, timezone
 from typing import ClassVar
@@ -21,6 +25,11 @@ from .. import __version__ as _NEOABS_THEME_VERSION
 from .. import social_card as _social_card
 
 _AI_LOGGER = logging.getLogger("mkdocs.plugins.neoabs")
+
+# Build-time cap for fetching a remote manifest icon (seconds). A slow/unreachable
+# icon host must never hang a docs build — a failed fetch logs a warning and the
+# manifest is emitted without an icon list instead.
+_PWA_ICON_FETCH_TIMEOUT = 10
 
 # Phase 1 - Design token overrides.
 #
@@ -619,6 +628,171 @@ _NEOABS_COMMENTS_BOOLS = ("enabled",)
 _NEOABS_COMMENTS_PROVIDERS = ("", "giscus")
 _NEOABS_COMMENTS_MAPPINGS = ("pathname", "url", "title", "og:title", "specific")
 
+# Phase 7 - UI-string i18n. This is the single source of truth for the chrome
+# strings the JS and templates read from `#__config.translations` (clipboard,
+# search, TOC, comments, a11y add-ons, footer). An author overrides any key via
+# `theme.neoabs.i18n` — either the nested group form or the concise flat aliases
+# (`search_placeholder`, `toc_title`, `back_to_top`, ...) which are normalized
+# onto the nested structure below.
+_NEOABS_DEFAULT_I18N = {
+    "clipboard": {
+        "copy": "Copy to clipboard",
+        "copied": "Copied to clipboard",
+        "copyLink": "Copy link",
+        "linkCopied": "Link copied",
+        "copyLinkFailed": "Copy link failed — clipboard unavailable",
+    },
+    "search": {
+        "placeholder": "Search",
+        "results": "Results",
+        "noResults": "No results found",
+        "startTyping": "Start typing to search...",
+        "loading": "Loading search...",
+        "loadError": "Search index could not be loaded.",
+        "suggestions": "Search suggestions",
+    },
+    "toc": {
+        "title": "On this page",
+        "backToTop": "Back to top",
+    },
+    "comments": {
+        "title": "Comments",
+    },
+    "zoom": {
+        "preview": "Image preview",
+        "close": "Close preview",
+        "previous": "Previous image",
+        "next": "Next image",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "copyImage": "Copy image",
+        "downloadImage": "Download image",
+    },
+    "a11y": {
+        "breadcrumb": "Breadcrumb",
+        "skipToContent": "Skip to content",
+    },
+    "repo": {
+        "status": "Status",
+        "noPublicData": "No public data",
+        "loadError": "Unable to load repo data",
+        "licenseNone": "None",
+        "latestTag": "latest ",
+        "author": "Author",
+        "followers": "Followers",
+        "publicRepos": "Public repos",
+        "location": "Location",
+        "stars": "Stars",
+        "watchers": "Watchers",
+        "forks": "Forks",
+        "openIssues": "Open issues",
+        "language": "Language",
+        "license": "License",
+        "defaultBranch": "Default branch",
+        "commits": "Commits",
+        "tags": "Tags",
+        "latestCommit": "Latest commit",
+        "commitMsg": "Last commit msg",
+        "created": "Created",
+        "updated": "Last updated",
+        "pushed": "Last pushed",
+    },
+    "notes": {
+        "notes": "Notes",
+        "close": "Close notes",
+        "add": "+ Add note",
+        "exportMd": "Export .md",
+        "exportJson": "Export .json",
+        "placeholder": "Write a note…",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saveChanges": "Save changes",
+        "colorPrefix": "Color ",
+        "delete": "Delete",
+        "empty": "No notes yet.",
+    },
+    "timer": {
+        "focus": "Focus",
+        "title": "Focus Timer",
+        "settings": "Focus timer settings",
+        "close": "Close",
+        "sessionLength": "Session length (minutes)",
+        "tocStyle": "TOC timer style",
+        "tocPosition": "TOC timer position",
+        "readingChip": "Reading-mode chip",
+        "toastNotify": "Toast on completion",
+        "chime": "Chime on completion",
+        "cancel": "Cancel",
+        "startSession": "Start session",
+        "start": "Start timer",
+        "restart": "Restart timer",
+        "stop": "Stop timer",
+        "reset": "Reset timer",
+        "controls": "Timer controls",
+        "complete": "Focus session complete",
+        "ring": "Ring",
+        "bar": "Bar",
+        "digits": "Digits",
+        "top": "Top",
+        "bottom": "Bottom",
+    },
+    "footer": {
+        "previous": "Previous",
+        "next": "Next",
+    },
+    "navigation": {
+        "label": "Navigation",
+    },
+    "help": {
+        "title": "Keyboard shortcuts",
+    },
+}
+
+# Phase 7 - flat alias -> nested i18n group/child path. Keeps the documented
+# one-level `i18n:` block (`search_placeholder`, `toc_title`, `back_to_top`)
+# working while the JS consumes the nested shape above.
+_NEOABS_I18N_FLAT_ALIASES = {
+    "search_placeholder": ("search", "placeholder"),
+    "search_results": ("search", "results"),
+    "search_no_results": ("search", "noResults"),
+    "search_start_typing": ("search", "startTyping"),
+    "search_loading": ("search", "loading"),
+    "search_load_error": ("search", "loadError"),
+    "search_suggestions": ("search", "suggestions"),
+    "toc_title": ("toc", "title"),
+    "back_to_top": ("toc", "backToTop"),
+    "copy_to_clipboard": ("clipboard", "copy"),
+    "copied_to_clipboard": ("clipboard", "copied"),
+    "copy_link": ("clipboard", "copyLink"),
+    "link_copied": ("clipboard", "linkCopied"),
+    "comments_title": ("comments", "title"),
+    "skip_to_content": ("a11y", "skipToContent"),
+    "breadcrumb_label": ("a11y", "breadcrumb"),
+    "previous_page": ("footer", "previous"),
+    "next_page": ("footer", "next"),
+}
+
+# Phase 7 - breadcrumbs. A trail above the content top whenever a page has
+# ancestors; the toggle ships ON so nothing has to be configured.
+_NEOABS_DEFAULT_BREADCRUMBS = {"show": True}
+_NEOABS_BREADCRUMBS_BOOLS = ("show",)
+
+# Phase 7 - PWA identity. The plugin auto-generates `manifest.webmanifest` so a
+# docs build is installable with the service worker the theme already ships.
+# `theme_color` / `start_url` fall back to `extra.neoabs_theme_color` /
+# `site_url`; icons resolve from the local logo. Ships ON by default (a logo-less
+# site simply gets a manifest without an icon list).
+_NEOABS_DEFAULT_PWA = {
+    "manifest": True,
+    "display": "standalone",
+    "icons": True,
+    "theme_color": "",
+    "background_color": "#111114",
+    "start_url": "",
+}
+_NEOABS_PWA_BOOLS = ("manifest", "icons")
+_NEOABS_PWA_DISPLAYS = ("standalone", "fullscreen", "minimal-ui", "browser")
+
 # Allowed enums / key sets for the AI reader so a typo fails the build loudly.
 _NEOABS_AI_READER_URL_STYLES = ("sidecar", "inline")
 _NEOABS_AI_READER_BOOLS = (
@@ -651,6 +825,25 @@ def _deep_merge(defaults, user):
             else:
                 merged[key] = value
     return merged
+
+
+def _normalize_i18n_overrides(provided):
+    """Fold the concise flat alias keys (`theme.neoabs.i18n.search_placeholder`)
+    into the nested groups the JS consumes (`search.placeholder`) so both the
+    documented one-level block and the full nested form produce the same shape."""
+    normalized = {}
+    if not isinstance(provided, dict):
+        return normalized
+    for key, value in provided.items():
+        alias = _NEOABS_I18N_FLAT_ALIASES.get(key)
+        if alias is not None:
+            group, child = alias
+            normalized.setdefault(group, {})[child] = value
+        elif isinstance(value, dict):
+            normalized[key] = value
+        else:
+            normalized[key] = value
+    return normalized
 
 
 def _css_safe_url(value):
@@ -1366,6 +1559,71 @@ _NEOABS_ANIMATION_VALUES = ("normal", "reduced", "none")
 _NEOABS_BORDER_VALUES = ("none", "thin", "thick")
 
 
+def _validate_i18n(i18n):
+    """Validate a merged `theme.neoabs.i18n` mapping. Values are nested string
+    groups (`search.placeholder`); a top-level scalar is a typo'd flat alias and
+    fails the build loudly so no dead config key survives."""
+    if not isinstance(i18n, dict):
+        raise ConfigurationError("theme.neoabs.i18n must be a mapping.")
+
+    for key, value in i18n.items():
+        if isinstance(value, dict):
+            for child_key, child_value in value.items():
+                if not isinstance(child_value, str):
+                    raise ConfigurationError(
+                        f"theme.neoabs.i18n.{key}.{child_key} must be a string."
+                    )
+            continue
+        if isinstance(value, str):
+            raise ConfigurationError(
+                "theme.neoabs.i18n contains an unknown flat key "
+                f"{key!r}; supported flat keys: "
+                f"{', '.join(sorted(_NEOABS_I18N_FLAT_ALIASES))}."
+            )
+        raise ConfigurationError(
+            f"theme.neoabs.i18n.{key} must be a string or a mapping."
+        )
+
+
+def _validate_breadcrumbs(breadcrumbs):
+    """Validate a merged `theme.neoabs.breadcrumbs` mapping, raising a clear
+    MkDocs configuration error for a malformed `show` toggle."""
+    if not isinstance(breadcrumbs, dict):
+        raise ConfigurationError("theme.neoabs.breadcrumbs must be a mapping.")
+
+    for field in _NEOABS_BREADCRUMBS_BOOLS:
+        value = breadcrumbs.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.breadcrumbs.{field} must be a boolean."
+            )
+
+
+def _validate_pwa(pwa):
+    """Validate a merged `theme.neoabs.pwa` mapping. `manifest`/`icons` gates
+    the generated manifest surface; `display` must be a valid web-app display
+    mode so the emitted manifest can never be malformed."""
+    if not isinstance(pwa, dict):
+        raise ConfigurationError("theme.neoabs.pwa must be a mapping.")
+
+    for field in _NEOABS_PWA_BOOLS:
+        value = pwa.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(f"theme.neoabs.pwa.{field} must be a boolean.")
+
+    display = pwa.get("display")
+    if display not in (None,) + _NEOABS_PWA_DISPLAYS:
+        raise ConfigurationError(
+            "theme.neoabs.pwa.display must be one of "
+            f"{sorted(_NEOABS_PWA_DISPLAYS)}; got {display!r}."
+        )
+
+    for field in ("theme_color", "background_color", "start_url"):
+        value = pwa.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(f"theme.neoabs.pwa.{field} must be a string.")
+
+
 def _coerce_bool(value, label):
     """Coerce YAML-ish booleans (true/false, 1/0, on/off, yes/no) to ``bool``."""
     if isinstance(value, bool):
@@ -1482,6 +1740,9 @@ class NeoAbsPlugin(BasePlugin):
         ("announcement_bar", Type(dict)),
         ("cookie_consent", Type(dict)),
         ("comments", Type(dict)),
+        ("i18n", Type(dict)),
+        ("breadcrumbs", Type(dict)),
+        ("pwa", Type(dict)),
         ("custom_css", Type(list)),
         ("custom_js", Type(list)),
     ]
@@ -1696,6 +1957,40 @@ class NeoAbsPlugin(BasePlugin):
         neoabs["comments"] = comments
         theme["neoabs"] = neoabs
 
+        # Phase 7 - UI-string i18n. Defaults carry the complete English chrome
+        # string set; author overrides (nested groups or the flat aliases) are
+        # normalized, deep-merged and validated so a typo fails the build.
+        provided_i18n = neoabs.get("i18n")
+        if not isinstance(provided_i18n, dict):
+            provided_i18n = {}
+        i18n = _deep_merge(
+            _NEOABS_DEFAULT_I18N, _normalize_i18n_overrides(provided_i18n)
+        )
+        _validate_i18n(i18n)
+        neoabs["i18n"] = i18n
+        theme["neoabs"] = neoabs
+
+        # Phase 7 - breadcrumbs. Renders above the content top whenever a page
+        # has ancestors; the toggle ships ON by default.
+        provided_breadcrumbs = neoabs.get("breadcrumbs")
+        if not isinstance(provided_breadcrumbs, dict):
+            provided_breadcrumbs = {}
+        breadcrumbs_cfg = _deep_merge(_NEOABS_DEFAULT_BREADCRUMBS, provided_breadcrumbs)
+        _validate_breadcrumbs(breadcrumbs_cfg)
+        neoabs["breadcrumbs"] = breadcrumbs_cfg
+        theme["neoabs"] = neoabs
+
+        # Phase 7 - PWA identity. Auto-generated manifest + app meta ships ON by
+        # default; theme_color/start_url/icons fall back to site config when the
+        # author leaves them empty.
+        provided_pwa = neoabs.get("pwa")
+        if not isinstance(provided_pwa, dict):
+            provided_pwa = {}
+        pwa = _deep_merge(_NEOABS_DEFAULT_PWA, provided_pwa)
+        _validate_pwa(pwa)
+        neoabs["pwa"] = pwa
+        theme["neoabs"] = neoabs
+
         # Phase 6 - consent gating. NeoAbs ships no trackers, so the consent
         # banner renders only when an integration that could collect personal
         # data is actually configured: `theme.analytics.gtag` (Google Analytics)
@@ -1832,6 +2127,9 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_cookie_consent"] = cookie_consent
         extra["neoabs_comments"] = comments
         extra["neoabs_consent_needed"] = consent_needed
+        extra["neoabs_i18n"] = i18n
+        extra["neoabs_breadcrumbs"] = breadcrumbs_cfg
+        extra["neoabs_pwa"] = pwa
         extra["neoabs_site_url"] = raw_site_url
 
         # Phase 1: collect user-supplied design tokens. Only values the author
@@ -1958,6 +2256,208 @@ class NeoAbsPlugin(BasePlugin):
                     return path
         return None
 
+    def _pwa_manifest(self, config, pwa):
+        """Build the PWA manifest dict. `theme_color` / `start_url` fall back to
+        `extra.neoabs_theme_color` / `site_url`; the icon list resolves from the
+        site logo — a local one is used when available, otherwise the first
+        remote logo/favicon is fetched at build time into the site dir."""
+        extra = config.get("extra") or {}
+        site_name = config.get("site_name") or "NeoAbs"
+        site_url = (config.get("site_url") or "").rstrip("/")
+        start_url = (pwa.get("start_url") or "").strip() or site_url or "/"
+        theme_color = (
+            str(pwa.get("theme_color") or "").strip()
+            or str(extra.get("neoabs_theme_color") or "").strip()
+            or str(pwa.get("background_color") or "").strip()
+        )
+        manifest = {
+            "name": site_name,
+            "short_name": site_name,
+            "start_url": start_url,
+            "display": pwa.get("display") or "standalone",
+            "background_color": pwa.get("background_color") or "#111114",
+        }
+        if theme_color:
+            manifest["theme_color"] = theme_color
+        if pwa.get("icons"):
+            icon = self._pwa_icon(config)
+            if icon:
+                manifest["icons"] = [icon]
+        return manifest
+
+    def _pwa_icon(self, config):
+        """Resolve one manifest icon entry, or ``None``.
+
+        Priority is the same logo chain as the social cards (``extra
+        .neoabs_logo_light`` → ``extra.neoabs_logo_dark`` → ``theme.logo``) with
+        ``theme.favicon`` as a final fallback. Local files are used as-is; a
+        `http(s)://` logo is fetched dynamically at build time into the site dir
+        (the remote value stays untouched — no round-trip rewrite of any URL).
+        """
+        docs_dir = config.get("docs_dir") or ""
+        site_dir = config.get("site_dir") or ""
+        theme = config.get("theme") or {}
+        extra = config.get("extra") or {}
+        candidates = [
+            extra.get("neoabs_logo_light"),
+            extra.get("neoabs_logo_dark"),
+            theme.get("logo"),
+            theme.get("favicon"),
+        ]
+        for candidate in candidates:
+            if not candidate:
+                continue
+            candidate = str(candidate)
+            if re.match(r"^(https?://|data:)", candidate):
+                continue
+            for directory in (site_dir, docs_dir):
+                path = os.path.join(directory, candidate)
+                if os.path.isfile(path):
+                    rel = os.path.relpath(path, site_dir).replace("\\", "/")
+                    return self._manifest_icon(rel, path)
+        remote = [
+            str(candidate)
+            for candidate in candidates
+            if candidate and str(candidate).startswith(("http://", "https://"))
+        ]
+        for index, url in enumerate(remote):
+            rel, path = self._pwa_fetch_icon(url, site_dir, index)
+            if rel and path:
+                return self._manifest_icon(rel, path)
+        return None
+
+    def _manifest_icon(self, rel, path):
+        """Build the manifest icon dict for a resolved local file, with the
+        MIME type and pixel size read from the actual bytes (SVG → ``any``)."""
+        mime, sizes = self._manifest_icon_info(path)
+        icon = {"src": rel, "type": mime or "image/svg+xml", "purpose": "any"}
+        if sizes:
+            icon["sizes"] = sizes
+        return icon
+
+    def _manifest_icon_info(self, path):
+        """Best-effort ``(mime, sizes)`` detection from the file header.
+
+        ``sizes`` is ``"any"`` for SVG, a ``WxH`` string for PNG/JPEG/GIF, and
+        an empty string when the dimensions cannot be read cheaply."""
+        with open(path, "rb") as handle:
+            head = handle.read(64)
+        if head[:8] == b"\x89PNG\r\n\x1a\n":
+            width, height = struct.unpack(">II", head[16:24])
+            return "image/png", f"{width}x{height}"
+        if head[:2] == b"\xff\xd8":
+            width, height = self._jpeg_size(path)
+            if width and height:
+                return "image/jpeg", f"{width}x{height}"
+            return "image/jpeg", ""
+        if head[:6] in (b"GIF87a", b"GIF89a"):
+            width, height = struct.unpack("<HH", head[6:10])
+            return "image/gif", f"{width}x{height}"
+        if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+            return "image/webp", ""
+        if head[:4] == b"\x00\x00\x01\x00":
+            return "image/x-icon", ""
+        if head.lstrip().lower().startswith(b"<svg") or b"<svg" in head:
+            return "image/svg+xml", "any"
+        mime, _ = mimetypes.guess_type(path)
+        return mime or "", ""
+
+    def _jpeg_size(self, path):
+        """Read width/height from the first SOF marker of a JPEG file."""
+        width = height = None
+        with open(path, "rb") as handle:
+            handle.read(2)
+            while True:
+                chunk = handle.read(4)
+                if len(chunk) < 4 or chunk[0] != 0xFF:
+                    break
+                code = chunk[1]
+                if code in (0xC0, 0xC1, 0xC2, 0xC3):
+                    data = handle.read(5)
+                    if len(data) < 5:
+                        break
+                    height, width = struct.unpack(">HH", data[1:5])
+                    break
+                length = struct.unpack(">H", chunk[2:4])[0]
+                if length < 2:
+                    break
+                handle.seek(length - 2, 1)
+        return width or None, height or None
+
+    def _pwa_fetch_icon(self, url, site_dir, index):
+        """Download a remote logo into ``site_dir/assets/`` and return
+        ``(rel, path)``. Never raises: a failure logs a warning and returns
+        ``(None, None)`` so the manifest is emitted without icons."""
+        ext = self._url_ext(url)
+        rel = f"assets/manifest-icon{index}{ext}"
+        dest = os.path.join(site_dir, *rel.split("/"))
+        try:
+            request = urllib.request.Request(
+                url,
+                headers={"User-Agent": "mkdocs-neoabs/+pwa-icon"},
+            )
+            with urllib.request.urlopen(
+                request, timeout=_PWA_ICON_FETCH_TIMEOUT
+            ) as response:
+                data = response.read()
+            if not data:
+                return None, None
+        except (OSError, ValueError):
+            # URLError/HTTPError/TimeoutError are OSError subclasses; a bad TLS
+            # handshake or truncated body also lands here. Never fail the build.
+            _AI_LOGGER.warning(
+                "neoabs pwa: could not fetch the manifest icon from %s at build "
+                "time — manifest.webmanifest emitted without icons.",
+                url,
+            )
+            return None, None
+        if not ext:
+            # Extensionless URL: derive one from the actual bytes so the stored
+            # artifact gets a honest suffix (SVG stays SVG, PNG stays PNG).
+            ext = self._ext_from_mime(self._sniff_mime(data))
+            rel = f"assets/manifest-icon{index}{ext}"
+            dest = os.path.join(site_dir, *rel.split("/"))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "wb") as handle:
+            handle.write(data)
+        return rel, dest
+
+    def _url_ext(self, url):
+        """File extension (with dot) of a URL's path, else ``""``."""
+        path = url.split("#", 1)[0].split("?", 1)[0]
+        _, ext = posixpath.splitext(posixpath.basename(path))
+        return ext.lower() if ext else ""
+
+    @staticmethod
+    def _ext_from_mime(mime):
+        """Map a MIME type to a file extension for stored fetch artifacts."""
+        return {
+            "image/svg+xml": ".svg",
+            "image/png": ".png",
+            "image/jpeg": ".jpg",
+            "image/gif": ".gif",
+            "image/webp": ".webp",
+            "image/x-icon": ".ico",
+        }.get(mime, ".png")
+
+    @staticmethod
+    def _sniff_mime(data):
+        """MIME type guessed from the leading bytes of an image payload."""
+        head = data[:64]
+        if head[:8] == b"\x89PNG\r\n\x1a\n":
+            return "image/png"
+        if head[:2] == b"\xff\xd8":
+            return "image/jpeg"
+        if head[:6] in (b"GIF87a", b"GIF89a"):
+            return "image/gif"
+        if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+            return "image/webp"
+        if head[:4] == b"\x00\x00\x01\x00":
+            return "image/x-icon"
+        if head.lstrip().lower().startswith(b"<svg") or b"<svg" in head:
+            return "image/svg+xml"
+        return ""
+
     # -- Phase 19: AI-readable content mode -----------------------------------
 
     def on_post_page(self, output, *, page, config):
@@ -2032,6 +2532,18 @@ class NeoAbsPlugin(BasePlugin):
                     description=entry["description"],
                     logo_path=logo_path,
                 )
+
+        # Phase 7: auto-generate `manifest.webmanifest` (name, icons,
+        # theme_color, display: standalone) so the docs build is installable
+        # with the service worker the theme ships. Off only when
+        # `pwa.manifest` is false.
+        pwa = extra.get("neoabs_pwa") or _NEOABS_DEFAULT_PWA
+        if pwa.get("manifest"):
+            theme_site_dir = config["site_dir"]
+            theme_manifest_dest = os.path.join(theme_site_dir, "manifest.webmanifest")
+            os.makedirs(theme_site_dir, exist_ok=True)
+            with open(theme_manifest_dest, "w", encoding="utf-8") as handle:
+                json.dump(self._pwa_manifest(config, pwa), handle, indent=2)
 
         extra = config.get("extra") or {}
         ai_reader = extra.get("neoabs_ai_reader") or _NEOABS_DEFAULT_AI_READER

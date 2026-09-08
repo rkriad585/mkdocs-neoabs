@@ -1,5 +1,6 @@
 {% set _comp = config.extra.neoabs_components | default({}) %}
 {% set _ct_cfg = config.extra.neoabs_content if (config.extra and config.extra.neoabs_content is mapping) else {} %}
+{% set _i18n = config.extra.neoabs_i18n if (config.extra and config.extra.neoabs_i18n is mapping) else {} %}
 {# Phase 13: page-level front-matter overrides. A page may declare an optional
    `neoabs:` block in its YAML front matter (`page.meta.neoabs`) to override
    theme settings for that page only. Only the keys named here take effect;
@@ -252,12 +253,21 @@
     {% set _social_cfg = config.extra.neoabs_social_cards | default({}) %}
     {% set _social_enabled = _social_cfg.enabled | default(true) %}
     {% set _social_jsonld = _social_enabled and (_social_cfg.jsonld is not sameas false) %}
+    {% set _pwa_cfg = config.extra.neoabs_pwa %}
+    {% set _pwa_active = _pwa_cfg is mapping and (_pwa_cfg.manifest | default(true)) %}
     {% if _brand_theme_color %}
     <meta name="theme-color" content="{{ _brand_theme_color }}">
     {% endif %}
     {% if _brand_manifest %}
     {% set _brand_manifest_url = _brand_manifest if _brand_manifest.startswith("http") else (_brand_manifest | url if _brand_manifest else '') %}
     <link rel="manifest" href="{{ _brand_manifest_url }}">
+    {% elif _pwa_active %}
+    <link rel="manifest" href="{{ 'manifest.webmanifest' | url }}">
+    {% endif %}
+    {% if _pwa_active %}
+    <meta name="application-name" content="{{ config.site_name }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     {% endif %}
     {% if _brand_og_image or _brand_twitter %}
     <meta property="og:type" content="website">
@@ -577,7 +587,7 @@
 
     {% block skip_to_content %}
     <a class="neoabs-skip" href="#neoabs-content" tabindex="0">
-      Skip to content
+      {{ _i18n.get("a11y", {}).get("skipToContent", "Skip to content") }}
     </a>
     {% endblock %}
 
@@ -596,6 +606,24 @@
 
       <main class="neoabs-main{% if _anim_scroll %} neoabs-animate-reveal{% endif %}" id="neoabs-content" tabindex="-1">
         <article class="neoabs-article">
+          {% if page and page.ancestors and (config.extra.neoabs_breadcrumbs.show | default(true)) %}
+          <nav class="neoabs-breadcrumbs" aria-label="{{ _i18n.get('a11y', {}).get('breadcrumb', 'Breadcrumb') }}">
+            {% if config.site_url %}
+            <a class="neoabs-breadcrumbs__link" href="{{ config.site_url }}">{{ config.site_name }}</a>
+            {% endif %}
+            {% for _anc in page.ancestors %}
+            {% if _anc.title and _anc.url %}
+            <span class="neoabs-breadcrumbs__sep" aria-hidden="true">/</span>
+            <a class="neoabs-breadcrumbs__link" href="{{ _anc.url | url }}">{{ _anc.title }}</a>
+            {% elif _anc.title %}
+            <span class="neoabs-breadcrumbs__sep" aria-hidden="true">/</span>
+            <span class="neoabs-breadcrumbs__current">{{ _anc.title }}</span>
+            {% endif %}
+            {% endfor %}
+            <span class="neoabs-breadcrumbs__sep" aria-hidden="true">/</span>
+            <span class="neoabs-breadcrumbs__current">{{ page.title | default('') }}</span>
+          </nav>
+          {% endif %}
           {% block content %}
           {% if _comp.content.show | default(true) %}
           <div class="neoabs-content" data-md-component="content">
@@ -671,22 +699,7 @@
         "comments": {{ config.extra.neoabs_comments | default({}) | tojson }},
         "consent_needed": {{ config.extra.neoabs_consent_needed | default(false) | tojson }},
         "repo_url": {{ config.repo_url | default('') | string | tojson }},
-        "translations": {
-          "clipboard": {
-            "copy": "Copy to clipboard",
-            "copied": "Copied to clipboard"
-          },
-          "search": {
-            "placeholder": "Search",
-            "results": "Results",
-            "noResults": "No results found",
-            "startTyping": "Start typing to search...",
-            "loadError": "Search index could not be loaded."
-          },
-          "toc": {
-            "backToTop": "Back to top"
-          }
-        },
+        "translations": {{ _i18n | default({}) | tojson }},
         "search": "{{ 'search/search_index.json' | url }}",
         "neoabs_search": {
           "enabled": {{ _search_enabled | tojson }},

@@ -28,11 +28,14 @@
 
 {% macro render_nav_item(nav_item, depth=1) %}
 {% set active = "neoabs-nav__link--active" if nav_item.active %}
+{% set _nav_meta = nav_item.meta if (nav_item.is_page and nav_item.meta) else {} %}
+{% set _nav_icon = _nav_meta.get("icon") if (_nav_meta is mapping and _nav_meta.get("icon")) else "" %}
 {% if nav_item.children %}
 {% set _id = nav_id() %}
 <li class="neoabs-nav__item neoabs-nav__item--parent">
   {% if nav_item.url %}
   <a href="{{ nav_item.url | url }}" class="neoabs-nav__link {{ active }}" title="{{ nav_item.title }}" {% if nav_item.active %}aria-current="page"{% endif %}>
+    {% if _nav_icon %}<span class="neoabs-nav__icon" aria-hidden="true">{{ _nav_icon }}</span>{% endif %}
     {{ nav_item.title }}
   </a>
   {% elif _sbr_sections_show and _sbr_toggles %}
@@ -58,13 +61,14 @@
 {% else %}
 <li class="neoabs-nav__item {{ active }}">
   <a href="{{ nav_item.url | url }}" class="neoabs-nav__link {{ active }}" title="{{ nav_item.title }}" {% if nav_item.active %}aria-current="page"{% endif %}>
+    {% if _nav_icon %}<span class="neoabs-nav__icon" aria-hidden="true">{{ _nav_icon }}</span>{% endif %}
     {{ nav_item.title }}
   </a>
 </li>
 {% endif %}
 {% endmacro %}
 
-<nav class="neoabs-nav" data-md-component="nav" aria-label="Navigation"{% if not _sbr_sidebar_glass %} data-md-neoabs-sidebar-glass="false"{% endif %}{% if not _sbr_sidebar_blur %} data-md-neoabs-sidebar-blur="false"{% endif %}{% if not _sbr_active_border %} data-md-neoabs-nav-active-border="false"{% endif %}{% if _sbr_sections_style != "uppercase" %} data-md-neoabs-nav-sections-style="{{ _sbr_sections_style }}"{% endif %}{% if _sbr_style.parts %} style="{{ _sbr_style.parts | join('; ') }}"{% endif %}>
+<nav class="neoabs-nav" data-md-component="nav" aria-label="{{ _i18n.get('navigation', {}).get('label', 'Navigation') if (_i18n is mapping) else 'Navigation' }}"{% if not _sbr_sidebar_glass %} data-md-neoabs-sidebar-glass="false"{% endif %}{% if not _sbr_sidebar_blur %} data-md-neoabs-sidebar-blur="false"{% endif %}{% if not _sbr_active_border %} data-md-neoabs-nav-active-border="false"{% endif %}{% if _sbr_sections_style != "uppercase" %} data-md-neoabs-nav-sections-style="{{ _sbr_sections_style }}"{% endif %}{% if _sbr_style.parts %} style="{{ _sbr_style.parts | join('; ') }}"{% endif %}>
   <div class="neoabs-nav__scroll">
     <div class="neoabs-nav__inner">
       <ul class="neoabs-nav__list">

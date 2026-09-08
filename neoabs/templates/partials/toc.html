@@ -15,7 +15,7 @@
     "h6": _pg_toc_levels.h6 | default(_toc_levels_eff.get("h6", false))
   } %}
 {% endif %}
-{% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else "On this page" %}
+{% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else (_i18n.get("toc", {}).get("title", "On this page") if (_i18n is mapping) else "On this page") %}
 {% set _toc_ttl_style = _toc_title_style if (_toc_title_style is defined) else "uppercase" %}
 {% set _toc_gls = _toc_glass if (_toc_glass is defined) else true %}
 

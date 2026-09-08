@@ -17,9 +17,9 @@
 
       <div class="neoabs-search__results" id="neoabs-search-results">
         <div class="neoabs-search__status">
-          <p>Start typing to search...</p>
+          <p>{{ _i18n.get("search", {}).get("startTyping", "Start typing to search...") if (_i18n is mapping) else "Start typing to search..." }}</p>
         </div>
-        <div class="neoabs-search__list" role="listbox" aria-label="Search results"></div>
+        <div class="neoabs-search__list" role="listbox" aria-label="{{ _i18n.get("search", {}).get("results", "Search results") if (_i18n is mapping) else "Search results" }}"></div>
       </div>
 
       <!-- Phase 3: per-result "copy link" share button markup, cloned by

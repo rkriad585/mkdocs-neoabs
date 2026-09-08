@@ -161,6 +161,21 @@
     return ""
   }
 
+  // Phase 7 UI-string i18n. `t(path, fallback)` resolves a dotted path inside
+  // `_config.translations` (e.g. `t("search.noResults", "No results found")`),
+  // so author overrides from `theme.neoabs.i18n` reach every JS string. The
+  // fallback is used whenever the key is missing or empty.
+  function t(path, fallback) {
+    const translations = (_config && _config.translations) || {}
+    let node = translations
+    const parts = String(path).split(".")
+    for (let i = 0; i < parts.length; i += 1) {
+      if (!node || typeof node !== "object") return fallback
+      node = node[parts[i]]
+    }
+    return typeof node === "string" && node !== "" ? node : fallback
+  }
+
   // Phase 13: page-level front-matter overrides. The page's `neoabs:` front
   // matter is serialized into `#__config` under `config.page.neoabs`; fold the
   // `components`/`content` groups into the runtime config so every initializer
@@ -253,6 +268,12 @@
     } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
       applyColorScheme("default")
     }
+
+    // Dark-aware images: if no scheme was applied above (no saved preference
+    // and no matchMedia signal), make sure the images reflect whatever scheme
+    // the theme booted with from the server-rendered attribute.
+    const bootScheme = document.documentElement.getAttribute("data-md-color-scheme")
+    if (bootScheme) syncSchemeImages(bootScheme)
 
     const savedGlass = storageGet("glass-intensity")
     const attrGlass = document.documentElement.getAttribute("data-md-neoabs-glass")
@@ -571,8 +592,8 @@
     const shareIcon = (shareTpl && shareTpl.innerHTML) ||
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>'
     const shareLabels = ((config && config.translations && config.translations.clipboard) || {})
-    const shareTitle = shareLabels.copy || "Copy link"
-    const shareCopiedTitle = shareLabels.copied || "Link copied"
+    const shareTitle = shareLabels.copy || t("clipboard.copy", "Copy to clipboard")
+    const shareCopiedTitle = shareLabels.copied || t("clipboard.copied", "Copied to clipboard")
 
     const clearSuggestions = () => {
       if (suggestionsEl && suggestionsEl.parentNode) suggestionsEl.parentNode.removeChild(suggestionsEl)
@@ -582,7 +603,7 @@
       if (!suggestionsEl) {
         suggestionsEl = document.createElement("div")
         suggestionsEl.className = "neoabs-search__suggestions"
-        suggestionsEl.setAttribute("aria-label", "Search suggestions")
+        suggestionsEl.setAttribute("aria-label", t("search.suggestions", "Search suggestions"))
       }
       suggestionsEl.innerHTML = ""
       recent.forEach((q) => {
@@ -686,7 +707,7 @@
                 shareBtn.classList.remove("neoabs-search__result-share--copied")
               }, 1600)
             }).catch(() => {
-              neoabsToast("Copy link failed — clipboard unavailable", "error")
+              neoabsToast(t("clipboard.copyLinkFailed", "Copy link failed — clipboard unavailable"), "error")
             })
           })
           row.appendChild(shareBtn)
@@ -701,7 +722,7 @@
       currentResults = results
       listEl.innerHTML = ""
       if (!results.length) {
-        showStatus("No results found")
+        showStatus(t("search.noResults", "No results found"))
         return
       }
       const capped = results.length > sMaxResults ? results.slice(0, sMaxResults) : results
@@ -758,7 +779,7 @@
       document.body.style.overflow = ""
       searchToken++
       input.value = ""
-      showStatus("Start typing to search...")
+      showStatus(t("search.startTyping", "Start typing to search..."))
       // Phase 3: clean the shared deep-link (?q=) from the URL so re-opening
       // search does not re-inject a stale query.
       try {
@@ -787,11 +808,11 @@
             return
           }
         }
-        showStatus("Start typing to search...")
+        showStatus(t("search.startTyping", "Start typing to search..."))
         return
       }
       if (!searchReady || !searchWorker) {
-        showStatus("Loading search...")
+        showStatus(t("search.loading", "Loading search..."))
         return
       }
       pendingQuery = token
@@ -1049,7 +1070,7 @@
     if (!btn) {
       btn = document.createElement("button")
       btn.className = "neoabs-back-to-top"
-      btn.setAttribute("aria-label", contentSetting("content", "back_to_top_label", "Back to top"))
+      btn.setAttribute("aria-label", contentSetting("content", "back_to_top_label", t("toc.backToTop", "Back to top")))
       btn.setAttribute("type", "button")
       btn.innerHTML =
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -1768,7 +1789,7 @@
       ov.className = "neoabs-zoom"
       ov.setAttribute("role", "dialog")
       ov.setAttribute("aria-modal", "true")
-      ov.setAttribute("aria-label", "Image preview")
+      ov.setAttribute("aria-label", t("zoom.preview", "Image preview"))
 
       const stage = document.createElement("div")
       stage.className = "neoabs-zoom__stage"
@@ -1782,16 +1803,16 @@
       const caption = document.createElement("div")
       caption.className = "neoabs-zoom__caption"
 
-      const close = makeBtn("neoabs-zoom__btn neoabs-zoom__close", "\u00d7", "Close preview")
-      const prev = makeBtn("neoabs-zoom__btn neoabs-zoom__prev", "\u2039", "Previous image")
-      const next = makeBtn("neoabs-zoom__btn neoabs-zoom__next", "\u203a", "Next image")
+      const close = makeBtn("neoabs-zoom__btn neoabs-zoom__close", "\u00d7", t("zoom.close", "Close preview"))
+      const prev = makeBtn("neoabs-zoom__btn neoabs-zoom__prev", "\u2039", t("zoom.previous", "Previous image"))
+      const next = makeBtn("neoabs-zoom__btn neoabs-zoom__next", "\u203a", t("zoom.next", "Next image"))
 
       const tools = document.createElement("div")
       tools.className = "neoabs-zoom__tools"
-      const zoomin = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomin", "\u002b", "Zoom in")
-      const zoomout = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomout", "\u2212", "Zoom out")
-      const copy = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__copy", "\u29c9", "Copy image")
-      const download = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__download", "\u2193", "Download image")
+      const zoomin = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomin", "\u002b", t("zoom.zoomIn", "Zoom in"))
+      const zoomout = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__zoomout", "\u2212", t("zoom.zoomOut", "Zoom out"))
+      const copy = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__copy", "\u29c9", t("zoom.copyImage", "Copy image"))
+      const download = makeBtn("neoabs-zoom__btn neoabs-zoom__tool neoabs-zoom__download", "\u2193", t("zoom.downloadImage", "Download image"))
       const state = document.createElement("span")
       state.className = "neoabs-zoom__state"
       state.textContent = "100%"
@@ -2184,7 +2205,7 @@
       if (img.closest("a")) return
       img.tabIndex = 0
       img.setAttribute("role", "button")
-      img.setAttribute("aria-label", "Preview image")
+      img.setAttribute("aria-label", t("zoom.preview", "Preview image"))
       img.addEventListener("click", function (e) {
         e.preventDefault()
         show(i)
@@ -3077,7 +3098,7 @@
     modal = document.createElement("div")
     modal.className = "neoabs-keyboard-help neoabs-keyboard-help--visible"
     modal.setAttribute("role", "dialog")
-    modal.setAttribute("aria-label", "Keyboard shortcuts")
+    modal.setAttribute("aria-label", t("help.title", "Keyboard shortcuts"))
 
     const rows = keyboardHelpRows().map((s) =>
       '<div class="neoabs-keyboard-help__row">' +
@@ -3301,7 +3322,7 @@
     const btn = document.createElement("button")
     btn.className = "neoabs-notes-btn"
     btn.type = "button"
-    btn.textContent = "Notes"
+    btn.textContent = t("notes.notes", "Notes")
     btn.setAttribute("aria-haspopup", "true")
     btn.setAttribute("aria-controls", "neoabs-notes-panel")
     btn.setAttribute("aria-expanded", "false")
@@ -3309,16 +3330,16 @@
     const panel = document.createElement("aside")
     panel.className = "neoabs-notes-panel"
     panel.id = "neoabs-notes-panel"
-    panel.setAttribute("aria-label", "Notes")
+    panel.setAttribute("aria-label", t("notes.notes", "Notes"))
 
     const head = document.createElement("div")
     head.className = "neoabs-notes-panel__head"
     const title = document.createElement("span")
-    title.textContent = "Notes"
+    title.textContent = t("notes.notes", "Notes")
     const close = document.createElement("button")
     close.type = "button"
     close.textContent = "×"
-    close.setAttribute("aria-label", "Close notes")
+    close.setAttribute("aria-label", t("notes.close", "Close notes"))
     head.appendChild(title)
     head.appendChild(close)
 
@@ -3326,15 +3347,15 @@
     tools.className = "neoabs-notes-panel__tools"
     const btnAdd = document.createElement("button")
     btnAdd.type = "button"
-    btnAdd.textContent = "+ Add note"
+    btnAdd.textContent = t("notes.add", "+ Add note")
     btnAdd.className = "neoabs-notes-panel__add"
     const btnMd = document.createElement("button")
     btnMd.type = "button"
-    btnMd.textContent = "Export .md"
+    btnMd.textContent = t("notes.exportMd", "Export .md")
     btnMd.className = "neoabs-notes-panel__export"
     const btnJson = document.createElement("button")
     btnJson.type = "button"
-    btnJson.textContent = "Export .json"
+    btnJson.textContent = t("notes.exportJson", "Export .json")
     btnJson.className = "neoabs-notes-panel__export"
     tools.appendChild(btnAdd)
     tools.appendChild(btnMd)
@@ -3378,7 +3399,7 @@
       b.style.background = c
       b.style.borderColor = c
       b.dataset.color = c
-      b.setAttribute("aria-label", "Color " + c)
+      b.setAttribute("aria-label", t("notes.colorPrefix", "Color ") + c)
       b.addEventListener("click", () => {
         activeColor = c
         const all = document.querySelectorAll(".neoabs-note__color")
@@ -3391,7 +3412,7 @@
 
     const ta = document.createElement("textarea")
     ta.className = "neoabs-note__composer-input"
-    ta.placeholder = "Write a note…"
+    ta.placeholder = t("notes.placeholder", "Write a note…")
     ta.rows = 3
     if (existing && existing.note) ta.value = existing.note
 
@@ -3400,11 +3421,11 @@
     const cancel = document.createElement("button")
     cancel.type = "button"
     cancel.className = "neoabs-note__cancel"
-    cancel.textContent = "Cancel"
+    cancel.textContent = t("notes.cancel", "Cancel")
     const save = document.createElement("button")
     save.type = "button"
     save.className = "neoabs-note__save"
-    save.textContent = existing ? "Save changes" : "Save"
+    save.textContent = existing ? t("notes.saveChanges", "Save changes") : t("notes.save", "Save")
     actions.appendChild(cancel)
     actions.appendChild(save)
 
@@ -3560,7 +3581,7 @@
     if (!pageNotes.length) {
       const empty = document.createElement("p")
       empty.className = "neoabs-notes-panel__empty"
-      empty.textContent = "No notes yet."
+      empty.textContent = t("notes.empty", "No notes yet.")
       list.appendChild(empty)
       return
     }
@@ -3599,7 +3620,7 @@
       edit.addEventListener("click", () => notesCompose(it))
       const del = document.createElement("button")
       del.type = "button"
-      del.textContent = "Delete"
+      del.textContent = t("notes.delete", "Delete")
       del.className = "neoabs-note__delete"
       del.setAttribute("aria-label", "Delete note")
       del.addEventListener("click", () => notesDelete(it.id))
@@ -4206,7 +4227,7 @@ actionClusterEnsureUi(cfg)
     focusTimerStopInterval()
     const notifications = cfg.notifications || {}
     if (notifications.enabled) {
-      if (notifications.toast) neoabsToast("Focus session complete", "success")
+      if (notifications.toast) neoabsToast(t("timer.complete", "Focus session complete"), "success")
       if (notifications.sound) timerChime()
     }
     focusTimerRender(cfg)
@@ -4295,7 +4316,7 @@ actionClusterEnsureUi(cfg)
         widget.setAttribute("data-md-neoabs-timer-style", tocCfg.style)
         widget.style.setProperty("--neoabs-timer-progress", "0")
         widget.innerHTML =
-          '<div class="neoabs-timer-toc__label">Focus</div>' +
+          '<div class="neoabs-timer-toc__label">' + t("timer.focus", "Focus") + "</div>" +
           (tocCfg.style === "ring"
             ? '<svg class="neoabs-timer-toc__ring" viewBox="0 0 44 44" aria-hidden="true">' +
               '<circle class="neoabs-timer-toc__ring-bg" cx="22" cy="22" r="20"></circle>' +
@@ -4306,10 +4327,10 @@ actionClusterEnsureUi(cfg)
             : "") +
           '<div class="neoabs-timer-toc__digits' + (tocCfg.style === "digits" ? " neoabs-timer-toc__digits--large" : "") + '">' +
           formatTimer(cfg.default_minutes * 60000) + "</div>" +
-          '<div class="neoabs-timer-toc__controls" role="group" aria-label="Timer controls">' +
-            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="toggle" aria-label="Start timer">' + TIMER_CTRL_ICONS.play + "</button>" +
-            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="restart" aria-label="Restart timer" disabled>' + TIMER_CTRL_ICONS.restart + "</button>" +
-            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="cancel" aria-label="Cancel timer" disabled>' + TIMER_CTRL_ICONS.cancel + "</button>" +
+          '<div class="neoabs-timer-toc__controls" role="group" aria-label="' + t("timer.controls", "Timer controls") + '">' +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="toggle" aria-label="' + t("timer.start", "Start timer") + '">' + TIMER_CTRL_ICONS.play + "</button>" +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="restart" aria-label="' + t("timer.restart", "Restart timer") + '" disabled>' + TIMER_CTRL_ICONS.restart + "</button>" +
+            '<button type="button" class="neoabs-timer-toc__control" data-md-neoabs-timer-ctrl="cancel" aria-label="' + t("timer.stop", "Stop timer") + '" disabled>' + TIMER_CTRL_ICONS.cancel + "</button>" +
           "</div>"
         if (tocCfg.position === "top") inner.insertBefore(widget, inner.firstChild)
         else inner.appendChild(widget)
@@ -4349,10 +4370,10 @@ actionClusterEnsureUi(cfg)
     modal = document.createElement("div")
     modal.className = "neoabs-timer-settings neoabs-timer-settings--visible"
     modal.setAttribute("role", "dialog")
-    modal.setAttribute("aria-label", "Focus timer settings")
+    modal.setAttribute("aria-label", t("timer.settings", "Focus timer settings"))
 
-    const styles = { ring: "Ring", bar: "Bar", digits: "Digits" }
-    const positions = { top: "Top", bottom: "Bottom" }
+    const styles = { ring: t("timer.ring", "Ring"), bar: t("timer.bar", "Bar"), digits: t("timer.digits", "Digits") }
+    const positions = { top: t("timer.top", "Top"), bottom: t("timer.bottom", "Bottom") }
     const styleOptions = Object.keys(styles).map((value) =>
       '<option value="' + value + '"' + (cfg.toc.style === value ? " selected" : "") + ">" + styles[value] + "</option>"
     ).join("")
@@ -4364,34 +4385,34 @@ actionClusterEnsureUi(cfg)
       '<div class="neoabs-timer-settings__overlay"></div>' +
       '<div class="neoabs-timer-settings__panel">' +
         '<div class="neoabs-timer-settings__header">' +
-          '<span class="neoabs-timer-settings__title">Focus Timer</span>' +
-          '<button class="neoabs-timer-settings__close" aria-label="Close">&times;</button>' +
+          '<span class="neoabs-timer-settings__title">' + t("timer.title", "Focus Timer") + "</span>" +
+          '<button class="neoabs-timer-settings__close" aria-label="' + t("timer.close", "Close") + '">&times;</button>' +
         "</div>" +
         '<form class="neoabs-timer-settings__body">' +
           '<div class="neoabs-timer-settings__row">' +
-            '<label class="neoabs-timer-settings__label" for="neoabs-timer-duration">Session length (minutes)</label>' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-duration">' + t("timer.sessionLength", "Session length (minutes)") + "</label>" +
             '<input class="neoabs-timer-settings__control" type="number" id="neoabs-timer-duration" min="1" max="180" step="1" value="' + cfg.default_minutes + '" />' +
           "</div>" +
           '<div class="neoabs-timer-settings__row">' +
-            '<label class="neoabs-timer-settings__label" for="neoabs-timer-style">TOC timer style</label>' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-style">' + t("timer.tocStyle", "TOC timer style") + "</label>" +
             '<select class="neoabs-timer-settings__control" id="neoabs-timer-style">' + styleOptions + "</select>" +
           "</div>" +
           '<div class="neoabs-timer-settings__row">' +
-            '<label class="neoabs-timer-settings__label" for="neoabs-timer-position">TOC timer position</label>' +
+            '<label class="neoabs-timer-settings__label" for="neoabs-timer-position">' + t("timer.tocPosition", "TOC timer position") + "</label>" +
             '<select class="neoabs-timer-settings__control" id="neoabs-timer-position">' + positionOptions + "</select>" +
           "</div>" +
           '<div class="neoabs-timer-settings__check">' +
-            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-reading" ' + (cfg.reading.show ? "checked" : "") + " />Reading-mode chip</label>" +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-reading" ' + (cfg.reading.show ? "checked" : "") + " />" + t("timer.readingChip", "Reading-mode chip") + "</label>" +
           "</div>" +
           '<div class="neoabs-timer-settings__check">' +
-            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-toast" ' + (cfg.notifications.toast ? "checked" : "") + " />Toast on completion</label>" +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-toast" ' + (cfg.notifications.toast ? "checked" : "") + " />" + t("timer.toastNotify", "Toast on completion") + "</label>" +
           "</div>" +
           '<div class="neoabs-timer-settings__check">' +
-            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-sound" ' + (cfg.notifications.sound ? "checked" : "") + " />Chime on completion</label>" +
+            '<label class="neoabs-timer-settings__check-label"><input type="checkbox" id="neoabs-timer-sound" ' + (cfg.notifications.sound ? "checked" : "") + " />" + t("timer.chime", "Chime on completion") + "</label>" +
           "</div>" +
           '<div class="neoabs-timer-settings__actions">' +
-            '<button type="button" class="neoabs-timer-settings__cancel">Cancel</button>' +
-            '<button type="submit" class="neoabs-timer-settings__save">Start Session</button>' +
+            '<button type="button" class="neoabs-timer-settings__cancel">' + t("timer.cancel", "Cancel") + "</button>" +
+            '<button type="submit" class="neoabs-timer-settings__save">' + t("timer.startSession", "Start session") + "</button>" +
           "</div>" +
         "</form>" +
       "</div>"
@@ -4779,8 +4800,8 @@ actionClusterEnsureUi(cfg)
         '<div class="neoabs-repo-pop__head">'
         + '<span class="neoabs-repo-pop__name">' + repoPopoverEscape(slug.owner + "/" + slug.name) + "</span></div>"
         + '<div class="neoabs-repo-pop__body">'
-        + '<div class="neoabs-repo-pop__row"><span class="neoabs-repo-pop__k">Status</span>'
-        + '<span class="neoabs-repo-pop__v">' + repoPopoverEscape(msg || "No public data") + "</span></div></div>"
+        + '<div class="neoabs-repo-pop__row"><span class="neoabs-repo-pop__k">' + t("repo.status", "Status") + "</span>"
+        + '<span class="neoabs-repo-pop__v">' + repoPopoverEscape(msg || t("repo.noPublicData", "No public data")) + "</span></div></div>"
     }
 
     // Dismissible popover: the card stays open until the visitor dismisses it —
@@ -4901,7 +4922,7 @@ actionClusterEnsureUi(cfg)
         renderBody(repoData)
       }).catch(function () {
         loading = false
-        renderError("Unable to load repo data")
+        renderError(t("repo.loadError", "Unable to load repo data"))
       })
     }
 
@@ -4937,30 +4958,30 @@ actionClusterEnsureUi(cfg)
         + '<div class="neoabs-repo-pop__body">'
         + (popoverFieldOn("owner_bio") && ownerData.bio ? '<div class="neoabs-repo-pop__bio">' + repoPopoverEscape(ownerData.bio) + "</div>" : "")
         + buildRows([
-          { id: "author", k: "Author", v: authorLink },
-          { id: "followers", k: "Followers", v: ownerData.followers != null ? fmtCount(ownerData.followers) + " (" + ownerData.followers + ")" : null },
-          { id: "public_repos", k: "Public repos", v: ownerData.public_repos != null ? fmtCount(ownerData.public_repos) : null },
-          { id: "location", k: "Location", v: ownerData.location ? repoPopoverEscape(ownerData.location) : null },
-          { id: "stars", k: "Stars", v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
-          { id: "watchers", k: "Watchers", v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
-          { id: "forks", k: "Forks", v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
-          { id: "open_issues", k: "Open issues", v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
-          { id: "language", k: "Language", v: d.language || "—" },
-          { id: "license", k: "License", v: d.license
+          { id: "author", k: t("repo.author", "Author"), v: authorLink },
+          { id: "followers", k: t("repo.followers", "Followers"), v: ownerData.followers != null ? fmtCount(ownerData.followers) + " (" + ownerData.followers + ")" : null },
+          { id: "public_repos", k: t("repo.publicRepos", "Public repos"), v: ownerData.public_repos != null ? fmtCount(ownerData.public_repos) : null },
+          { id: "location", k: t("repo.location", "Location"), v: ownerData.location ? repoPopoverEscape(ownerData.location) : null },
+          { id: "stars", k: t("repo.stars", "Stars"), v: d.stargazers_count != null ? fmtCount(d.stargazers_count) + " (" + d.stargazers_count + ")" : "—" },
+          { id: "watchers", k: t("repo.watchers", "Watchers"), v: d.watchers_count != null ? fmtCount(d.watchers_count) + " (" + d.watchers_count + ")" : "—" },
+          { id: "forks", k: t("repo.forks", "Forks"), v: d.forks_count != null ? fmtCount(d.forks_count) : "—" },
+          { id: "open_issues", k: t("repo.openIssues", "Open issues"), v: d.open_issues_count != null ? fmtCount(d.open_issues_count) : "—" },
+          { id: "language", k: t("repo.language", "Language"), v: d.language || "—" },
+          { id: "license", k: t("repo.license", "License"), v: d.license
               ? (d.license_url
                   ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">' + repoPopoverEscape(d.license) + "</a>"
                   : repoPopoverEscape(d.license))
               : (d.license_url
-                  ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">None</a>'
-                  : "None") },
-          { id: "default_branch", k: "Default branch", v: d.default_branch || "—" },
-          { id: "commits", k: "Commits", v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
-          { id: "tags", k: "Tags", v: d.latest_tag ? "latest " + repoPopoverEscape(d.latest_tag) : "—" },
-          { id: "latest_commit", k: "Latest commit", v: (d.commit_sha ? d.commit_sha : "—") + (d.commit_date ? " · " + d.commit_date : "") },
-          { id: "commit_msg", k: "Last commit msg", v: d.commit_msg ? repoPopoverEscape(d.commit_msg) : "—" },
-          { id: "created", k: "Created", v: fmtDate(d.created_at) },
-          { id: "updated", k: "Last updated", v: fmtDate(d.updated_at) },
-          { id: "pushed", k: "Last pushed", v: fmtDate(d.pushed_at) }
+                  ? '<a href="' + repoPopoverEscape(d.license_url) + '" target="_blank" rel="noopener">' + t("repo.licenseNone", "None") + "</a>"
+                  : t("repo.licenseNone", "None")) },
+          { id: "default_branch", k: t("repo.defaultBranch", "Default branch"), v: d.default_branch || "—" },
+          { id: "commits", k: t("repo.commits", "Commits"), v: d.total_commits != null ? fmtCount(d.total_commits) : "—" },
+          { id: "tags", k: t("repo.tags", "Tags"), v: d.latest_tag ? t("repo.latestTag", "latest ") + repoPopoverEscape(d.latest_tag) : "—" },
+          { id: "latest_commit", k: t("repo.latestCommit", "Latest commit"), v: (d.commit_sha ? d.commit_sha : "—") + (d.commit_date ? " · " + d.commit_date : "") },
+          { id: "commit_msg", k: t("repo.commitMsg", "Last commit msg"), v: d.commit_msg ? repoPopoverEscape(d.commit_msg) : "—" },
+          { id: "created", k: t("repo.created", "Created"), v: fmtDate(d.created_at) },
+          { id: "updated", k: t("repo.updated", "Last updated"), v: fmtDate(d.updated_at) },
+          { id: "pushed", k: t("repo.pushed", "Last pushed"), v: fmtDate(d.pushed_at) }
         ])
         + "</div>"
 

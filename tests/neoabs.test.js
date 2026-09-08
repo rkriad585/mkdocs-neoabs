@@ -36,6 +36,7 @@ function makeNode() {
     setAttribute(attr, val) { this._attrs[attr] = String(val) },
     getAttribute(attr) { return this._attrs[attr] },
     hasAttribute(attr) { return attr in this._attrs },
+    removeAttribute(attr) { delete this._attrs[attr] },
     classList: {
       _c: new Set(),
       toggle(c, force) { const on = force !== undefined ? !!force : !this._c.has(c); on ? this._c.add(c) : this._c.delete(c); return on },
@@ -224,6 +225,7 @@ const documentStub = {
   },
   querySelectorAll(sel) {
     if (sel === "article .neoabs-typeset img") return _zoomImgs
+    if (sel === "img[data-md-scheme-dark][data-md-scheme-light]") return _schemeImgs
     return []
   },
   getElementById(id) {
@@ -263,6 +265,7 @@ const windowStub = {
 let _configEl = null
 let _typesetNode = null
 let _repoFixture = null
+let _schemeImgs = []
 
 // Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
 // harness can resolve relative paths the way a real browser does.
@@ -1102,6 +1105,75 @@ const repoDisabled = (() => {
 })()
 check("repo popover stays off when components.repo_popover.show is false", repoDisabled)
 _repoFixture = null
+
+// ============================================================================
+// Phase 7: i18n — theme.neoabs.i18n overrides swap UI strings read from
+// #__config.translations (repo popover labels here)
+// ============================================================================
+const i18nRepo = (() => {
+  const fixture = repoPopoverFixture()
+  _repoFixture = fixture
+  documentStub._handlers = {}
+  stored["neoabs-cache-repo-neoabs/mkdocs-docs"] =
+    JSON.stringify({ ts: Date.now(), data: repoSeedData })
+  const boot = bootIIFE({
+    location: { origin: "https://x", pathname: "/guide/", search: "", href: "https://x/guide/", hash: "" },
+    config: {
+      base: "/",
+      components: { repo_popover: { show: true } },
+      repo_url: "https://github.com/neoabs/mkdocs-docs",
+      neoabs_search: { enabled: false },
+      translations: { repo: { author: "Autor", followers: "Fans", stars: "Sterne" } },
+    },
+    searchDom: null,
+    stored: stored,
+    clipboard: false,
+  })
+  const html = boot && fixture.pop._neoabsRepoShow
+    ? (fixture.pop._neoabsRepoShow(), fixture.pop.innerHTML || "")
+    : ""
+  return html
+})()
+check(
+  "i18n overrides translate repo popover labels (author/followers/stars)",
+  i18nRepo.indexOf(">Autor<") !== -1 &&
+    i18nRepo.indexOf(">Fans<") !== -1 &&
+    i18nRepo.indexOf(">Sterne<") !== -1 &&
+    i18nRepo.indexOf(">Author<") === -1 &&
+    i18nRepo.indexOf(">Stars<") === -1
+)
+
+// ============================================================================
+// Phase 7: dark-aware images — when the theme boots without a saved scheme or
+// matchMedia signal, image srcs still follow the server-rendered scheme attr
+// ============================================================================
+const darkBoot = (() => {
+  const lightImg = makeNode()
+  lightImg.tagName = "IMG"
+  lightImg.setAttribute("data-md-scheme-light", "https://x/light.png")
+  lightImg.setAttribute("data-md-scheme-dark", "https://x/dark.png")
+  lightImg.setAttribute("src", "https://x/light.png")
+  const darkImg = makeNode()
+  darkImg.tagName = "IMG"
+  darkImg.setAttribute("data-md-scheme-light", "https://x/light.png")
+  darkImg.setAttribute("data-md-scheme-dark", "https://x/dark.png")
+  darkImg.setAttribute("src", "https://x/dark.png")
+  _schemeImgs = [lightImg, darkImg]
+  documentStub.documentElement.setAttribute("data-md-color-scheme", "default")
+  const ok = bootIIFE({
+    location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+    config: null,
+    searchDom: null,
+    stored: {},
+  })
+  _schemeImgs = []
+  documentStub.documentElement.removeAttribute("data-md-color-scheme")
+  return ok ? lightImg.getAttribute("src") : ""
+})()
+check(
+  "dark-aware image srcs follow the boot scheme when no preference is stored",
+  darkBoot === "https://x/light.png"
+)
 
 // ============================================================================
 // Link rebase: `site_url` (mkdocs.yml) falls back to localhost:{port} in dev

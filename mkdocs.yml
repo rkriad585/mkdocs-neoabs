@@ -8,6 +8,12 @@ site_url: https://rkriad585.github.io/mkdocs-neoabs
 repo_url: https://github.com/rkriad585/mkdocs-neoabs
 repo_name: rkriad585/mkdocs-neoabs
 
+# Intentionally not part of the nav: the auto-generated config reference is
+# pulled into Configuration via a snippets include, not linked as its own page.
+# Keeping it listed here silences the "page not included in nav" warning.
+not_in_nav: |
+  _config_ref.generated.md
+
 copyright: "&copy; 2025 rkriad585. Built with NeoAbs."
 
 theme:
@@ -749,6 +755,25 @@ theme:
     #     include_url: true             #   canonical URL of the page
     #     include_generated: true       #   build timestamp (UTC)
     #     include_version: true         #   theme version
+    # --- Phase 7: Identity & i18n (optional) ----------------------------------
+    # brand, chrome strings, breadcrumbs, nav icons, dark-aware images and the
+    # auto PWA manifest. i18n keys are flat aliases over the nested surfaces the
+    # client reads (search_, toc_, back_to_top, copy_to_clipboard, comments_title,
+    # skip_to_content, breadcrumb_label, previous_page/next_page); every key
+    # defaults to its English string. breadcrumbs/pwa ship ON and need nothing.
+    # i18n:
+    #   search_placeholder: "Partout dans la docs."
+    #   toc_title: "Sur cette page"
+    #   back_to_top: "Haut de page"
+    # breadcrumbs:
+    #   show: true                    # Auto trail above content when ancestors exist
+    # pwa:
+    #   manifest: true                # Emit manifest.webmanifest at the site root
+    #   display: "standalone"         #  standalone | fullscreen | minimal-ui | browser
+    #   icons: true                   # Local logo wins; a remote logo/favicon URL is fetched at build time
+    #   theme_color: ""               # Fallback: extra.neoabs_theme_color, then background_color
+    #   background_color: "#111114"
+    #   start_url: ""                 # Fallback: site_url, then "/"
 
 extra:
   neoabs_version: 21
@@ -805,7 +830,7 @@ plugins:
       # glass, dot_matrix, animation, border, colors, typography, spacing,
       # border_radius, transitions, shadows, components, header, footer,
       # sidebar, toc, search, keyboard, content, reading_mode, action_cluster,
-      # custom_css, custom_js.
+      # i18n, breadcrumbs, pwa, custom_css, custom_js.
       # glass: "medium"              # "light" | "medium" | "heavy" | "none"
       # dot_matrix: true             # Show the dot matrix overlay
       # animation: "normal"          # "normal" | "reduced" | "none"
@@ -859,6 +884,7 @@ nav:
     - Colors: design/colors.md
     - Typography: design/typography.md
     - Glass Effects: design/glass.md
+  - Identity & i18n: identity.md
   - Components:
     - Admonitions: components/admonitions.md
     - Notes: components/notes.md

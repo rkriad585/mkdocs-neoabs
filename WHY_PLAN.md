@@ -665,7 +665,7 @@ reference; docs (configuration.md, plugins/neoabs.md, components/engagement.md);
 
 ---
 
-### Phase 7 — Identity & i18n
+### Phase 7 — Identity & i18n ✅ (done)
 
 **Goal.** A brand-true, locale-aware product that feels app-like everywhere.
 
@@ -676,7 +676,7 @@ clean extension point beats "English only."
 `__config` (clipboard/search/toc). **Not shipped:** override merge, locale
 bundles, breadcrumbs, nav icons, dark-aware images, auto PWA manifest.
 
-#### 7a. UI-string i18n
+#### 7a. UI-string i18n ✅ (done)
 
 Centralize strings already in `__config.translations` and merge user overrides:
 
@@ -701,7 +701,7 @@ theme:
 
 Follow with an `i18n/` folder + `theme.language` mapping for en, fr, de, es, ja.
 
-#### 7b. Breadcrumbs, nav icons, dark-aware images
+#### 7b. Breadcrumbs, nav icons, dark-aware images ✅ (done)
 
 ```jinja
 {# breadcrumbs in content top #}
@@ -718,7 +718,7 @@ Follow with an `i18n/` folder + `theme.language` mapping for en, fr, de, es, ja.
 Dark-aware images (emits `_dark` variant when available) + optional inline nav
 icons via `attr_list` are CSS-first additions.
 
-#### 7c. Auto PWA manifest + app meta
+#### 7c. Auto PWA manifest + app meta ✅ (done)
 
 ```jinja
 {# base.html #}
@@ -736,6 +736,20 @@ already ship.
 
 **Acceptance.** `language` + `i18n` overrides swap chrome strings; manifest is
 auto-generated at build; breadcrumbs render when ancestors exist.
+
+**Done (verified).** Phase 7 implemented (uncommitted at the time of writing):
+plugin `("i18n"|"breadcrumbs"|"pwa", Type(dict))` scheme + defaults + validators,
+`_NEOABS_I18N_FLAT_ALIASES` override merge into `__config.translations`, and
+PWA manifest emission at build; `base.html` breadcrumbs (`page.ancestors`,
+`config.site_url` + ancestors + current page), auto `<link rel="manifest">` +
+app meta gated on the plugin, i18n-driven skip link; `nav.html` per-page
+`icon:` front-matter icons, i18n nav label; `toc.html`/`footer.html`/`search.html`
+string lookups; `neoabs.js` `t()` helper wired across search/back-to-top/clipboard/
+zoom/repo popover/notes/focus timer/keyboard help + dark-aware image boot
+fallback; `components.scss` breadcrumbs + nav-icon sections; a unified
+`docs/identity.md` + `mkdocs.yml` config reference + `icon:` demos;
+`tools/emit_config_reference.py` + regenerated reference; `npm test` green
+(39/39), `mkdocs build --strict` and `ruff check` clean.
 
 ---
 
