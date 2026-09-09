@@ -1,4 +1,4 @@
-<!-- generated: do not edit. Run `python tools/emit_config_reference.py` (2026-09-08). -->
+<!-- generated: do not edit. Run `python tools/emit_config_reference.py` (2026-09-09). -->
 ```yaml
 defaults:
   animation: normal
@@ -275,6 +275,7 @@ sections:
       title: Comments
     footer:
       next: Next
+      poweredBy: Powered by NeoAbs
       previous: Previous
     help:
       title: Keyboard shortcuts

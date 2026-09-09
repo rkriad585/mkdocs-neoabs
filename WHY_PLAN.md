@@ -209,14 +209,14 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 9 | Image lightbox, footnotes, code annotations | ✅ vanilla `initImageZoom` (overlay/keyboard), `footnotes` styled, custom `initCodeAnnotations` (text-node badge wrapping) | done |
 | 10 | Cookie consent, announcement bar, feedback ("was this helpful"?) | ✅ `feedback` (GitHub-issue-backed), `announcement_bar` (dismissable, localStorage), `cookie_consent` (privacy-first; banner only when a real integration is configured) | done |
 | 11 | Comments (giscus) | ✅ `comments` (opt-in giscus, consent-gated, palette-synced theme) | done |
-| 12 | i18n of UI strings, translations of chrome | 🟡 `language` + partial `translations`; no override merge | P7 |
+| 12 | i18n of UI strings, translations of chrome | ✅ `i18n` deep-merge (flat aliases + validation), breadcrumbs, nav icons, dark-aware images, PWA manifest | done |
 | 13 | Dark-aware images, breadcrumbs, nav icons | ❌ | P7 |
 | 14 | Auto PWA manifest + app meta | 🟡 optional `<link>`; no auto-gen, no iOS meta | P7 |
 | 15 | Prefetch on hover, lazy images, perf budget CI | ✅ prefetch 🟡 perf budget CI (`lighthouseci`+workflow shipped, needs runs) | P8 |
 | 16 | Asset bundling (cdn \| local \| bundle) / offline self-host | ✅ `assets.mode` cdn/local/bundle (on_files vendoring, inline critical CSS, revert-on-failure) | P8 |
 | 17 | Plugin compat guide + recipes | ✅ `integrations.md` + recipe CI job (proves all recipes) | P9 |
 | 18 | `neoabs new` scaffolding + `doctor` | ✅ `neoabs new` (P2) + `neoabs doctor` (P9) | P9 |
-| 19 | MkDocs 2.0 compat matrix + release automation | 🟡 GitHub Release ✅; no PyPI, no version matrix | P9 |
+| 19 | MkDocs 2.0 compat matrix + release automation | ✅ compat matrix (1.5.3/1.6.1/2.0.0.dev0) + GitHub Release + PyPI publish (OIDC) | done |
 | 20 | Showcase, benchmarks, funding, contributor path | ✅ benchmarks page (`extra.neoabs_showcase` footer credit), `FUNDING.yml` + Discussions, good-first-issues + translation onboarding, auto-changelog wired to releases | P10 |
 
 ---
