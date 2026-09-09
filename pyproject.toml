@@ -20,6 +20,12 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: JavaScript",
   "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
   "Topic :: Text Processing :: Markup :: HTML",
@@ -34,6 +40,7 @@ Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
 Documentation = "https://rkriad585.github.io/mkdocs-neoabs"
 Source = "https://github.com/rkriad585/mkdocs-neoabs"
 Issues = "https://github.com/rkriad585/mkdocs-neoabs/issues"
+Changelog = "https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md"
 
 [project.entry-points."mkdocs.themes"]
 neoabs = "neoabs.templates"

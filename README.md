@@ -452,32 +452,20 @@ make help       # Show all commands
 
 ---
 
-## Contributing
-
-Contributions are welcome. Please read [CONTRIBUTING.md](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CONTRIBUTING.md) for guidelines.
-
----
-
-## Security
-
-To report security vulnerabilities, please see [SECURITY.md](https://github.com/rkriad585/mkdocs-neoabs/blob/main/SECURITY.md).
-
----
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](https://github.com/rkriad585/mkdocs-neoabs/blob/main/LICENSE) for details.
-
-```
-MIT License
-
-Copyright (c) 2025 rkriad585
-```
-
----
-
 ## Acknowledgments
 
 - [MkDocs](https://www.mkdocs.org/) — the static site generator this theme is built for
 - [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [Space Mono](https://fonts.google.com/specimen/Space+Mono) — the typefaces used throughout the theme
 - Nothing Technology — for the NothingOS design identity
+
+---
+
+<div align="center">
+
+**Developed with ♥ by [rkriad585](https://github.com/rkriad585)**
+
+*Make documentation feel app-like — fast, private, distinctive.*
+
+[GitHub](https://github.com/rkriad585/mkdocs-neoabs) · [Docs](https://rkriad585.github.io/mkdocs-neoabs) · [Changelog](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md)
+
+</div>

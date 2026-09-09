@@ -1,0 +1,54 @@
+name: Compatibility (MkDocs versions)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "neoabs/**"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mkdocs: ["1.5.3", "1.6.1", "2.0.0.dev0"]
+    # 2.0.dev is a moving target - inform the matrix but never red it
+    continue-on-error: ${{ matrix.mkdocs == '2.0.0.dev0' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install MkDocs ${{ matrix.mkdocs }}
+        run: pip install "mkdocs==${{ matrix.mkdocs }}"
+
+      - name: Install NeoAbs
+        run: pip install -e .
+
+      - name: Scaffold a test project
+        run: neoabs new /tmp/neoabs-compat
+
+      - name: Verify versions
+        working-directory: /tmp/neoabs-compat
+        run: neoabs doctor
+
+      - name: Build with --strict
+        working-directory: /tmp/neoabs-compat
+        run: mkdocs build --strict
+
+      - name: Confirm pages rendered
+        run: |
+          test -f /tmp/neoabs-compat/site/index.html
+          echo "Compatibility check passed on mkdocs ${{ matrix.mkdocs }}"

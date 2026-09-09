@@ -1,0 +1,139 @@
+name: Integrations (recipes)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/plugins/integrations.md"
+      - ".github/workflows/integrations.yml"
+      - "neoabs/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recipes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "ci@example.com"
+
+      - name: Install NeoAbs and recipe plugins
+        run: |
+          pip install -e .
+          pip install \
+            mkdocs-git-revision-date-localized \
+            mkdocs-glightbox \
+            mkdocs-print-site \
+            mkdocs-section-index \
+            mkdocs-table-reader \
+            mkdocs-git-authors \
+            mkdocs-awesome-pages
+
+      - name: Scaffold recipe project
+        run: |
+          neoabs new /tmp/neoabs-recipes
+          mkdir -p /tmp/neoabs-recipes/docs/guide
+          printf '%s\n' \
+            '![logo](https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg){ width="120" }' \
+            '' \
+            'Welcome to the recipe site.' > /tmp/neoabs-recipes/docs/index.md
+
+      - name: Write guide and table sources
+        run: |
+          cat > /tmp/neoabs-recipes/docs/guide/README.md <<'EOF'
+          # Guide
+
+          Section landing page (makes the nav section clickable).
+          EOF
+          cat > /tmp/neoabs-recipes/docs/guide/usage.md <<'EOF'
+          # Usage
+
+          {! docs/table_data.md !}
+          EOF
+          cat > /tmp/neoabs-recipes/docs/table_data.md <<'EOF'
+          | Tool | Purpose |
+          | ---- | ------- |
+          | mkdocs-git-revision-date-localized | Last-updated date |
+          | mkdocs-table-reader | Inline tables from files |
+          EOF
+
+      - name: Apply combined recipe config
+        run: |
+          cat > /tmp/neoabs-recipes/mkdocs.yml <<'YAML'
+          site_name: Recipes
+          theme:
+            name: neoabs
+            neoabs:
+              meta:
+                enabled: true
+                show_last_updated: true
+                show_edit_on_github: false
+                last_updated_label: Last updated
+              content:
+                typography:
+                  image_lightbox: false
+          markdown_extensions:
+            - attr_list
+          plugins:
+            - awesome-pages:
+                collapse_single_pages: true
+                strict: false
+            - search
+            - git-revision-date-localized:
+                enabled: true
+                fallback_to_build_date: true
+                type: date
+            - git-authors:
+                show_email_address: false
+            - glightbox:
+                auto_caption: true
+            - section-index
+            - table-reader
+            - print-site:
+                add_to_navigation: true
+                print_page_path: print_page
+                theme: neoabs
+            - neoabs
+          YAML
+
+      - name: Commit scaffold (git plugins need history)
+        working-directory: /tmp/neoabs-recipes
+        run: |
+          git init -q
+          git add -A
+          git commit -q -m "init recipes"
+
+      - name: Build the recipe site
+        # Not --strict: mkdocs-section-index emits a benign theme-detection
+        # warning for any theme outside its internal allowlist (NeoAbs' nav
+        # renders section pages natively - proven by the assertions below).
+        working-directory: /tmp/neoabs-recipes
+        run: mkdocs build
+
+      - name: Prove the recipes rendered
+        run: |
+          test -f /tmp/neoabs-recipes/site/index.html || exit 1
+          test -f /tmp/neoabs-recipes/site/print_page/index.html || exit 1
+          grep -q "Last updated" /tmp/neoabs-recipes/site/guide/usage/index.html || exit 1
+          grep -q "<table" /tmp/neoabs-recipes/site/guide/usage/index.html || exit 1
+          # section-index: the "Guide" nav entry must be a clickable link
+          # pointing at the section's index page
+          grep -q 'href="[^"]*guide/"' /tmp/neoabs-recipes/site/guide/usage/index.html || exit 1
+          echo "Recipes proven: print page, last-updated date, table-reader, and section index all rendered"
+
+      - name: Doctor reports healthy
+        working-directory: /tmp/neoabs-recipes
+        run: neoabs doctor

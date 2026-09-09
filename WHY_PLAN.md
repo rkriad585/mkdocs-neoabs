@@ -130,8 +130,12 @@ Shipped since the last audit (moved into "Current state audit" above): Article
 JSON-LD + auto social-card images (Phase 4, `e2dae82`), image lightbox /
 footnotes / code annotations / metadata bar (Phase 5, `f056514`), feedback
 widget, announcement bar, cookie consent, and giscus comments (Phase 6,
-`37d80dc`) — the "no JSON-LD / no social cards / no feedback / no consent" gaps
-below are **closed**.
+`37d80dc`), Phase 7 i18n/breadcrumbs/nav icons/PWA manifest, and Phase 8
+prefetch + `assets.mode` vendoring + Lighthouse CI — the "no JSON-LD / no
+social cards / no feedback / no consent / no i18n / no bundling" gaps below are
+**closed**. Phase 9 (uncommitted at the time of writing) ships `neoabs doctor`,
+the integrations guide + recipe CI, the MkDocs 1.5/1.6/2.0.dev compat matrix,
+and PyPI publishing.
 
 - Screenshot gallery ❌→✅ fixed: all 17 `Screenshots/*.png` exist as real
   Playwright captures (macOS/phone frames), including `light-mode.png`,
@@ -210,8 +214,8 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 14 | Auto PWA manifest + app meta | 🟡 optional `<link>`; no auto-gen, no iOS meta | P7 |
 | 15 | Prefetch on hover, lazy images, perf budget CI | ✅ prefetch 🟡 perf budget CI (`lighthouseci`+workflow shipped, needs runs) | P8 |
 | 16 | Asset bundling (cdn \| local \| bundle) / offline self-host | ✅ `assets.mode` cdn/local/bundle (on_files vendoring, inline critical CSS, revert-on-failure) | P8 |
-| 17 | Plugin compat guide + recipes | ❌ | P9 |
-| 18 | `neoabs new` scaffolding + `doctor` | 🟡 `neoabs new` ✅ (P2); `doctor` ❌ | P9 |
+| 17 | Plugin compat guide + recipes | ✅ `integrations.md` + recipe CI job (proves all recipes) | P9 |
+| 18 | `neoabs new` scaffolding + `doctor` | ✅ `neoabs new` (P2) + `neoabs doctor` (P9) | P9 |
 | 19 | MkDocs 2.0 compat matrix + release automation | 🟡 GitHub Release ✅; no PyPI, no version matrix | P9 |
 | 20 | Showcase, benchmarks, funding, contributor path | 🟡 CONTRIBUTING+CHANGELOG ✅; no benchmarks/FUNDING/showcase | P10 |
 
@@ -846,11 +850,46 @@ def doctor() -> int:
 - **PyPI publish**: extend `release.yml` with `twine upload` /
   `pypa/gh-action-pypi-publish` env: PYPI_TOKEN, env: PYPI_USERNAME already set (today it only cuts a GitHub Release).
 
-**Files.** `docs/plugins/integrations.md`, `neoabs/cli.py`, `.github/workflows/*`, `pyproject.toml`.
+**Files.** `docs/plugins/integrations.md` (new), `mkdocs.yml` (nav entry),
+`neoabs/cli.py`, `.github/workflows/*` (`compat.yml` + `integrations.yml` new;
+`release.yml` publish job), `pyproject.toml`.
 
 **Acceptance.** Matrix job green 1.5·1.6·2.0.dev; `neoabs doctor` exits 0 on a
 healthy project; integrations page renders with showcased recipe builds; tags
 publish to PyPI.
+
+**Done (verified).** Phase 9 implemented:
+
+- **9a** — `docs/plugins/integrations.md` (nav: Plugins → Third-Party
+  Integrations) with drop-in recipes for `git-revision-date-localized` (native
+  `theme.neoabs.meta` `date_source` integration), `glightbox` (turn off the
+  built-in `content.typography.image_lightbox`), `print-site` (`theme: neoabs`),
+  `section-index`, `table-reader`, `git-authors`, and `awesome-pages` (first in
+  `plugins:`, `.pages` file) plus ordering rules. `.github/workflows/integrations.yml`
+  builds a project using **all seven** recipes and *asserts* the outputs (print
+  page, "Last updated" date, table-reader table, clickable section-index nav
+  link, `neoabs doctor` exit 0). `mkdocs build` (not `--strict`): section-index
+  logs a benign theme-detection warning for any non-allowlisted theme — NeoAbs'
+  nav renders section pages natively, so the recipe asserts the feature instead.
+- **9b** — `neoabs doctor` in `neoabs/cli.py`: prints mkdocs + neoabs versions
+  and checks `site_url`, `theme.name == neoabs`, fonts, `neoabs` plugin
+  registration, node availability, service-worker cache version (theme vs
+  `site/sw.js`), and `extra.neoabs_version`; exit 0 healthy, 1 on failure,
+  2 on usage/YAML errors. Config is loaded with `mkdocs.utils.yaml_load`
+  (handles `!ENV` and `!!python/name:` tags).
+- **9c** — `.github/workflows/compat.yml` matrix on MkDocs 1.5.3 / 1.6.1 /
+  2.0.0.dev0 (`continue-on-error` only for the dev build — informative, never
+  red): scaffolds with `neoabs new`, runs `neoabs doctor`, builds `--strict`.
+  `release.yml` gains a `publish` job (`pypa/gh-action-pypi-publish`, OIDC
+  trusted publishing by default, `PYPI_TOKEN` fallback, `skip-existing`).
+  `pyproject.toml` gains Python 3.8–3.13 classifiers + a Changelog URL.
+
+Verified: repo `mkdocs build --strict` clean; `npm run build`; `npm test`
+(45/45); `ruff check neoabs/` clean (the `tools/screenshots_gen.py` BLE001s are
+pre-existing); `neoabs doctor` exits 0 on the repo; recipe build verified
+locally for the reachable subset (glightbox + section-index + built-in date
+fallback — this sandbox's PyPI proxy cannot reach the other five packages;
+the full proof runs on GitHub in `integrations.yml`). Gap rows 17, 18, 19 ✅.
 
 ---
 

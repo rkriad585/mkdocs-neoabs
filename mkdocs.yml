@@ -911,6 +911,7 @@ nav:
     - Feedback & Announcements: components/engagement.md
   - Plugins:
     - NeoAbs Plugin: plugins/neoabs.md
+    - Third-Party Integrations: plugins/integrations.md
   - Architecture: architecture.md
   - Performance: performance.md
   - Development: development.md

@@ -35,3 +35,31 @@ jobs:
           name: ${{ github.ref_name }}
           generate_release_notes: true
           files: dist/*
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Trusted publishing (OIDC) on PyPI as the default path; alternatively
+      # set a PYPI_TOKEN secret and the action falls back to token auth.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build package
+        run: pip install build && python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+          skip-existing: true
+          verbose: true
