@@ -419,6 +419,21 @@ python tools/emit_config_reference.py
 
 --8<-- "_config_ref.generated.md"
 
+### `extra.neoabs_showcase`
+
+Phase 10 footer credit: an **opt-in** one-line "Powered by NeoAbs" badge in the
+site footer. **Off by default** — set `extra.neoabs_showcase: true` to show it.
+The badge is a self-contained inline SVG (a dot-matrix mark echoing the
+NothingOS canvas) that links back to the project, so enabling it adds no
+third-party image or CDN request. `extra.neoabs_showcase_url` overrides the
+default link target; the label text follows `theme.neoabs.i18n.footer_powered_by`.
+
+```yaml
+extra:
+  neoabs_showcase: true                 # Opt-in footer credit + badge
+  neoabs_showcase_url: "https://github.com/rkriad585/mkdocs-neoabs"   # Optional
+```
+
 ## Plugin configuration
 
 NeoAbs ships with an optional MkDocs plugin that sets theme defaults. See the [Plugin documentation](../plugins/neoabs.md) for details.

@@ -1689,6 +1689,52 @@ html[data-md-neoabs-reading="active"] .neoabs-article {
 	}
 }
 
+// "Powered by NeoAbs" credit (Phase 10) — opt-in via extra.neoabs_showcase.
+// Self-contained badge: a dot-matrix mark echoes the NothingOS canvas so no
+// external image/CDN is needed to advertise the theme.
+.neoabs-footer__powered {
+	display: inline-flex;
+	align-items: center;
+}
+
+.neoabs-footer__powered-link {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	font-family: var(--neoabs-font-mono);
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--neoabs-text-muted);
+	text-decoration: none;
+	background: var(--neoabs-glass-bg);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-pill);
+	padding: 3px 10px 3px 4px;
+	transition: color var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast);
+
+	&:hover,
+	&:focus-visible {
+		color: var(--neoabs-text-primary);
+		border-color: var(--neoabs-accent);
+		outline: none;
+	}
+}
+
+.neoabs-footer__powered-mark {
+	display: inline-flex;
+	width: 20px;
+	height: 20px;
+	color: var(--neoabs-text-secondary);
+
+	svg {
+		width: 20px;
+		height: 20px;
+		stroke: var(--neoabs-glass-border-strong);
+	}
+}
+
 // Footer glass/border toggles (Phase 4: theme.neoabs.footer)
 .neoabs-footer[data-md-neoabs-footer-glass="false"] {
 	background: transparent;

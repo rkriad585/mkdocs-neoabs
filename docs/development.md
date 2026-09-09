@@ -71,6 +71,9 @@ ruff check neoabs/
 | `neoabs/plugins/` | MkDocs plugin |
 | `docs/` | Documentation Markdown source |
 | `tools/build.js` | SCSS build script |
+| `tools/emit_benchmarks.py` | Regenerates `docs/benchmarks.md` (page-weight table) |
+| `tools/emit_changelog.py` | Regenerates the `[Unreleased]` changelog block |
+| `tools/emit_config_reference.py` | Regenerates the generated config reference |
 
 ## Making Changes
 
@@ -117,9 +120,30 @@ ruff check neoabs/
 
 ## Commit Guidelines
 
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/) so
+the changelog can be machine-checked:
+
+- `feat:` — a new user-facing feature or config surface
+- `fix:` — a bug fix
+- `docs:` — documentation-only changes
+- `chore:` / `refactor:` / `perf:` / `ci:` — non-user-facing changes
+
+`tools/emit_changelog.py` turns the commit list into the `[Unreleased]` block
+of `CHANGELOG.md` (a CI workflow opens a PR whenever it changes), so the
+prefix is part of the feature — keep it accurate and use focused commits.
+Other rules:
+
 - Keep commits focused on a single change
 - Use clear, descriptive commit messages
 - Do not commit `site/`, `node_modules/`, or `__pycache__/`
+
+## Translating NeoAbs
+
+UI strings are centralized in `_NEOABS_DEFAULT_I18N`
+(`neoabs/plugins/neoabs_plugin.py`) and overridable per site via
+`theme.neoabs.i18n`. See [Translating NeoAbs](identity.md#translating-neoabs)
+for onboarding: which keys exist, how flat aliases map to nested groups, and
+how to verify a translated build.
 
 ---
 

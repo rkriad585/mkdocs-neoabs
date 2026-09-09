@@ -9,7 +9,7 @@ description = "NeoAbs - Glass + NothingOS design language for MkDocs"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-keywords = ["mkdocs", "theme", "documentation", "rkriad585", "neostore", "glass", "nothingos", "neoabs"]
+keywords = ["mkdocs", "theme", "documentation", "rkriad585", "neostore", "glass", "glassmorphism", "nothingos", "neoabs", "mkdocs-theme", "pwa", "static-site", "design-system", "fast", "web"]
 authors = [
   { name = "rkriad585", email = "rkriad585@gmail.com" },
 ]
@@ -27,13 +27,17 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Documentation",
+  "Topic :: Internet :: WWW/HTTP :: Site Management",
   "Topic :: Software Development :: Documentation",
+  "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Text Processing :: Markup :: HTML",
 ]
 dependencies = ["mkdocs>=1.5", "pymdown-extensions>=10.0", "Pygments>=2.18"]
 
 [project.optional-dependencies]
 social-cards = ["Pillow>=9.0"]
+docs = ["mkdocs-section-index>=0.3.5", "mkdocs-glightbox>=0.4.0", "Pillow>=9.0"]
+dev = ["build>=1.0", "ruff>=0.5"]
 
 [project.urls]
 Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
@@ -41,6 +45,9 @@ Documentation = "https://rkriad585.github.io/mkdocs-neoabs"
 Source = "https://github.com/rkriad585/mkdocs-neoabs"
 Issues = "https://github.com/rkriad585/mkdocs-neoabs/issues"
 Changelog = "https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md"
+Funding = "https://github.com/sponsors/rkriad585"
+Tidelift = "https://tidelift.com/funding/github/pypi/mkdocs-neoabs"
+Patreon = "https://www.patreon.com/rkriad585"
 
 [project.entry-points."mkdocs.themes"]
 neoabs = "neoabs.templates"

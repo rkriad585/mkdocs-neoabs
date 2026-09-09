@@ -104,6 +104,40 @@ Full key list (group → key):
 | `comments_title` | Comments header |
 | `skip_to_content`, `breadcrumb_label` | Accessibility chrome |
 | `previous_page`, `next_page` | Footer paging links |
+| `footer_powered_by` | "Powered by NeoAbs" footer credit |
+
+### Translating NeoAbs
+
+Adding a language (or fixing a string) takes two edits in
+`neoabs/plugins/neoabs_plugin.py`; no template touches a hardcoded English
+string.
+
+1. **Add the default** in `_NEOABS_DEFAULT_I18N` — every chrome string ships an
+   English value there, grouped by surface (`search`, `toc`, `clipboard`,
+   `comments`, `zoom`, `repo`, `notes`, `timer`, `footer`, `navigation`,
+   `help`). Use the `footer.previous` / `footer.next` entries as the template
+   for a new group key.
+2. **Register a flat alias** in `_NEOABS_I18N_FLAT_ALIASES` so the documented
+   one-level `theme.neoabs.i18n.<key>` spelling keeps working — the alias maps
+   a flat key to `(group, child)`, e.g. `previous_page` →
+   `("footer", "previous")`.
+
+A site then overrides any string without touching templates:
+
+```yaml
+theme:
+  neoabs:
+    i18n:
+      footer_powered_by: "Propulsé par NeoAbs"
+      previous_page: "Précédent"
+```
+
+Because the alias has to exist for a string to be overridable, an unknown key
+aborts the build instead of silently staying English. Verify a translation by
+building the docs `mkdocs build --strict` (or `neoabs new` + `mkdocs serve`)
+and checking the chrome in both dark and light modes — see
+[Contributing — Translations](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CONTRIBUTING.md#translations)
+for the suggested workflow.
 
 ## Auto PWA manifest
 

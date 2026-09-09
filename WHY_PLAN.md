@@ -217,7 +217,7 @@ Legend: ✅ have (shipped & verified) · 🟡 partial (partly done / needs harde
 | 17 | Plugin compat guide + recipes | ✅ `integrations.md` + recipe CI job (proves all recipes) | P9 |
 | 18 | `neoabs new` scaffolding + `doctor` | ✅ `neoabs new` (P2) + `neoabs doctor` (P9) | P9 |
 | 19 | MkDocs 2.0 compat matrix + release automation | 🟡 GitHub Release ✅; no PyPI, no version matrix | P9 |
-| 20 | Showcase, benchmarks, funding, contributor path | 🟡 CONTRIBUTING+CHANGELOG ✅; no benchmarks/FUNDING/showcase | P10 |
+| 20 | Showcase, benchmarks, funding, contributor path | ✅ benchmarks page (`extra.neoabs_showcase` footer credit), `FUNDING.yml` + Discussions, good-first-issues + translation onboarding, auto-changelog wired to releases | P10 |
 
 ---
 
@@ -915,6 +915,21 @@ workflow.
 
 **Acceptance.** Footer credit opt-in works; benchmarks page has real numbers CI
 regenerates; FUNDING/community links live; an auto changelog ships with each tag.
+
+**Files touched (so far).** `neoabs/plugins/neoabs_plugin.py` (i18n
+`footer.poweredBy` + `footer_powered_by` alias; `extra.neoabs_showcase` /
+`neoabs_showcase_url` normalization), `neoabs/templates/partials/footer.html`
+(powered credit + dot-matrix badge), `neoabs/templates/assets/neoabs.css`
+(output of `tools/build.js`) + `stylesheets/components.scss` (
+`.neoabs-footer__powered*`), `mkdocs.yml` (`extra.neoabs_showcase: true`, nav
+`Benchmarks`), `tools/emit_benchmarks.py`, `docs/benchmarks.md`,
+`tools/emit_changelog.py`, `CHANGELOG.md`, `.github/workflows/benchmarks.yml`,
+`.github/workflows/changelog.yml`, `.github/workflows/release.yml` (promote
+step), `.github/FUNDING.yml`, `README.md` (Community section + TOC +
+Documentation table), `CONTRIBUTING.md` (commit guidelines, good-first-issues,
+translations, community), `docs/development.md` (commit guidelines + project
+layout), `docs/identity.md` (Translating NeoAbs), and
+`docs/getting-started/configuration.md` (`extra.neoabs_showcase`).
 
 ---
 

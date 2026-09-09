@@ -799,6 +799,12 @@ extra:
   # neoabs_twitter_handle: "@username"                   # Twitter card @handle (also used for site/creator)
   # neoabs_site_tagline: "Glass + NothingOS Design"      # Subtitle shown under the header site name
   # neoabs_site_badge: "v0.1.2"                          # Version pill shown next to the site name
+  # --- Phase 10: community flywheel (extra) -----------------------------------
+  # "Powered by NeoAbs" footer credit + dot-matrix badge. Opt-in: set true to
+  # show a one-line credit linking back to the project (self-contained badge,
+  # no external image request). neoabs_showcase_url overrides the default repo.
+  neoabs_showcase: true
+  # neoabs_showcase_url: "https://github.com/rkriad585/mkdocs-neoabs"
   # --- Phase 8: raw markup / <html> attribute injection (extra) ---------------
   # Custom markup is injected verbatim (no escaping), so blocks are fine and
   # anything that is valid HTML there is valid on the page. All keys are empty
@@ -914,6 +920,7 @@ nav:
     - Third-Party Integrations: plugins/integrations.md
   - Architecture: architecture.md
   - Performance: performance.md
+  - Benchmarks: benchmarks.md
   - Development: development.md
   - Deployment: deployment.md
   - Troubleshooting: troubleshooting.md

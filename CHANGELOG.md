@@ -22,6 +22,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - `tools/add_dates.py`: stamps every `docs/**/*.md` page with a `date:` front-matter key (`YYYY-MM-DD`, UTC-based); skips MkDocs `_`-prefixed generated files; idempotent, handles files with or without existing front matter, preserves line endings
 - `site_url` link rebasing (`initLinkRebase`): the plugin captures the production `site_url` at `on_config` (before `mkdocs serve` swaps it for the dev server) and exposes it in `#__config` as `site_url`; during localhost:{port} previews the JS rewrites anchors baked/hardcoded with the main site URL onto `location.origin` (production base path stripped, query/hash preserved), leaving relative and external links untouched — clicks never leave the preview, and it is a no-op on the deployed origin
 - Repo popover info-field control (`theme.neoabs.components.repo_popover.fields`): pick which sections the GitHub popover shows — `author`, `followers`, `public_repos`, `location`, `stars`, `watchers`, `forks`, `open_issues`, `language`, `license`, `default_branch`, `commits`, `tags`, `latest_commit`, `commit_msg`, `created`, `updated`, `pushed`, `description`, `owner_bio` — **defaults to every section**, validated at build time by `_validate_repo_popover()`
+- Phase 10 — community flywheel:
+  - Opt-in "Powered by NeoAbs" footer credit + dot-matrix badge (`extra.neoabs_showcase: true`): a self-contained inline SVG badge (no CDN request) linking back to the project; target overridable via `extra.neoabs_showcase_url`; the label is i18n-able via `theme.neoabs.i18n.footer_powered_by`
+  - Benchmarks page (`docs/benchmarks.md`): CI-regenerated page-weight table (`tools/emit_benchmarks.py` builds the same content with `neoabs` / `material` / `readthedocs` and reports raw + gzip shipped bytes) — the permanent "we're fast" receipt; Lighthouse ≥95 per category is enforced separately by `performance.yml`
+  - `.github/FUNDING.yml` (GitHub Sponsors) + Discussions community links in the README
+  - Contributor path: `good first issue` / `help wanted` labels and translation onboarding in `CONTRIBUTING.md`, "Translating NeoAbs" in `docs/identity.md`, conventional-commit guidelines in `docs/development.md`
+  - Auto-changelog automation: `tools/emit_changelog.py` keeps a machine-generated `[Unreleased]` block from conventional-commit history (via a CI PR), and `release.yml` promotes `[Unreleased]` into a dated release section on every tag push
 
 ### Changed
 
@@ -38,6 +44,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Phase 5 annotation legend rendering: live docs example uses raw `<ol>` after `div.highlight` (reliable sibling regardless of Python-Markdown extension-set), fixing the ordered-list-not-parsed issue when `pymdownx.highlight` anchor_linenums are active
 - The announcement block commented out in `mkdocs.yml` no longer leaves a stray serialized config: when absent, the plugin default (`enabled: false`) merges cleanly into `#__config`
+
+<!-- AUTO-CHANGELOG:start -->
+### Commits since the last release (auto)
+- [Added] feat: Phase 9 ecosystem & tooling (neoabs doctor, integrations guide + recipe CI, MkDocs 1.5/1.6/2.0.dev compat matrix, PyPI publish) + README footer
+- [Added] feat: Phase 8 performance & PWA (prefetch on hover, cdn/local/bundle asset modes, inline critical CSS, sw v4, Lighthouse CI)
+- [Added] feat: Phase 7 identity & i18n (i18n overrides, breadcrumbs, nav icons, dark-aware images, auto PWA manifest with dynamic icon fetch)
+- [Added] feat: dismissible animated repo popover + scrollable/responsive card + repo_popover.fields config
+- [Added] feat: image lightbox controls (nav/zoom/copy/download) + real download + open/close fixes + image_lightbox config reference
+- [Added] feat: floating position config for announcement + cookie consent (top/right/bottom/left/center popup)
+- [Added] feat: site_url link rebase with localhost fallback + opt-in comments/announcement + giscus loader fix
+- [Added] feat: Phase 6 engagement & privacy (feedback, announcement bar, cookie consent, opt-in giscus)
+- [Added] feat: per-page social cards and Article JSON-LD (Phase 4)
+- [Added] feat: add search result.show_share config to toggle per-result copy link
+- [Added] feat: phase 3 search deep-links & share (?q= restore, per-result copy link with toast)
+- [Added] feat: phase 2 onboarding & documentation
+- [Added] feat: phase 20 mermaid controls & gestures, keyboard actions, screenshot tooling, themed logo
+- [Added] feat: phase 19 ai-readable content mode (markdown mirrors, llms.txt)
+- [Added] feat: phase 18 action shortcuts and cluster customization
+- [Added] feat: phase 17 focus timer (TOC widget controls, settings popup)
+- [Added] feat: phase 16 action cluster (plus menu, right-side tooltips)
+- [Added] feat: phase 15 reading mode (full-width measure, dark scheme inherit)
+- [Added] feat: phase 14 plugin config passthrough + phase 13/14 config reference
+- [Added] feat: phase 13 page-level front matter overrides
+- [Added] feat: phase 11 content area customization
+- [Added] feat: phase 12 global branding & meta
+- [Added] feat: phase 10 search customization
+- [Added] feat: phase 9 advanced visual customization
+- [Added] feat: phase 8 custom css/js & head injection
+- [Added] feat: phase 7 keyboard shortcuts customization
+- [Added] feat: phase 6 table of contents customization
+- [Added] feat: phase 5 sidebar and navigation customization
+- [Added] feat: phase 3 header customization + phase 4 footer customization
+- [Added] feat: phase 2 component visibility toggles + sass @use migration + ruff fixes
+- [Added] feat: remember last page + nav state, repo popover owner avatar
+- [Added] feat(phase-1): design token overrides via mkdocs.yml
+- [Added] feat: SPA navigation, scroll restore, favicon fix, SW caching, plan
+- [Added] feat: add dark/light logo + favicon support
+- [Fixed] fix: phase 1 trust & correctness (1a theme.font, 1b features passthrough)
+- [Fixed] fix: phase 2/5/6 dead config keys and toc h5/h6 defaults
+- [Fixed] fix: resolve a11y audit findings + ship under ?v=9
+- [Fixed] fix: show only owner name (drop @username span) in repo popover Author row
+- [Fixed] fix: render @login span markup (not escaped text) in repo popover Author row
+- [Fixed] fix: always-visible repo popover via pure CSS hover + ship under ?v=6
+- [Fixed] fix: ship popover/page-memory fixes under ?v=5 so no stale v4 copy is served
+- [Fixed] fix: never resume file:// lastPage (Security Error), opaque popover bg, pointerenter + popover open/ready logs
+- [Fixed] fix: deliver under v4, SW passes versioned (?v=) URLs through to HTTP cache
+- [Fixed] fix: popover opens on hover+click+keyboard, search arrows scroll active item into view
+- [Fixed] fix: bust v2 cache (assets v3 + SW v3), robust search Enter/auto-run, TOC always-active indicator
+- [Fixed] fix: reliable repo-popover avatar (github .png), instant skeleton, TOC active scroll tracking
+- [Fixed] fix: cache-busted assets, hardened SPA base-guard, SW cache v2, build signature
+- [Fixed] fix: resume to stale/404 pages stays on landing page; fetch directory URLs
+- [Fixed] fix: close search overlay on SPA nav, auto-run restored query
+- [Changed] ï»¿feat: Phase 5 content superpowers + docs date front matter
+- [Changed] docs: add phase 10 search customization config reference to mkdocs.yml
+- [Changed] docs: add phase 9 advanced visual customization config reference to mkdocs.yml
+- [Changed] docs: expand phase 8 custom css/js & head injection config reference
+- [Changed] docs: add phase 5 sidebar customization config reference to mkdocs.yml
+- [Changed] docs: add phase 4 footer customization config reference to mkdocs.yml
+- [Changed] docs: add phase 3 header customization config reference to mkdocs.yml
+<!-- AUTO-CHANGELOG:end -->
+
 
 ## [0.1.2] - 2026-09-04
 

@@ -1,0 +1,42 @@
+name: Changelog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Regenerate Unreleased changelog block
+        run: python tools/emit_changelog.py
+
+      - name: Open a PR when the changelog changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "changelog unchanged"
+          else
+            git config user.name "CI Bot"
+            git config user.email "ci@example.com"
+            BRANCH="chore/changelog-${GITHUB_SHA:0:7}"
+            git checkout -b "$BRANCH"
+            git add CHANGELOG.md
+            git commit -m "chore: auto-update changelog"
+            git push origin "$BRANCH"
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: auto-update changelog" \
+              --body "Auto-generated from conventional commits by the Changelog workflow." || \
+              echo "PR creation skipped (may already exist)"
+          fi

@@ -146,5 +146,30 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {% if (config.extra and config.extra.neoabs_showcase) %}
+    {% set _powered_label = _i18n.get("footer", {}).get("poweredBy", "Powered by NeoAbs") if (_i18n is mapping) else "Powered by NeoAbs" %}
+    {% set _showcase_target = (config.extra.neoabs_showcase_url | default('')) if (config.extra.neoabs_showcase_url is defined and config.extra.neoabs_showcase_url) else "https://github.com/rkriad585/mkdocs-neoabs" %}
+    <div class="neoabs-footer__powered">
+      <a href="{{ _showcase_target }}" class="neoabs-footer__powered-link" title="{{ _powered_label }}" rel="noopener">
+        <span class="neoabs-footer__powered-mark" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+            <rect x="0.5" y="0.5" width="19" height="19" rx="4"/>
+            <circle cx="5" cy="5" r="1.1" fill="currentColor" opacity="0.9"/>
+            <circle cx="10" cy="5" r="1.1" fill="currentColor" opacity="0.55"/>
+            <circle cx="15" cy="5" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="5" cy="10" r="1.1" fill="currentColor" opacity="0.55"/>
+            <circle cx="10" cy="10" r="1.1" fill="currentColor" fill-opacity="0.9"/>
+            <circle cx="15" cy="10" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="5" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="10" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="15" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="15" cy="15" r="1.1" fill="var(--neoabs-accent)"/>
+          </svg>
+        </span>
+        <span class="neoabs-footer__powered-text">{{ _powered_label }}</span>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </footer>

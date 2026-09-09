@@ -47,9 +47,7 @@ NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics 
 - [Requirements](#requirements)
 - [Prerequisites](#prerequisites)
 - [Development](#development)
-- [Contributing](#contributing)
-- [Security](#security)
-- [License](#license)
+- [Community](#community)
 - [Acknowledgments](#acknowledgments)
 
 ---
@@ -248,6 +246,7 @@ def hello():
 | [Development](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/development.md) | Contributing and dev workflow |
 | [Deployment](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/deployment.md) | Build and deployment guide |
 | [Troubleshooting](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/troubleshooting.md) | Common issues and fixes |
+| [Benchmarks](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/benchmarks.md) | CI-regenerated page-weight + Lighthouse receipts |
 | [FAQ](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/faq.md) | Frequently asked questions |
 | [Screenshots](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/screenshots.md) | Visual gallery of the theme |
 | [About](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/about.md) | Credits and license |
@@ -452,6 +451,18 @@ make help       # Show all commands
 
 ---
 
+## Community
+
+- **Discussions** — ask questions and share showsites at
+  [github.com/rkriad585/mkdocs-neoabs/discussions](https://github.com/rkriad585/mkdocs-neoabs/discussions)
+- **Good first issues** — browse
+  [issues labeled `good first issue`](https://github.com/rkriad585/mkdocs-neoabs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  to start contributing
+- **Translations** — see the [Translating NeoAbs](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/identity.md#translating-neoabs) guide
+- **Sponsor** — fund development via [GitHub Sponsors](https://github.com/sponsors/rkriad585)
+
+---
+
 ## Acknowledgments
 
 - [MkDocs](https://www.mkdocs.org/) — the static site generator this theme is built for
@@ -466,6 +477,6 @@ make help       # Show all commands
 
 *Make documentation feel app-like — fast, private, distinctive.*
 
-[GitHub](https://github.com/rkriad585/mkdocs-neoabs) · [Docs](https://rkriad585.github.io/mkdocs-neoabs) · [Changelog](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md)
+[GitHub](https://github.com/rkriad585/mkdocs-neoabs) · [Docs](https://rkriad585.github.io/mkdocs-neoabs) · [Changelog](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md) · [Discussions](https://github.com/rkriad585/mkdocs-neoabs/discussions)
 
 </div>

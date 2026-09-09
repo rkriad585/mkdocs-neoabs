@@ -752,6 +752,7 @@ _NEOABS_DEFAULT_I18N = {
     "footer": {
         "previous": "Previous",
         "next": "Next",
+        "poweredBy": "Powered by NeoAbs",
     },
     "navigation": {
         "label": "Navigation",
@@ -783,6 +784,7 @@ _NEOABS_I18N_FLAT_ALIASES = {
     "breadcrumb_label": ("a11y", "breadcrumb"),
     "previous_page": ("footer", "previous"),
     "next_page": ("footer", "next"),
+    "footer_powered_by": ("footer", "poweredBy"),
 }
 
 # Phase 7 - breadcrumbs. A trail above the content top whenever a page has
@@ -2259,6 +2261,14 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_pwa"] = pwa
         extra["neoabs_assets"] = assets
         extra["neoabs_site_url"] = raw_site_url
+
+        # Phase 10: "Powered by NeoAbs" footer credit + badge — opt-in community
+        # signal. `extra.neoabs_showcase` (bool) enables it; an optional
+        # `extra.neoabs_showcase_url` overrides the default repo link.
+        extra["neoabs_showcase"] = bool(extra.get("neoabs_showcase"))
+        extra["neoabs_showcase_url"] = str(
+            extra.get("neoabs_showcase_url") or ""
+        ).strip()
 
         # Phase 1: collect user-supplied design tokens. Only values the author
         # explicitly set are collected; defaults live in the compiled CSS.
