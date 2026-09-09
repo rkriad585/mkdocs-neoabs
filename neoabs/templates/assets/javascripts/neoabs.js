@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "22"
+  var NEOABS_VERSION = "23"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -3764,7 +3764,8 @@
     help: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
     notes: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>',
     timer: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><line x1="12" y1="9" x2="12" y2="13"></line><line x1="14.5" y1="16.5" x2="17" y2="18.5"></line><line x1="9" y1="2" x2="15" y2="2"></line></svg>',
-    reading: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 4.5 7.5 4 4 4v13c3.5 0 6.5.5 8 2.5 1.5-2 4.5-2.5 8-2.5V4c-3.5 0-6.5.5-8 2.5z"></path><line x1="12" y1="6.5" x2="12" y2="19.5"></line></svg>'
+    reading: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 4.5 7.5 4 4 4v13c3.5 0 6.5.5 8 2.5 1.5-2 4.5-2.5 8-2.5V4c-3.5 0-6.5.5-8 2.5z"></path><line x1="12" y1="6.5" x2="12" y2="19.5"></line></svg>',
+    builder: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4v3.4M14.5 4v3.4M7 7.4h10a2 2 0 0 1 2 2v7.6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9.4a2 2 0 0 1 2-2Z"></path><path d="M7 7.4v1.2M17 7.4v1.2M7 12h10M7 15.8h5"></path></svg>'
   }
 
   let _actionClusterOpen = false
@@ -3798,7 +3799,8 @@
     const name = id === "keyboard_help" ? "open_help"
       : id === "notes" ? "toggle_notes"
       : id === "reading_mode" ? "toggle_reading_mode"
-      : id === "timer" ? "timer_toggle" : id
+      : id === "timer" ? "timer_toggle"
+      : id === "config_builder" ? "open_config_builder" : id
     const fn = keyboardActions[name] || resolveKeyboardAction(name)
     if (typeof fn === "function") fn()
     const cfg = _config.action_cluster || {}
@@ -3942,6 +3944,516 @@ actionClusterEnsureUi(cfg)
     })
 
     keyboardActions.toggle_action_cluster = toggleActionCluster
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 21: Interactive config builder (opt-in mkdocs.yml generator)
+  // ---------------------------------------------------------------------------
+  //
+  // A client-side dev tool that assembles a mkdocs.yml from checkbox feature
+  // toggles, guided questions (each option can carry a "recommended" tag) and
+  // three preset cards (Default / Standard / Custom), with a live YAML preview
+  // and Download / Copy buttons. The generator is read-only: it never mutates
+  // the running page, it only emits YAML text. It ships OFF until
+  // `theme.neoabs.config_builder.enabled: true` (the one feature that breaks
+  // the theme's default-ON rule on purpose — it is a developer tool), and the
+  // inner switches (toc_icon / cluster_icon / download / copy) stay ON once the
+  // master switch is on. A distinctive build icon is pinned to the bottom of
+  // the TOC panel; when the TOC panel is hidden (responsive breakpoint,
+  // reading mode, or `components.toc.show: false`) the icon is mirrored into
+  // the action-cluster menu so the tool stays reachable.
+  const CONFIG_BUILDER_SCHEMA_ID = "neoabs-config-builder-schema"
+
+  let _configBuilderEl = null
+  let _configBuilderOpts = {}
+  let _configBuilderSchema = []
+  let _configBuilderState = {}
+  let _configBuilderRendered = false
+  let _configBuilderMirrorEl = null
+
+  function configBuilderI18n(key, fallback) {
+    return t("config_builder." + key, fallback === undefined ? key : fallback)
+  }
+
+  function configBuilderIsOpen() {
+    return !!(_configBuilderEl && _configBuilderEl.classList.contains("neoabs-config-builder--visible"))
+  }
+
+  function configBuilderSetAt(obj, parts, value) {
+    let node = obj
+    for (let i = 0; i < parts.length - 1; i += 1) {
+      const key = parts[i]
+      if (!node[key] || typeof node[key] !== "object") node[key] = {}
+      node = node[key]
+    }
+    node[parts[parts.length - 1]] = value
+  }
+
+  function configBuilderValue(question) {
+    const v = _configBuilderState[question.id]
+    return v === undefined ? question.default : v
+  }
+
+  function yamlScalar(value) {
+    if (typeof value === "boolean") return value ? "true" : "false"
+    if (typeof value === "number") return String(value)
+    const s = String(value)
+    if (/^[A-Za-z0-9_./@:-]+$/.test(s) &&
+        s !== "true" && s !== "false" && s !== "null" && s !== "yes" && s !== "no" && s !== "on" && s !== "off") {
+      return s
+    }
+    return "'" + s.replace(/'/g, "''") + "'"
+  }
+
+  function yamlStringify(obj, depth) {
+    const indent = "  ".repeat(depth)
+    return Object.keys(obj).map((key) => {
+      const value = obj[key]
+      if (value && typeof value === "object") {
+        return indent + key + ":\n" + yamlStringify(value, depth + 1)
+      }
+      return indent + key + ": " + yamlScalar(value)
+    }).join("\n")
+  }
+
+  // Assemble the generated YAML from the current builder state. Empty text
+  // answers are dropped so a half-finished site_name never ships as a blank
+  // key; nested paths (theme.neoabs.*, features.*, extra.*) build real maps.
+  function configBuilderYamlString() {
+    const root = {}
+    _configBuilderSchema.forEach((group) => {
+      ;(group.questions || []).forEach((q) => {
+        const v = configBuilderValue(q)
+        if (v === "" || v === null || v === undefined) return
+        configBuilderSetAt(root, String(q.path || q.id).split("."), v)
+      })
+    })
+    return yamlStringify(root, 0)
+  }
+
+  // Keep the action-cluster mirror in step: the builder stays reachable from the
+  // plus menu at all times. The mirror button is created once and never removed
+  // (matching the theme's state-on-attribute pattern), so it survives SPA nav
+  // and resize re-syncs cleanly.
+  function configBuilderClusterSync() {
+    const cfg = _configBuilderOpts
+    if (!cfg || !cfg.enabled) return
+    if (cfg.cluster_icon === false) return
+    const cluster = document.querySelector(".neoabs-action-cluster")
+    if (!cluster) return
+    const menu = cluster.querySelector(".neoabs-action-cluster__menu")
+    if (!menu) return
+    if (!_configBuilderMirrorEl) {
+      const btn = document.createElement("button")
+      btn.type = "button"
+      btn.className = "neoabs-action-cluster__action neoabs-config-builder__cluster-mirror"
+      btn.setAttribute("aria-label", configBuilderI18n("open", "Open config builder"))
+      btn.setAttribute("data-md-neoabs-cluster-action", "config_builder")
+      btn.innerHTML =
+        (ACTION_CLUSTER_ICONS.builder || ACTION_CLUSTER_ICONS.plus) +
+        '<span class="neoabs-action-cluster__tooltip">' +
+          escapeHtml(configBuilderI18n("open", "Open config builder")) + "</span>"
+      btn.addEventListener("click", () => actionClusterDispatch("config_builder"))
+      menu.appendChild(btn)
+      _configBuilderMirrorEl = btn
+    }
+    _configBuilderMirrorEl.hidden = false
+    _configBuilderMirrorEl.classList.remove("neoabs-config-builder__cluster-mirror--hidden")
+  }
+
+  function configBuilderControlValue(ctrl) {
+    if (!ctrl) return
+    const q = _configBuilderSchema
+      .reduce((all, group) => all.concat(group.questions || []), [])
+      .filter((x) => x)
+      .find((x) => x.id === ctrl.getAttribute("data-md-neoabs-config-builder-question"))
+    return q
+  }
+
+  function configBuilderPreviewRefresh() {
+    if (!_configBuilderEl) return
+    const preview = _configBuilderEl.querySelector(".neoabs-config-builder__yaml")
+    if (!preview) return
+    const yaml = configBuilderYamlString()
+    const plain = yaml || "# nothing selected yet — pick options to assemble your mkdocs.yml"
+    preview.dataset.yaml = plain
+    preview.innerHTML = configBuilderHighlightYaml(plain)
+  }
+
+  // Lightweight YAML syntax highlight for the live preview. Self-contained so
+  // the dev tool works on any computer regardless of whether highlight.js has
+  // loaded (assets mode is cdn/local/bundle and not guaranteed). Keys, plain
+  // strings, booleans and numbers get distinct token colours; every character
+  // is HTML-escaped first so author-entered values can never inject markup.
+  function configBuilderHighlightYaml(yaml) {
+    return String(yaml).split("\n").map((line) => {
+      if (/^\s*#/.test(line)) {
+        return '<span class="neoabs-config-builder__tok-comment">' + escapeHtml(line) + "</span>"
+      }
+      const match = /^(\s*)([A-Za-z0-9_.@/-]+):(?:\s+(.*))?$/.exec(line)
+      if (!match) return escapeHtml(line)
+      const indent = escapeHtml(match[1])
+      const key = '<span class="neoabs-config-builder__tok-key">' + escapeHtml(match[2]) + "</span>"
+      let value = ""
+      if (match[3] !== undefined && match[3] !== "") {
+        const raw = match[3]
+        if (raw === "true" || raw === "false") {
+          value = ' <span class="neoabs-config-builder__tok-bool">' + raw + "</span>"
+        } else if (/^-?\d+(\.\d+)?$/.test(raw)) {
+          value = ' <span class="neoabs-config-builder__tok-num">' + raw + "</span>"
+        } else {
+          value = ' <span class="neoabs-config-builder__tok-str">' + escapeHtml(raw) + "</span>"
+        }
+      }
+      return indent + key + value
+    }).join("\n")
+  }
+
+  function configBuilderMarkActivePreset(name) {
+    if (!_configBuilderEl) return
+    ;[].forEach.call(_configBuilderEl.querySelectorAll(".neoabs-config-builder__preset"), (card) => {
+      card.classList.toggle(
+        "neoabs-config-builder__preset--active",
+        card.getAttribute("data-md-neoabs-config-builder-preset") === name
+      )
+    })
+  }
+
+  function configBuilderSyncControls() {
+    if (!_configBuilderEl) return
+    _configBuilderSchema.forEach((group) => {
+      ;(group.questions || []).forEach((q) => {
+        const ctrl = _configBuilderEl.querySelector('[data-md-neoabs-config-builder-question="' + q.id + '"]')
+        if (!ctrl) return
+        const v = configBuilderValue(q)
+        if (ctrl.type === "checkbox") {
+          ctrl.checked = !!v
+        } else if (q.type === "select") {
+          ;[].forEach.call(_configBuilderEl.querySelectorAll(
+            '[data-md-neoabs-config-builder-question="' + q.id + '"][data-md-neoabs-config-builder-option]'), (opt) => {
+            opt.classList.toggle("neoabs-config-builder__option--active",
+              String(opt.getAttribute("data-md-neoabs-config-builder-option")) === String(v))
+          })
+        } else {
+          ctrl.value = v === null || v === undefined ? "" : String(v)
+        }
+      })
+    })
+  }
+
+  function configBuilderPresetApply(name) {
+    if (name !== "custom") {
+      _configBuilderSchema.forEach((group) => {
+        ;(group.questions || []).forEach((q) => {
+          if (name === "standard") {
+            _configBuilderState[q.id] = (q.recommended !== undefined && q.recommended !== null)
+              ? q.recommended
+              : q.default
+          } else {
+            _configBuilderState[q.id] = q.default
+          }
+        })
+      })
+    }
+    configBuilderSyncControls()
+    configBuilderPreviewRefresh()
+    configBuilderMarkActivePreset(name)
+  }
+
+  function configBuilderRenderQuestion(host, q) {
+    const field = document.createElement("div")
+    field.className = "neoabs-config-builder__question"
+    field.setAttribute("data-md-neoabs-config-builder-field", q.id)
+
+    if (q.type === "toggle" || q.type === "checkbox") {
+      const label = document.createElement("label")
+      label.className = "neoabs-config-builder__choice"
+      label.setAttribute("data-md-neoabs-config-builder-question", q.id)
+      field.appendChild(label)
+      const box = document.createElement("input")
+      box.type = "checkbox"
+      box.checked = !!configBuilderValue(q)
+      box.addEventListener("change", () => {
+        _configBuilderState[q.id] = box.checked
+        configBuilderPreviewRefresh()
+      })
+      label.appendChild(box)
+      const track = document.createElement("span")
+      track.className = "neoabs-config-builder__choice-track"
+      label.appendChild(track)
+      const copy = document.createElement("span")
+      copy.className = "neoabs-config-builder__choice-copy"
+      const name = document.createElement("strong")
+      name.textContent = q.label
+      copy.appendChild(name)
+      if (q.help) {
+        const hint = document.createElement("small")
+        hint.textContent = q.help
+        copy.appendChild(hint)
+      }
+      label.appendChild(copy)
+      if (q.recommended !== undefined && q.recommended !== null && q.recommended !== false) {
+        const chip = document.createElement("span")
+        chip.className = "neoabs-config-builder__recommend"
+        chip.textContent = configBuilderI18n("recommended", "Recommended")
+        label.appendChild(chip)
+      }
+    } else if (q.type === "select") {
+      const label = document.createElement("label")
+      label.className = "neoabs-config-builder__field-label"
+      label.setAttribute("data-md-neoabs-config-builder-question", q.id)
+      const name = document.createElement("strong")
+      name.textContent = q.label
+      label.appendChild(name)
+      if (q.help) {
+        const hint = document.createElement("small")
+        hint.textContent = q.help
+        label.appendChild(hint)
+      }
+      field.appendChild(label)
+      const options = document.createElement("div")
+      options.className = "neoabs-config-builder__options"
+      field.appendChild(options)
+      const current = configBuilderValue(q)
+      ;(q.options || []).forEach((option) => {
+        const opt = document.createElement("button")
+        opt.type = "button"
+        opt.className = "neoabs-config-builder__option"
+        opt.setAttribute("data-md-neoabs-config-builder-question", q.id)
+        opt.setAttribute("data-md-neoabs-config-builder-option", option.value)
+        opt.textContent = option.label
+        if (option.recommended) {
+          const chip = document.createElement("span")
+          chip.className = "neoabs-config-builder__recommend"
+          chip.textContent = configBuilderI18n("recommended", "Recommended")
+          opt.appendChild(chip)
+        }
+        opt.classList.toggle("neoabs-config-builder__option--active", String(option.value) === String(current))
+        opt.addEventListener("click", () => {
+          _configBuilderState[q.id] = option.value
+          ;[].forEach.call(options.children, (sibling) =>
+            sibling.classList.toggle("neoabs-config-builder__option--active", sibling === opt))
+          configBuilderPreviewRefresh()
+        })
+        options.appendChild(opt)
+      })
+    } else {
+      const label = document.createElement("label")
+      label.className = "neoabs-config-builder__field-label"
+      label.setAttribute("data-md-neoabs-config-builder-question", q.id)
+      const name = document.createElement("strong")
+      name.textContent = q.label
+      label.appendChild(name)
+      if (q.help) {
+        const hint = document.createElement("small")
+        hint.textContent = q.help
+        label.appendChild(hint)
+      }
+      field.appendChild(label)
+      const input = document.createElement("input")
+      input.type = "text"
+      input.className = "neoabs-config-builder__text"
+      input.placeholder = q.placeholder || ""
+      input.value = configBuilderValue(q) === null || configBuilderValue(q) === undefined ? "" : String(configBuilderValue(q))
+      input.addEventListener("input", () => {
+        _configBuilderState[q.id] = input.value
+        configBuilderPreviewRefresh()
+      })
+      field.appendChild(input)
+    }
+    host.appendChild(field)
+  }
+
+  function configBuilderRenderAll() {
+    if (!_configBuilderEl || _configBuilderRendered) return
+    _configBuilderRendered = true
+    const host = _configBuilderEl.querySelector("[data-md-neoabs-config-builder-groups]")
+    if (!host) return
+    _configBuilderSchema.forEach((group) => {
+      const section = document.createElement("section")
+      section.className = "neoabs-config-builder__group"
+      const heading = document.createElement("h3")
+      heading.className = "neoabs-config-builder__group-title"
+      heading.textContent = group.title || group.group || "Group"
+      section.appendChild(heading)
+      if (group.help) {
+        const hint = document.createElement("p")
+        hint.className = "neoabs-config-builder__group-help"
+        hint.textContent = group.help
+        section.appendChild(hint)
+      }
+      ;(group.questions || []).forEach((q) => configBuilderRenderQuestion(section, q))
+      host.appendChild(section)
+    })
+
+    const presetsHost = _configBuilderEl.querySelector("[data-md-neoabs-config-builder-presets]")
+    if (presetsHost) {
+      const allowed = Array.isArray(_configBuilderOpts.presets) ? _configBuilderOpts.presets : ["default", "standard", "custom"]
+      allowed.forEach((name) => {
+        const meta = {
+          default: {
+            label: configBuilderI18n("presetDefault", "Default"),
+            help: configBuilderI18n("presetDefaultHelp", "Plugin defaults, nothing extra")
+          },
+          standard: {
+            label: configBuilderI18n("presetStandard", "Standard"),
+            help: configBuilderI18n("presetStandardHelp", "Recommended, balanced setup")
+          },
+          custom: {
+            label: configBuilderI18n("presetCustom", "Custom"),
+            help: configBuilderI18n("presetCustomHelp", "Keep what you selected")
+          }
+        }[name] || { label: name, help: "" }
+        const card = document.createElement("button")
+        card.type = "button"
+        card.className = "neoabs-config-builder__preset"
+        card.setAttribute("data-md-neoabs-config-builder-preset", name)
+        const label = document.createElement("span")
+        label.className = "neoabs-config-builder__preset-label"
+        label.textContent = meta.label
+        card.appendChild(label)
+        const hint = document.createElement("span")
+        hint.className = "neoabs-config-builder__preset-help"
+        hint.textContent = meta.help
+        card.appendChild(hint)
+        card.addEventListener("click", () => configBuilderPresetApply(name))
+        presetsHost.appendChild(card)
+      })
+    }
+
+    configBuilderMarkActivePreset("default")
+    configBuilderPreviewRefresh()
+  }
+
+  function configBuilderDownload() {
+    const cfg = _configBuilderOpts
+    if (!cfg || cfg.download === false) return
+    const yaml = configBuilderYamlString()
+    const filename = (typeof cfg.target === "string" && cfg.target) ? cfg.target : "mkdocs.yml"
+    try {
+      const blob = new Blob([yaml], { type: "text/yaml" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      if (a.click) a.click()
+      setTimeout(() => { if (a.remove) a.remove(); if (URL.revokeObjectURL) URL.revokeObjectURL(url) }, 0)
+    } catch (e) {/* download unsupported in this context */}
+    neoabsToast(configBuilderI18n("downloadDone", "mkdocs.yml downloaded"))
+  }
+
+  function configBuilderCopyFallback(yaml) {
+    const ta = document.createElement("textarea")
+    ta.value = yaml
+    ta.style.position = "fixed"
+    document.body.appendChild(ta)
+    if (ta.select) ta.select()
+    try { if (document.execCommand) document.execCommand("copy") } catch (e) {}
+    if (ta.remove) ta.remove()
+  }
+
+  function configBuilderCopy() {
+    const cfg = _configBuilderOpts
+    if (!cfg || cfg.copy === false) return
+    const yaml = configBuilderYamlString()
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(yaml).then(
+        () => neoabsToast(configBuilderI18n("copied", "Config copied to clipboard")),
+        () => { configBuilderCopyFallback(yaml); neoabsToast(configBuilderI18n("copied", "Config copied to clipboard")) }
+      )
+    } else {
+      configBuilderCopyFallback(yaml)
+      neoabsToast(configBuilderI18n("copied", "Config copied to clipboard"))
+    }
+  }
+
+  function configBuilderFocusTrap(e) {
+    if (!configBuilderIsOpen()) return
+    if (e.key !== "Tab") return
+    const focusables = _configBuilderEl.querySelectorAll(".neoabs-config-builder button, .neoabs-config-builder input, .neoabs-config-builder select")
+    if (!focusables || !focusables.length) return
+    const first = focusables[0]
+    const last = focusables[focusables.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
+  function configBuilderWireTriggers() {
+    ;[].forEach.call(document.querySelectorAll("[data-md-neoabs-config-builder-open]"), (trigger) => {
+      if (trigger.getAttribute && trigger.getAttribute("data-md-neoabs-config-builder-bound")) return
+      if (trigger.setAttribute) trigger.setAttribute("data-md-neoabs-config-builder-bound", "true")
+      trigger.addEventListener("click", configBuilderOpen)
+    })
+  }
+
+  function configBuilderWireDialog() {
+    if (!_configBuilderEl) return
+    const close = _configBuilderEl.querySelector(".neoabs-config-builder__close")
+    if (close) close.addEventListener("click", configBuilderClose)
+    _configBuilderEl.addEventListener("click", (e) => {
+      if (e.target === _configBuilderEl) configBuilderClose()
+    })
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && configBuilderIsOpen()) configBuilderClose()
+    })
+    document.addEventListener("keydown", configBuilderFocusTrap)
+
+    const download = _configBuilderEl.querySelector(".neoabs-config-builder__download")
+    if (download) download.addEventListener("click", configBuilderDownload)
+    const copy = _configBuilderEl.querySelector(".neoabs-config-builder__copy")
+    if (copy) copy.addEventListener("click", configBuilderCopy)
+
+    configBuilderWireTriggers()
+    if (window.addEventListener) {
+      window.addEventListener("resize", configBuilderClusterSync)
+    }
+  }
+
+  function configBuilderOpen() {
+    if (!_configBuilderEl) return
+    if (!_configBuilderRendered) configBuilderRenderAll()
+    _configBuilderEl.classList.add("neoabs-config-builder--visible")
+    _configBuilderEl.setAttribute("aria-hidden", "false")
+    const shell = _configBuilderEl.querySelector("[data-md-neoabs-config-builder-shell]")
+    if (shell) shell.focus()
+  }
+
+  function configBuilderClose() {
+    if (!_configBuilderEl) return
+    _configBuilderEl.classList.remove("neoabs-config-builder--visible")
+    _configBuilderEl.setAttribute("aria-hidden", "true")
+  }
+
+  function initConfigBuilder(config) {
+    const cfg = config.config_builder || {}
+    if (!cfg.enabled) return
+    _configBuilderOpts = cfg
+    const el = document.querySelector(".neoabs-config-builder")
+    if (!el) return
+    _configBuilderEl = el
+    const schemaEl = document.getElementById(CONFIG_BUILDER_SCHEMA_ID)
+    let schema = []
+    if (schemaEl && schemaEl.textContent) {
+      try { schema = JSON.parse(schemaEl.textContent) } catch (e) { schema = [] }
+    }
+    if (!Array.isArray(schema) || !schema.length) return
+    _configBuilderSchema = schema
+    _configBuilderState = {}
+    _configBuilderSchema.forEach((group) => {
+      ;(group.questions || []).forEach((q) => {
+        _configBuilderState[q.id] = q.default
+      })
+    })
+    configBuilderWireDialog()
+    configBuilderRenderAll()
+    keyboardActions.open_config_builder = configBuilderOpen
+    if (cfg.cluster_icon !== false) configBuilderClusterSync()
   }
 
   // Phase 18: cluster action id -> built-in keyboard shortcut name it aliases.
@@ -5179,7 +5691,7 @@ actionClusterEnsureUi(cfg)
         () => initCopyButtons(_navConfig), initTabs, initTaskLists,
         initUIExamples, () => initMath(_navConfig), initNavToggle,
         initPermalinks, () => initFeedback(_navConfig), () => initComments(_navConfig),
-        focusTimerEnsureUi
+        focusTimerEnsureUi, configBuilderClusterSync, configBuilderWireTriggers
       ]
       inits.forEach(function (fn) {
         try { fn() } catch (e) {}
@@ -5507,7 +6019,7 @@ actionClusterEnsureUi(cfg)
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
       initContentTables, initMermaid, initImageZoom, initCodeAnnotations,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
+      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initConfigBuilder(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

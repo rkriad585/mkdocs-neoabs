@@ -1,0 +1,68 @@
+{% set _cb_i18n = _i18n.get("config_builder", {}) if (_i18n is mapping and _i18n.get("config_builder") is mapping) else {} %}
+{% set _cb_title = _cb_i18n.get("title", "Config builder") %}
+{% set _cb_dev_tool = _cb_i18n.get("devTool", "DEV TOOL") %}
+{% set _cb_open = _cb_i18n.get("open", "Open config builder") %}
+{% set _cb_close = _cb_i18n.get("close", "Close") %}
+{% set _cb_primer = _cb_i18n.get("primer", "Answer a few questions and NeoAbs writes your mkdocs.yml") %}
+{% set _cb_presets = _cb_i18n.get("presets", "Presets") %}
+{% set _cb_preview = _cb_i18n.get("preview", "Live YAML preview") %}
+{% set _cb_download = _cb_i18n.get("download", "Download") %}
+{% set _cb_copy = _cb_i18n.get("copy", "Copy") %}
+{% set _cb_target = _cb.target | default("mkdocs.yml") %}
+
+<div class="neoabs-config-builder" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="neoabs-config-builder-title" data-md-neoabs-config-builder>
+  <div class="neoabs-config-builder__panel" data-md-neoabs-config-builder-shell tabindex="-1">
+    <header class="neoabs-config-builder__header">
+      <div class="neoabs-config-builder__heading">
+        <span class="neoabs-config-builder__dev-tool">{{ _cb_dev_tool }}</span>
+        <h2 class="neoabs-config-builder__title" id="neoabs-config-builder-title">{{ _cb_title }}</h2>
+        <p class="neoabs-config-builder__primer">{{ _cb_primer }}</p>
+      </div>
+      <button type="button" class="neoabs-config-builder__close" aria-label="{{ _cb_close }}" title="{{ _cb_close }}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="neoabs-config-builder__presets-header">
+      <span class="neoabs-config-builder__presets-label">{{ _cb_presets }}</span>
+    </div>
+    <div class="neoabs-config-builder__presets" data-md-neoabs-config-builder-presets></div>
+
+    <div class="neoabs-config-builder__main">
+      <div class="neoabs-config-builder__preview">
+        <div class="neoabs-config-builder__preview-head">
+          <span class="neoabs-config-builder__preview-label">{{ _cb_preview }}</span>
+          <span class="neoabs-config-builder__preview-target">{{ _cb_target }}</span>
+        </div>
+        <pre class="neoabs-config-builder__yaml"></pre>
+      </div>
+
+      <div class="neoabs-config-builder__body">
+        <div class="neoabs-config-builder__groups" data-md-neoabs-config-builder-groups></div>
+      </div>
+    </div>
+
+    <footer class="neoabs-config-builder__footer">
+      <button type="button" class="neoabs-config-builder__copy">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>{{ _cb_copy }}</span>
+      </button>
+      <button type="button" class="neoabs-config-builder__download">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>{{ _cb_download }}</span>
+      </button>
+    </footer>
+  </div>
+
+  <script type="application/json" id="neoabs-config-builder-schema">[{"group": "basics", "title": "Site basics", "help": "These appear in the header, the browser tab and search results.", "questions": [{"id": "site_name", "label": "Site name", "help": "Shown in the header and in search results.", "path": "site_name", "type": "text", "placeholder": "My Docs", "default": "", "recommended": "My Docs"}, {"id": "site_description", "label": "Site description", "help": "A one-line summary for search engines.", "path": "site_description", "type": "text", "placeholder": "A modern documentation site", "default": "", "recommended": "A modern documentation site built with mkdocs-neoabs."}, {"id": "site_url", "label": "Site URL", "help": "Absolute URL of the deployed site (sitemap, canonicals, social cards).", "path": "site_url", "type": "text", "placeholder": "https://docs.example.com", "default": "", "recommended": "https://docs.example.com"}, {"id": "repo_url", "label": "Repository URL", "help": "Enables the repo button and edit links on every page.", "path": "repo_url", "type": "text", "placeholder": "https://github.com/user/repo", "default": "", "recommended": "https://github.com/user/repo"}]}, {"group": "theme", "title": "Theme", "help": "Branding and language settings.", "questions": [{"id": "language", "label": "Language", "help": "UI strings and search weighting.", "path": "theme.language", "type": "select", "default": "en", "options": [{"value": "en", "label": "English", "recommended": true}, {"value": "de", "label": "Deutsch"}, {"value": "fr", "label": "Français"}, {"value": "es", "label": "Español"}, {"value": "ja", "label": "日本語"}, {"value": "zh", "label": "中文"}, {"value": "pt", "label": "Português"}]}, {"id": "logo", "label": "Logo", "help": "A small brand image in the header.", "path": "theme.logo", "type": "text", "placeholder": "assets/logo.png", "default": "", "recommended": ""}, {"id": "favicon", "label": "Favicon", "help": "Browser-tab icon.", "path": "theme.favicon", "type": "text", "placeholder": "assets/favicon.ico", "default": "", "recommended": ""}]}, {"group": "features", "title": "Core features", "help": "Navigation, search and content extras.", "questions": [{"id": "f_nav_sections", "label": "Section index pages", "help": "Show section children in the nav when the section has an index.md.", "path": "features.navigation.sections", "type": "checkbox", "default": true, "recommended": true}, {"id": "f_nav_top", "label": "Top navigation", "help": "Place the navigation at the top of every page.", "path": "features.navigation.top", "type": "checkbox", "default": false, "recommended": false}, {"id": "f_nav_footer", "label": "Footer navigation", "help": "Previous / next pager in the page footer.", "path": "features.navigation.footer", "type": "checkbox", "default": false, "recommended": true}, {"id": "f_code_copy", "label": "Copy-code buttons", "help": "Add a copy button to every code block.", "path": "features.content.code.copy", "type": "checkbox", "default": true, "recommended": true}, {"id": "f_search_suggest", "label": "Search suggestions", "help": "Suggest terms as you type in the search box.", "path": "features.search.suggest", "type": "checkbox", "default": true, "recommended": true}, {"id": "f_search_highlight", "label": "Highlight search hits", "help": "Highlight matching words in search results.", "path": "features.search.highlight", "type": "checkbox", "default": true, "recommended": true}]}, {"group": "look", "title": "NeoAbs look", "help": "The visual signature of the theme.", "questions": [{"id": "glass", "label": "Frosted glass", "help": "How much glass blur the floating panels use.", "path": "theme.neoabs.glass", "type": "select", "default": "medium", "options": [{"value": "none", "label": "None"}, {"value": "light", "label": "Subtle"}, {"value": "medium", "label": "Frosted", "recommended": true}, {"value": "heavy", "label": "Strong"}]}, {"id": "border", "label": "Border", "help": "The hairline that frames panels and cards.", "path": "theme.neoabs.border", "type": "select", "default": "thin", "options": [{"value": "none", "label": "None"}, {"value": "thin", "label": "Hairline", "recommended": true}, {"value": "thick", "label": "Bold"}]}, {"id": "animation", "label": "Motion", "help": "How much animation the theme uses.", "path": "theme.neoabs.animation", "type": "select", "default": "normal", "options": [{"value": "normal", "label": "Full motion", "recommended": true}, {"value": "reduced", "label": "Light motion"}, {"value": "none", "label": "Static"}]}, {"id": "dot_matrix", "label": "Dot matrix", "help": "The signature dot-grid backdrop.", "path": "theme.neoabs.dot_matrix", "type": "toggle", "default": true, "recommended": true}]}, {"group": "components", "title": "Components", "help": "Which widgets ship on the page.", "questions": [{"id": "c_header", "label": "Header", "help": "Sticky top bar with nav, search and theme toggle.", "path": "theme.neoabs.components.header.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_sidebar", "label": "Navigation sidebar", "help": "The collapsible section tree.", "path": "theme.neoabs.components.sidebar.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_toc", "label": "On-this-page sidebar", "help": "The right-hand table of contents.", "path": "theme.neoabs.components.toc.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_footer", "label": "Footer", "help": "The page footer.", "path": "theme.neoabs.components.footer.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_search", "label": "Search", "help": "Client-side full-text search.", "path": "theme.neoabs.components.search.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_notes", "label": "Browser-local notes", "help": "Sticky notes stored in the browser.", "path": "theme.neoabs.components.notes.show", "type": "toggle", "default": true, "recommended": true}, {"id": "c_progress", "label": "Reading progress bar", "help": "A thin bar that fills as you scroll.", "path": "theme.neoabs.components.content.show_progress_bar", "type": "toggle", "default": true, "recommended": true}, {"id": "c_backtop", "label": "Back-to-top", "help": "The floating arrow that returns to the top.", "path": "theme.neoabs.components.content.show_back_to_top", "type": "toggle", "default": true, "recommended": true}]}, {"group": "power", "title": "Optional feature packs", "help": "Extra NeoAbs layers you can switch off in one click.", "questions": [{"id": "p_cluster", "label": "Action cluster", "help": "The plus menu with one-click quick actions.", "path": "theme.neoabs.action_cluster.enabled", "type": "toggle", "default": true, "recommended": true}, {"id": "p_timer", "label": "Focus timer", "help": "Pomodoro timer with reading-mode chip.", "path": "theme.neoabs.timer.enabled", "type": "toggle", "default": true, "recommended": true}, {"id": "p_reading", "label": "Reading mode", "help": "Distraction-free article view.", "path": "theme.neoabs.reading_mode.enabled", "type": "toggle", "default": true, "recommended": true}, {"id": "p_ai", "label": "AI reader", "help": "Markup + AI panel layer for content.", "path": "theme.neoabs.ai_reader.enabled", "type": "toggle", "default": true, "recommended": true}]}, {"group": "extra", "title": "Extras", "help": "Odds and ends.", "questions": [{"id": "e_showcase", "label": "Showcase footer", "help": "The Powered-by-NeoAbs mark in the footer.", "path": "extra.neoabs_showcase", "type": "toggle", "default": true, "recommended": true}]}]</script>
+</div>

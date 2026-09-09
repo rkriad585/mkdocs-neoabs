@@ -6892,3 +6892,561 @@ html[data-md-color-scheme~="light"] .neoabs-consent {
 		transition: none !important;
 	}
 }
+
+// --- Phase 21: Interactive config builder -----------------------------------
+// A developer tool that assembles a mkdocs.yml from checkboxes, guided
+// questions and preset cards. Distinctive "dev tool" styling (accent-red,
+// mono headings, dense fields) marks it as clearly separate from the site's
+// end-user UI. Ships ON->OFF by default via `config_builder.enabled`.
+
+:root {
+	--neoabs-config-builder-accent: #ff5c33;
+	--neoabs-config-builder-accent-dim: rgba(255, 92, 51, 0.14);
+}
+
+.neoabs-config-builder {
+	position: fixed;
+	inset: 0;
+	z-index: calc(var(--neoabs-z-modal) + 10);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity var(--neoabs-transition-normal),
+	            visibility var(--neoabs-transition-normal);
+
+	&--visible {
+		opacity: 1;
+		visibility: visible;
+
+		.neoabs-config-builder__panel {
+			transform: scale(1) translateY(0);
+		}
+	}
+}
+
+.neoabs-config-builder__panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 860px;
+	max-height: calc(100vh - var(--neoabs-space-8));
+	margin: var(--neoabs-space-4);
+	overflow: hidden;
+	background: var(--neoabs-glass-bg-strong);
+	backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur-heavy)) saturate(var(--neoabs-glass-saturation));
+	border: 1px solid var(--neoabs-glass-border-strong);
+	border-top: 2px solid var(--neoabs-config-builder-accent);
+	border-radius: var(--neoabs-radius-xl);
+	box-shadow: var(--neoabs-shadow-lg);
+	transform: scale(0.96) translateY(12px);
+	transition: transform var(--neoabs-transition-spring);
+
+	@media (max-width: $neoabs-breakpoint-mobile) {
+		margin: 0;
+		max-width: 100%;
+		max-height: 100vh;
+		border-radius: 0;
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-config-builder__panel {
+	background: rgba(255, 255, 255, 0.97);
+}
+
+.neoabs-config-builder__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--neoabs-space-4);
+	padding: var(--neoabs-space-5) var(--neoabs-space-6);
+	border-bottom: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+}
+
+.neoabs-config-builder__dev-tool {
+	display: inline-block;
+	font-family: var(--neoabs-font-mono);
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: #fff;
+	background: var(--neoabs-config-builder-accent);
+	border-radius: var(--neoabs-radius-sm);
+	padding: 2px 6px;
+	margin-bottom: var(--neoabs-space-2);
+}
+
+.neoabs-config-builder__title {
+	font-family: var(--neoabs-font-body);
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--neoabs-text-primary);
+	margin: 0;
+}
+
+.neoabs-config-builder__primer {
+	font-family: var(--neoabs-font-body);
+	font-size: 13px;
+	color: var(--neoabs-text-muted);
+	margin: var(--neoabs-space-1) 0 0 0;
+}
+
+.neoabs-config-builder__close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 30px;
+	height: 30px;
+	color: var(--neoabs-text-muted);
+	background: transparent;
+	border: var(--neoabs-border-width, 1px) solid transparent;
+	border-radius: var(--neoabs-radius-pill);
+	cursor: pointer;
+	transition: color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast);
+
+	&:hover {
+		color: var(--neoabs-config-builder-accent);
+		background: var(--neoabs-config-builder-accent-dim);
+		border-color: var(--neoabs-config-builder-accent);
+	}
+}
+
+.neoabs-config-builder__presets-header {
+	padding: var(--neoabs-space-4) var(--neoabs-space-6) 0;
+}
+
+.neoabs-config-builder__presets-label {
+	font-family: var(--neoabs-font-mono);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--neoabs-text-muted);
+}
+
+.neoabs-config-builder__presets {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--neoabs-space-3);
+	padding: var(--neoabs-space-3) var(--neoabs-space-6) var(--neoabs-space-4);
+
+	@media (max-width: $neoabs-breakpoint-toc) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.neoabs-config-builder__preset {
+	display: flex;
+	flex-direction: column;
+	gap: var(--neoabs-space-1);
+	text-align: left;
+	padding: var(--neoabs-space-3);
+	background: var(--neoabs-ghost);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-md);
+	cursor: pointer;
+	transition: border-color var(--neoabs-transition-fast),
+	            box-shadow var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-config-builder-accent);
+	}
+
+	&--active {
+		background: var(--neoabs-config-builder-accent-dim);
+		border-color: var(--neoabs-config-builder-accent);
+		box-shadow: 0 0 0 1px var(--neoabs-config-builder-accent) inset;
+	}
+}
+
+.neoabs-config-builder__preset-label {
+	font-family: var(--neoabs-font-body);
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--neoabs-text-primary);
+}
+
+.neoabs-config-builder__preset-help {
+	font-family: var(--neoabs-font-body);
+	font-size: 11px;
+	color: var(--neoabs-text-muted);
+}
+
+// Two-pane workspace: live YAML preview on the left, question groups on the
+// right. Both panes scroll independently while the header, presets and footer
+// stay put; below the TOC breakpoint it stacks to a single scrolling column.
+.neoabs-config-builder__main {
+	display: grid;
+	grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+	flex: 1 1 auto;
+	min-height: 0;
+
+	@media (max-width: $neoabs-breakpoint-toc) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.neoabs-config-builder__body {
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	padding: var(--neoabs-space-2) var(--neoabs-space-6);
+}
+
+.neoabs-config-builder__group {
+	padding: var(--neoabs-space-4) 0;
+	border-bottom: var(--neoabs-border-width, 1px) dashed var(--neoabs-glass-border);
+
+	&:last-child {
+		border-bottom: 0;
+	}
+}
+
+.neoabs-config-builder__group-title {
+	font-family: var(--neoabs-font-mono);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--neoabs-text-primary);
+	margin: 0 0 var(--neoabs-space-1) 0;
+}
+
+.neoabs-config-builder__group-help {
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	color: var(--neoabs-text-muted);
+	margin: 0 0 var(--neoabs-space-3) 0;
+}
+
+.neoabs-config-builder__question {
+	margin-top: var(--neoabs-space-3);
+}
+
+.neoabs-config-builder__field-label {
+	display: block;
+	margin-bottom: var(--neoabs-space-2);
+
+	strong {
+		display: block;
+		font-family: var(--neoabs-font-body);
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--neoabs-text-primary);
+	}
+
+	small {
+		display: block;
+		font-family: var(--neoabs-font-body);
+		font-size: 11px;
+		color: var(--neoabs-text-muted);
+		margin-top: 2px;
+	}
+}
+
+.neoabs-config-builder__options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--neoabs-space-2);
+}
+
+.neoabs-config-builder__option {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	font-family: var(--neoabs-font-body);
+	font-size: 12px;
+	color: var(--neoabs-text-secondary);
+	background: var(--neoabs-ghost);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-pill);
+	padding: 4px 12px;
+	cursor: pointer;
+	transition: border-color var(--neoabs-transition-fast),
+	            color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-config-builder-accent);
+		color: var(--neoabs-text-primary);
+	}
+
+	&--active {
+		background: var(--neoabs-config-builder-accent-dim);
+		border-color: var(--neoabs-config-builder-accent);
+		color: var(--neoabs-text-primary);
+	}
+}
+
+.neoabs-config-builder__recommend {
+	font-family: var(--neoabs-font-mono);
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--neoabs-config-builder-accent);
+	border: 1px solid var(--neoabs-config-builder-accent);
+	border-radius: var(--neoabs-radius-sm);
+	padding: 1px 5px;
+}
+
+.neoabs-config-builder__choice {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-3);
+	cursor: pointer;
+
+	input[type="checkbox"] {
+		appearance: none;
+		flex: 0 0 auto;
+		width: 18px;
+		height: 18px;
+		margin: 0;
+		border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+		border-radius: var(--neoabs-radius-sm);
+		background: var(--neoabs-ghost);
+		display: grid;
+		place-content: center;
+		transition: border-color var(--neoabs-transition-fast),
+		            background var(--neoabs-transition-fast);
+
+		&::before {
+			content: "";
+			width: 10px;
+			height: 10px;
+			transform: scale(0);
+			transition: transform var(--neoabs-transition-fast);
+			background: var(--neoabs-config-builder-accent);
+			border-radius: 2px;
+		}
+
+		&:checked {
+			border-color: var(--neoabs-config-builder-accent);
+
+			&::before {
+				transform: scale(1);
+			}
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--neoabs-config-builder-accent);
+			outline-offset: 2px;
+		}
+	}
+}
+
+.neoabs-config-builder__choice-track {
+	display: none;
+}
+
+.neoabs-config-builder__choice-copy {
+	display: flex;
+	flex-direction: column;
+
+	strong {
+		font-family: var(--neoabs-font-body);
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--neoabs-text-primary);
+	}
+
+	small {
+		font-family: var(--neoabs-font-body);
+		font-size: 11px;
+		color: var(--neoabs-text-muted);
+	}
+}
+
+.neoabs-config-builder__text {
+	display: block;
+	width: 100%;
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-ghost);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-sm);
+	padding: 6px 10px;
+	transition: border-color var(--neoabs-transition-fast);
+
+	&:focus {
+		outline: none;
+		border-color: var(--neoabs-config-builder-accent);
+	}
+}
+
+.neoabs-config-builder__preview {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	border-right: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	background: var(--neoabs-ink, #000);
+
+	@media (max-width: $neoabs-breakpoint-toc) {
+		border-right: 0;
+		border-bottom: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+		max-height: 260px;
+	}
+}
+
+[data-md-color-scheme="default"] .neoabs-config-builder__preview {
+	background: #f6f6f4;
+}
+
+.neoabs-config-builder__preview-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--neoabs-space-2);
+	padding: var(--neoabs-space-3) var(--neoabs-space-4);
+
+	.neoabs-config-builder__preview-label {
+		font-family: var(--neoabs-font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--neoabs-text-muted);
+	}
+
+	.neoabs-config-builder__preview-target {
+		font-family: var(--neoabs-font-mono);
+		font-size: 10px;
+		color: var(--neoabs-config-builder-accent);
+		text-align: right;
+		word-break: break-word;
+	}
+}
+
+.neoabs-config-builder__yaml {
+	flex: 1 1 auto;
+	min-height: 0;
+	margin: 0;
+	padding: var(--neoabs-space-2) var(--neoabs-space-4) var(--neoabs-space-4);
+	font-family: var(--neoabs-font-mono);
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: var(--neoabs-text-secondary);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+// Token colours for the inline YAML highlighter.
+.neoabs-config-builder__tok-key {
+	color: var(--neoabs-config-builder-accent);
+}
+
+.neoabs-config-builder__tok-str {
+	color: var(--neoabs-accent-strong, var(--neoabs-accent));
+}
+
+.neoabs-config-builder__tok-bool {
+	color: var(--neoabs-config-builder-accent);
+	font-weight: 600;
+}
+
+.neoabs-config-builder__tok-num {
+	color: var(--neoabs-accent-strong, var(--neoabs-accent));
+}
+
+.neoabs-config-builder__tok-comment {
+	color: var(--neoabs-text-muted);
+	font-style: italic;
+}
+
+.neoabs-config-builder__footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--neoabs-space-3);
+	padding: var(--neoabs-space-4) var(--neoabs-space-6);
+	border-top: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+}
+
+.neoabs-config-builder__copy,
+.neoabs-config-builder__download {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	font-family: var(--neoabs-font-body);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--neoabs-text-primary);
+	background: var(--neoabs-ghost);
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border-strong);
+	border-radius: var(--neoabs-radius-md);
+	padding: 8px 16px;
+	cursor: pointer;
+	transition: border-color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast),
+	            color var(--neoabs-transition-fast);
+
+	&:hover {
+		border-color: var(--neoabs-config-builder-accent);
+	}
+}
+
+.neoabs-config-builder__download {
+	color: #fff;
+	background: var(--neoabs-config-builder-accent);
+	border-color: var(--neoabs-config-builder-accent);
+
+	&:hover {
+		background: var(--neoabs-config-builder-accent-dim);
+		color: var(--neoabs-config-builder-accent);
+	}
+}
+
+// Pinned build icon at the bottom of the TOC panel. The flex column in
+// `.neoabs-toc__inner` lets `margin-top: auto` park it under the page list.
+.neoabs-config-builder__toc-trigger {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-2);
+	margin-top: auto;
+	margin-bottom: var(--neoabs-space-2);
+	padding: var(--neoabs-space-2) var(--neoabs-space-4);
+	font-family: var(--neoabs-font-mono);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--neoabs-text-muted);
+	background: transparent;
+	border: var(--neoabs-border-width, 1px) solid transparent;
+	border-radius: var(--neoabs-radius-md);
+	cursor: pointer;
+	transition: color var(--neoabs-transition-fast),
+	            border-color var(--neoabs-transition-fast),
+	            background var(--neoabs-transition-fast);
+
+	&:hover {
+		color: var(--neoabs-config-builder-accent);
+		border-color: var(--neoabs-glass-border-strong);
+		background: var(--neoabs-ghost);
+	}
+}
+
+// Cluster mirror: the same build icon surfaced in the action-cluster menu at
+// all times, so the builder stays reachable from anywhere on the page.
+.neoabs-config-builder__cluster-mirror {
+	&:hover {
+		color: var(--neoabs-config-builder-accent);
+	}
+}

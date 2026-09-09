@@ -48,6 +48,17 @@
         {{ render_toc_item(toc_item) }}
         {% endfor %}
       </ul>
+      {% if _cb.enabled and (_cb.toc_icon | default(true)) %}
+      {% set _cb_open_label = _i18n.get("config_builder", {}).get("open", "Open config builder") if (_i18n is mapping and _i18n.get("config_builder") is mapping) else "Open config builder" %}
+      <button type="button" class="neoabs-config-builder__toc-trigger" data-md-neoabs-config-builder-open aria-label="{{ _cb_open_label }}" title="{{ _cb_open_label }}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+          <path d="M9.5 3.5v3M14.5 3.5v3M7 6.5h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 7v1.2M17 7v1.2M7 12h10M7 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M5 9.2h14" stroke="var(--neoabs-accent)" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>{{ _cb_open_label }}</span>
+      </button>
+      {% endif %}
     </div>
   </div>
 </aside>

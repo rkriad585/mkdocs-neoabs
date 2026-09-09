@@ -171,6 +171,56 @@ function zoomOverlayNode() {
   return ov
 }
 
+// Phase 21: config builder fixture. The dialog host, its inner containers, the
+// schema script node, the TOC (for the pinned-trigger / hidden check) and a
+// minimal action-cluster menu so the mirror can be asserted too.
+function configBuilderFixture() {
+  const dialog = makeNode()
+  const groups = makeNode()
+  const presets = makeNode()
+  const preview = makeNode()
+  const shell = makeNode()
+  const close = makeNode()
+  const copy = makeNode()
+  const download = makeNode()
+  const trigger = makeNode()
+  const schema = makeNode()
+  schema.textContent = JSON.stringify(phase21Schema())
+  dialog.querySelector = (sel) => {
+    if (sel === "[data-md-neoabs-config-builder-groups]") return groups
+    if (sel === "[data-md-neoabs-config-builder-presets]") return presets
+    if (sel === ".neoabs-config-builder__yaml") return preview
+    if (sel === "[data-md-neoabs-config-builder-shell]") return shell
+    if (sel === ".neoabs-config-builder__close") return close
+    if (sel === ".neoabs-config-builder__copy") return copy
+    if (sel === ".neoabs-config-builder__download") return download
+    return null
+  }
+  dialog.querySelectorAll = () => []
+  const toc = makeNode()
+  toc.tagName = "ASIDE"
+  const cluster = makeNode()
+  const menu = makeNode()
+  cluster.querySelector = (sel) => (sel === ".neoabs-action-cluster__menu" ? menu : null)
+  return { dialog, groups, presets, preview, shell, close, copy, download, trigger, triggers: [trigger], schema, toc, cluster, menu }
+}
+
+function phase21Schema() {
+  return [
+    {
+      group: "basics",
+      title: "Site basics",
+      questions: [
+        { id: "site_name", label: "Site name", path: "site_name", type: "text", default: "", recommended: "My Docs" },
+        { id: "glass", label: "Glass", path: "theme.neoabs.glass", type: "select", default: "medium",
+          options: [{ value: "none", label: "None" }, { value: "medium", label: "Frosted", recommended: true }] },
+        { id: "c_toc", label: "TOC", path: "theme.neoabs.components.toc.show", type: "toggle", default: true, recommended: true },
+        { id: "f_nav_top", label: "Top nav", path: "features.navigation.top", type: "checkbox", default: false, recommended: false },
+      ],
+    },
+  ]
+}
+
 const documentStub = {
   readyState: "complete",
   body,
@@ -220,16 +270,25 @@ const documentStub = {
       if (sel === ".neoabs-search__close") return _searchDom.closeBtn
     }
     if (_repoFixture && sel === ".neoabs-header__repo") return _repoFixture.link
+    if (_configBuilderDom) {
+      if (sel === ".neoabs-config-builder") return _configBuilderDom.dialog
+      if (sel === ".neoabs-toc") return _configBuilderDom.toc
+      if (sel === ".neoabs-action-cluster") return _configBuilderDom.cluster
+    }
     if (sel === "article .neoabs-typeset") return _typesetNode
     return null
   },
   querySelectorAll(sel) {
     if (sel === "article .neoabs-typeset img") return _zoomImgs
     if (sel === "img[data-md-scheme-dark][data-md-scheme-light]") return _schemeImgs
+    if (_configBuilderDom && sel === "[data-md-neoabs-config-builder-open]") {
+      return _configBuilderDom.triggers ? _configBuilderDom.triggers.slice() : []
+    }
     return []
   },
   getElementById(id) {
     if (id === "__config") return _configEl
+    if (_configBuilderDom && id === "neoabs-config-builder-schema") return _configBuilderDom.schema
     if (_searchDom && id === "neoabs-search") return _searchDom.checkbox
     if (id === "neoabs-search-share") return null
     return null
@@ -267,6 +326,7 @@ let _configEl = null
 let _typesetNode = null
 let _repoFixture = null
 let _schemeImgs = []
+let _configBuilderDom = null
 
 // Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
 // harness can resolve relative paths the way a real browser does.
@@ -336,6 +396,7 @@ function bootIIFE(overrides) {
   } else {
     _configEl = null
   }
+  _configBuilderDom = overrides.configBuilder || null
   _searchDom = overrides.searchDom || null
   if (overrides.stored !== undefined) stored = overrides.stored
   if (overrides.clipboard !== undefined) clipboardCaptured = overrides.clipboard
@@ -1330,6 +1391,87 @@ const assetBoot2 = bootIIFE({
 })
 globalThis.URL = savedURL
 check("Phase 8 boots in local + bundle asset modes without throwing", assetBoot && assetBoot2)
+
+// ============================================================================
+// Phase 21: Interactive config builder
+// ============================================================================
+// OFF by default: even with the dialog present in the DOM, no builder UI is
+// initialized and the preview stays empty.
+const cbOff = configBuilderFixture()
+const cbOffBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", components: {}, content: {} },
+  searchDom: null,
+  configBuilder: cbOff,
+  stored: {},
+})
+check("config builder stays untouched when the master switch is off", cbOffBoot && !cbOff.preview.innerHTML && !cbOff.preview.dataset.yaml)
+
+// ON: the builder renders its groups, opens/closes through the pinned trigger,
+// generates live YAML and copies it to the clipboard.
+const cbOn = configBuilderFixture()
+const cbOnBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    config_builder: { enabled: true, toc_icon: true, cluster_icon: true, presets: ["default", "standard", "custom"], download: true, copy: true, target: "mkdocs.yml" },
+    components: { toc: { show: true } },
+    content: {},
+  },
+  searchDom: null,
+  configBuilder: cbOn,
+  stored: {},
+  clipboard: "",
+})
+check(
+  "config builder renders a highlighted YAML preview in the left pane when enabled",
+  cbOnBoot &&
+    cbOn.preview.dataset.yaml.indexOf("glass: medium") !== -1 &&
+    cbOn.preview.innerHTML.indexOf("neoabs-config-builder__tok-key") !== -1 &&
+    cbOn.preview.innerHTML.indexOf("neoabs-config-builder__tok-bool") !== -1
+)
+check("config builder starts closed", cbOnBoot && !cbOn.dialog.classList.contains("neoabs-config-builder--visible"))
+cbOn.trigger.listeners.click[0]()
+check("config builder opens from the pinned trigger", cbOn.dialog.classList.contains("neoabs-config-builder--visible"))
+cbOn.close.listeners.click[0]()
+check("config builder closes via its close button", !cbOn.dialog.classList.contains("neoabs-config-builder--visible"))
+cbOn.trigger.listeners.click[0]()
+cbOn.copy.listeners.click[0]()
+check("config builder copies the generated YAML to the clipboard", clipboardCaptured.indexOf("glass: medium") !== -1)
+
+// Cluster mirror: the build icon is always present in the action-cluster menu,
+// regardless of TOC visibility (shown via attribute, nothing removed from DOM).
+const cbMirror = configBuilderFixture()
+const cbMirrorBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    config_builder: { enabled: true, toc_icon: true, cluster_icon: true, presets: ["default", "standard", "custom"], download: true, copy: true, target: "mkdocs.yml" },
+    components: { toc: { show: false } },
+    content: {},
+  },
+  searchDom: null,
+  configBuilder: cbMirror,
+  stored: {},
+})
+const cbMirrorBtn = (cbMirror.menu._children || []).find((n) => n.getAttribute && n.getAttribute("data-md-neoabs-cluster-action") === "config_builder")
+check("config builder mirrors its icon into the cluster when the TOC is hidden", cbMirrorBoot && !!cbMirrorBtn && cbMirrorBtn.hidden === false)
+
+const cbMirrorToc = configBuilderFixture()
+const cbMirrorTocBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    config_builder: { enabled: true, toc_icon: true, cluster_icon: true, presets: ["default", "standard", "custom"], download: true, copy: true, target: "mkdocs.yml" },
+    components: { toc: { show: true } },
+    content: {},
+  },
+  searchDom: null,
+  configBuilder: cbMirrorToc,
+  stored: {},
+})
+const cbMirrorTocBtn = (cbMirrorToc.menu._children || []).find((n) => n.getAttribute && n.getAttribute("data-md-neoabs-cluster-action") === "config_builder")
+check("config builder keeps its icon in the cluster even when the TOC is visible", cbMirrorTocBoot && !!cbMirrorTocBtn && cbMirrorTocBtn.hidden === false)
 
 // ============================================================================
 // Report

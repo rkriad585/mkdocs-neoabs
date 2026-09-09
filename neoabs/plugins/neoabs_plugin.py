@@ -392,9 +392,23 @@ _NEOABS_DEFAULT_ACTION_CLUSTER = {
 
 # Allowed enums / keys for the action cluster so a typo fails the build loudly.
 _NEOABS_ACTION_CLUSTER_POSITIONS = ("bottom-left", "bottom-right")
-_NEOABS_ACTION_CLUSTER_ICONS = ("plus", "menu", "notes", "help", "timer", "reading")
+_NEOABS_ACTION_CLUSTER_ICONS = (
+    "plus",
+    "menu",
+    "notes",
+    "help",
+    "timer",
+    "reading",
+    "builder",
+)
 _NEOABS_ACTION_CLUSTER_ANIMATIONS = ("normal", "reduced", "none")
-_NEOABS_ACTION_CLUSTER_IDS = ("keyboard_help", "notes", "timer", "reading_mode")
+_NEOABS_ACTION_CLUSTER_IDS = (
+    "keyboard_help",
+    "notes",
+    "timer",
+    "reading_mode",
+    "config_builder",
+)
 _NEOABS_ACTION_CLUSTER_OFFSET_KEYS = ("bottom", "left", "right")
 _NEOABS_ACTION_CLUSTER_BADGES = ("none", "time")
 _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
@@ -404,6 +418,33 @@ _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
     "tooltips",
     "focus_trap",
 )
+
+# Phase 21 - Interactive config builder.
+#
+# An opt-in, client-side "mkdocs.yml generator": a guided wizard that lets a
+# developer assemble their own config by clicking checkboxes and answering
+# questions (each option can carry a recommended tag), with a live YAML preview
+# and Download / Copy buttons. The builder is a dev tool: it ships OFF by
+# default (the one feature that deliberately breaks the "everything ON" rule,
+# per the phase spec) and is intended for the official mkdocs-neoabs website,
+# but any site can enable it. A distinctive icon is pinned at the bottom of the
+# TOC panel; when the TOC panel is hidden (responsive breakpoint, reading mode,
+# or components.toc.show: false) the same icon is mirrored into the action
+# cluster so the tool stays reachable. Inner switches (toc_icon, cluster_icon,
+# download, copy) default to ON once the master switch is on.
+_NEOABS_DEFAULT_CONFIG_BUILDER = {
+    "enabled": False,
+    "toc_icon": True,
+    "cluster_icon": True,
+    "presets": ["default", "standard", "custom"],
+    "download": True,
+    "copy": True,
+    "target": "mkdocs.yml",
+}
+
+# Allowed preset ids for the config builder so a typo fails the build loudly.
+_NEOABS_CONFIG_BUILDER_PRESETS = ("default", "standard", "custom")
+_NEOABS_CONFIG_BUILDER_BOOLS = ("toc_icon", "cluster_icon", "download", "copy")
 
 # Phase 17 - Focus timer.
 #
@@ -754,6 +795,28 @@ _NEOABS_DEFAULT_I18N = {
         "next": "Next",
         "poweredBy": "Powered by NeoAbs",
     },
+    "config_builder": {
+        "title": "Config builder",
+        "devTool": "DEV TOOL",
+        "open": "Open config builder",
+        "close": "Close",
+        "recommended": "Recommended",
+        "primer": "Answer a few questions and NeoAbs writes your mkdocs.yml",
+        "presets": "Presets",
+        "presetDefault": "Default",
+        "presetDefaultHelp": "Plugin defaults, nothing extra",
+        "presetStandard": "Standard",
+        "presetStandardHelp": "Recommended, balanced setup",
+        "presetCustom": "Custom",
+        "presetCustomHelp": "Keep what you selected",
+        "preview": "Live YAML preview",
+        "download": "Download",
+        "copy": "Copy",
+        "copied": "Config copied to clipboard",
+        "downloadDone": "mkdocs.yml downloaded",
+        "exit": "Press Escape to close",
+        "stepOf": "Step {current} of {total}",
+    },
     "navigation": {
         "label": "Navigation",
     },
@@ -785,6 +848,12 @@ _NEOABS_I18N_FLAT_ALIASES = {
     "previous_page": ("footer", "previous"),
     "next_page": ("footer", "next"),
     "footer_powered_by": ("footer", "poweredBy"),
+    "config_builder_title": ("config_builder", "title"),
+    "config_builder_open": ("config_builder", "open"),
+    "config_builder_close": ("config_builder", "close"),
+    "config_builder_presets": ("config_builder", "presets"),
+    "config_builder_download": ("config_builder", "download"),
+    "config_builder_copy": ("config_builder", "copy"),
 }
 
 # Phase 7 - breadcrumbs. A trail above the content top whenever a page has
@@ -1219,6 +1288,47 @@ def _validate_action_cluster(action_cluster):
                     f"theme.neoabs.action_cluster.actions[{index}].enabled must "
                     "be a boolean."
                 )
+
+
+def _validate_config_builder(config_builder):
+    """Validate a merged `theme.neoabs.config_builder` mapping, raising a clear
+    MkDocs configuration error for malformed entries instead of silently
+    degrading the dev tool."""
+    if not isinstance(config_builder, dict):
+        raise ConfigurationError("theme.neoabs.config_builder must be a mapping.")
+
+    enabled = config_builder.get("enabled")
+    if enabled is not None and not isinstance(enabled, bool):
+        raise ConfigurationError(
+            "theme.neoabs.config_builder.enabled must be a boolean."
+        )
+
+    for field in _NEOABS_CONFIG_BUILDER_BOOLS:
+        value = config_builder.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.config_builder.{field} must be a boolean."
+            )
+
+    presets = config_builder.get("presets")
+    if presets is not None:
+        if not isinstance(presets, list):
+            raise ConfigurationError(
+                "theme.neoabs.config_builder.presets must be a list of "
+                f"{sorted(_NEOABS_CONFIG_BUILDER_PRESETS)}."
+            )
+        for entry in presets:
+            if entry not in _NEOABS_CONFIG_BUILDER_PRESETS:
+                raise ConfigurationError(
+                    f"theme.neoabs.config_builder.presets entries must be one of "
+                    f"{sorted(_NEOABS_CONFIG_BUILDER_PRESETS)}; got {entry!r}."
+                )
+
+    target = config_builder.get("target")
+    if target is not None and (not isinstance(target, str) or not target.strip()):
+        raise ConfigurationError(
+            "theme.neoabs.config_builder.target must be a non-empty string."
+        )
 
 
 def _validate_timer(timer):
@@ -1809,6 +1919,7 @@ class NeoAbsPlugin(BasePlugin):
         ("content", Type(dict)),
         ("reading_mode", Type(dict)),
         ("action_cluster", Type(dict)),
+        ("config_builder", Type(dict)),
         ("timer", Type(dict)),
         ("ai_reader", Type(dict)),
         ("social_cards", Type(dict)),
@@ -1936,6 +2047,22 @@ class NeoAbsPlugin(BasePlugin):
         )
         _validate_action_cluster(action_cluster)
         neoabs["action_cluster"] = action_cluster
+        theme["neoabs"] = neoabs
+
+        # Phase 21: resolve the interactive config builder. Ships OFF by
+        # default (explicitly breaking the "everything ON" working rule on
+        # purpose: it is a developer tool, not an end-user feature). When it is
+        # on, the inner switches (toc_icon, cluster_icon, presets, download,
+        # copy, target) keep their ON defaults so the tool is fully usable with
+        # a single `enabled: true`.
+        provided_config_builder = neoabs.get("config_builder")
+        if not isinstance(provided_config_builder, dict):
+            provided_config_builder = {}
+        config_builder = _deep_merge(
+            _NEOABS_DEFAULT_CONFIG_BUILDER, provided_config_builder
+        )
+        _validate_config_builder(config_builder)
+        neoabs["config_builder"] = config_builder
         theme["neoabs"] = neoabs
 
         # Phase 17: resolve the focus timer. Defaults ship fully ON (TOC
@@ -2247,6 +2374,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_content"] = content
         extra["neoabs_reading_mode"] = reading_mode
         extra["neoabs_action_cluster"] = action_cluster
+        extra["neoabs_config_builder"] = config_builder
         extra["neoabs_timer"] = timer
         extra["neoabs_ai_reader"] = ai_reader
         extra["neoabs_social_cards"] = social_cards
