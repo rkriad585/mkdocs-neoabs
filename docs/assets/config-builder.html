@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>neoabs config builder</title>
+<style>
+/* -------------------------------------------------------------------------
+   neoabs config builder — standalone single-file tool.
+   No external resources; works offline at file:// and over HTTP.
+   ------------------------------------------------------------------------- */
+:root {
+  --cb-bg: #ffffff;
+  --cb-fg: #1f2430;
+  --cb-muted: #57606a;
+  --cb-border: #d0d7de;
+  --cb-accent: #3b82f6;
+  --cb-code-bg: #f6f8fa;
+  --cb-key: #8250df;
+  --cb-str: #0a7d38;
+  --cb-bool: #0550ae;
+  --cb-num: #953800;
+  --cb-comment: #6e7781;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cb-bg: #16181d;
+    --cb-fg: #cdd6f4;
+    --cb-muted: #8c93a3;
+    --cb-border: #30363d;
+    --cb-accent: #58a6ff;
+    --cb-code-bg: #101218;
+    --cb-key: #89b4fa;
+    --cb-str: #a6e3a1;
+    --cb-bool: #f38ba8;
+    --cb-num: #fab387;
+    --cb-comment: #7f849c;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--cb-bg);
+  color: var(--cb-fg);
+}
+header {
+  padding: 18px 20px 6px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+header h1 { margin: 0; font-size: 20px; }
+header p { margin: 4px 0 0; color: var(--cb-muted); }
+.cb-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 12px 20px 40px;
+}
+@media (max-width: 900px) {
+  .cb-shell { grid-template-columns: 1fr; }
+}
+.cb-panel h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cb-muted);
+}
+.cb-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.cb-toolbar select,
+.cb-toolbar button {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--cb-border);
+  border-radius: 8px;
+  background: var(--cb-bg);
+  color: var(--cb-fg);
+  cursor: pointer;
+}
+.cb-toolbar button:hover, .cb-toolbar select:hover { border-color: var(--cb-accent); }
+button.cb-primary { background: var(--cb-accent); border-color: var(--cb-accent); color: #fff; }
+button.cb-primary:hover { opacity: 0.92; }
+form#cb-form fieldset {
+  border: 1px solid var(--cb-border);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  margin: 0 0 14px;
+}
+form#cb-form legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+.field { margin: 10px 0 0; }
+.field > label { display: block; font-weight: 500; }
+.field > label .req { color: var(--cb-accent); }
+.field small { display: block; color: var(--cb-muted); margin-top: 1px; }
+.field input[type="text"],
+.field select {
+  width: 100%;
+  margin-top: 4px;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--cb-border);
+  border-radius: 8px;
+  background: var(--cb-bg);
+  color: var(--cb-fg);
+}
+.field input[type="text"]:focus,
+.field select:focus { border-color: var(--cb-accent); outline: none; }
+.field input[type="checkbox"] { accent-color: var(--cb-accent); }
+.field .cb-checks { display: grid; gap: 4px; margin-top: 4px; }
+.field .cb-checks label { display: flex; align-items: center; gap: 8px; }
+.field .cb-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.field .cb-toggle label { font-weight: 500; }
+#cb-preview {
+  margin: 0;
+  padding: 12px;
+  min-height: 60vh;
+  border: 1px solid var(--cb-border);
+  border-radius: 10px;
+  background: var(--cb-code-bg);
+  overflow: auto;
+  white-space: pre;
+  font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+#cb-preview:focus-visible { outline: 2px solid var(--cb-accent); outline-offset: 2px; }
+.tok-key { color: var(--cb-key); }
+.tok-str { color: var(--cb-str); }
+.tok-bool { color: var(--cb-bool); }
+.tok-num { color: var(--cb-num); }
+.tok-comment { color: var(--cb-comment); }
+.cb-note { color: var(--cb-muted); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>neoabs config builder</h1>
+  <p>Answer the questions, then copy or download your mkdocs.yml. Your answers are saved in this browser only.</p>
+</header>
+<main class="cb-shell">
+  <section class="cb-panel" aria-label="Questions">
+    <h2>Questions</h2>
+    <div class="cb-toolbar">
+      <label for="cb-preset">Preset</label>
+      <select id="cb-preset"></select>
+      <button type="button" id="cb-reset">Reset</button>
+    </div>
+    <form id="cb-form" novalidate></form>
+  </section>
+  <section class="cb-panel" aria-label="YAML preview">
+    <h2>mkdocs.yml</h2>
+    <div class="cb-toolbar">
+      <button type="button" id="cb-copy" class="cb-primary">Copy YAML</button>
+      <button type="button" id="cb-download">Download mkdocs.yml</button>
+    </div>
+    <pre id="cb-preview" tabindex="0" role="region" aria-label="YAML preview"><code id="cb-code"></code></pre>
+    <p class="cb-note" id="cb-note"></p>
+  </section>
+</main>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// neoabs config builder — vanilla ES6+, zero dependencies.
+// source: neoabs-standalone-config-builder
+// ---------------------------------------------------------------------------
+
+const CB_STORAGE_KEY = "neoabs-config-builder-v1";
+
+// Single source of truth: a flat list of questions. Each `key` is a dotted
+// YAML path inside the generated mkdocs.yml; `type` picks the widget:
+//   text   -> <input type="text">
+//   select -> <select> from `options`
+//   checks -> checkbox group -> YAML list
+//   toggle -> single checkbox -> YAML boolean
+const SCHEMA = [
+  // Site basics
+  { cat: "Site", key: "site_name", type: "text", label: "Site name", req: true, placeholder: "My Docs" },
+  { cat: "Site", key: "site_url", type: "text", label: "Site URL", placeholder: "https://example.com" },
+  { cat: "Site", key: "repo_url", type: "text", label: "Repo URL", placeholder: "https://github.com/user/repo" },
+  { cat: "Site", key: "site_description", type: "text", label: "Description" },
+  // Theme core
+  { cat: "Theme", key: "theme.name", type: "select", label: "Theme name", options: ["neoabs"], default: "neoabs" },
+  { cat: "Theme", key: "theme.palette.primary", type: "select", label: "Primary color", options: ["indigo", "blue", "green", "amber", "red", "slate", "black", "white"], default: "indigo" },
+  { cat: "Theme", key: "theme.palette.accent", type: "select", label: "Accent color", options: ["red", "blue", "green", "amber", "indigo"], default: "red" },
+  { cat: "Theme", key: "theme.features", type: "checks", label: "Theme features", options: [
+    { label: "Navigation sections", value: "navigation.sections" },
+    { label: "Navigation top",      value: "navigation.top" },
+    { label: "Navigation footer",   value: "navigation.footer" },
+    { label: "Content code copy",   value: "content.code.copy" },
+    { label: "Search suggestions",  value: "search.suggest" },
+    { label: "Search highlight",    value: "search.highlight" } ] },
+  // NeoAbs components (all ON by default)
+  { cat: "NeoAbs components", key: "theme.neoabs.components.search.show",          type: "toggle", label: "Search",            default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.toc.show",             type: "toggle", label: "Table of contents", default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.reading_mode.show",    type: "toggle", label: "Reading mode",      default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.action_cluster.show",  type: "toggle", label: "Action cluster",    default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.focus_timer.show",     type: "toggle", label: "Focus timer",       default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.repo_popover.show",    type: "toggle", label: "Repo popover",      default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.feedback.show",        type: "toggle", label: "Feedback widget",   default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.announcement.show",    type: "toggle", label: "Announcement bar",  default: true },
+  { cat: "NeoAbs components", key: "theme.neoabs.components.comments.show",        type: "toggle", label: "Comments",          default: true },
+  // Plugins
+  { cat: "Plugins", key: "plugins", type: "checks", label: "Plugins", options: [
+    { label: "Search",   value: "search" },
+    { label: "Tags",     value: "tags" },
+    { label: "Minify",   value: "minify" },
+    { label: "Social",   value: "social" } ] },
+  // Markdown extensions
+  { cat: "Markdown extensions", key: "markdown_extensions", type: "checks", label: "Extensions", options: [
+    { label: "Admonition",    value: "admonition" },
+    { label: "Attr list",     value: "attr_list" },
+    { label: "Def list",      value: "def_list" },
+    { label: "SuperFences",   value: "pymdownx.superfences" },
+    { label: "Highlight",     value: "pymdownx.highlight" },
+    { label: "Tabbed",        value: "pymdownx.tabbed" },
+    { label: "Emoji",         value: "pymdownx.emoji" } ] },
+];
+
+function labelFor(q) {
+  const l = document.createElement("label");
+  l.setAttribute("for", q.key);
+  l.innerHTML = (q.req ? q.label + ' <span class="req">*</span>' : q.label);
+  return l;
+}
+
+function renderForm() {
+  const form = document.getElementById("cb-form");
+  const groups = {};
+  SCHEMA.forEach((q) => { (groups[q.cat] = groups[q.cat] || []).push(q); });
+  Object.keys(groups).forEach((cat) => {
+    const fs = document.createElement("fieldset");
+    const lg = document.createElement("legend");
+    lg.textContent = cat;
+    fs.appendChild(lg);
+    groups[cat].forEach((q) => {
+      const w = document.createElement("div");
+      w.className = "field";
+      if (q.type === "text") {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.id = q.key;
+        inp.dataset.key = q.key;
+        if (q.placeholder) inp.placeholder = q.placeholder;
+        if (q.req) inp.setAttribute("required", "");
+        w.appendChild(labelFor(q));
+        w.appendChild(inp);
+      } else if (q.type === "select") {
+        const sel = document.createElement("select");
+        sel.id = q.key;
+        sel.dataset.key = q.key;
+        q.options.forEach((o) => {
+          const op = document.createElement("option");
+          op.value = typeof o === "string" ? o : o.value;
+          op.textContent = typeof o === "string" ? o : o.label;
+          sel.appendChild(op);
+        });
+        sel.value = q.default || "";
+        w.appendChild(labelFor(q));
+        w.appendChild(sel);
+      } else if (q.type === "checks") {
+        const title = document.createElement("div");
+        title.className = "field-title";
+        title.textContent = q.label;
+        w.appendChild(title);
+        const box = document.createElement("div");
+        box.className = "cb-checks";
+        q.options.forEach((o) => {
+          const idb = q.key + "__" + o.value;
+          const cbl = document.createElement("label");
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.id = idb;
+          cb.dataset.key = q.key;
+          cb.value = o.value;
+          const span = document.createElement("span");
+          span.textContent = o.label;
+          cbl.appendChild(cb);
+          cbl.appendChild(span);
+          box.appendChild(cbl);
+        });
+        w.appendChild(box);
+      } else if (q.type === "toggle") {
+        const row = document.createElement("div");
+        row.className = "cb-toggle";
+        const lbl = document.createElement("label");
+        lbl.setAttribute("for", q.key);
+        lbl.textContent = q.label;
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.id = q.key;
+        cb.dataset.key = q.key;
+        cb.dataset.toggle = "1";
+        cb.checked = !!q.default;
+        row.appendChild(lbl);
+        row.appendChild(cb);
+        w.appendChild(row);
+      }
+      fs.appendChild(w);
+    });
+    form.appendChild(fs);
+  });
+}
+
+function currentValues() {
+  const v = {};
+  SCHEMA.forEach((q) => {
+    const el = q.type === "checks" ? null : document.getElementById(q.key);
+    if (q.type === "text") v[q.key] = (el && el.value || "").trim();
+    else if (q.type === "select") v[q.key] = el && el.value !== "" ? el.value : "";
+    else if (q.type === "toggle") v[q.key] = !!el.checked;
+    else if (q.type === "checks")
+      v[q.key] = Array.from(document.querySelectorAll('input[data-key="' + q.key + '"]:checked')).map((c) => c.value);
+  });
+  return v;
+}
+
+function setByPath(obj, path, value) {
+  const parts = path.split(".");
+  let node = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    node[parts[i]] = node[parts[i]] || {};
+    node = node[parts[i]];
+  }
+  node[parts[parts.length - 1]] = value;
+  return obj;
+}
+
+function buildConfigObject() {
+  const out = {};
+  const v = currentValues();
+  Object.keys(v).forEach((path) => { setByPath(out, path, v[path]); });
+  return out;
+}
+
+function toYaml(obj, indent) {
+  indent = indent || 0;
+  const pad = "  ".repeat(indent);
+  let out = "";
+  Object.keys(obj).forEach((k) => {
+    const val = obj[k];
+    if (val === "" || val === undefined || val === null) return;
+    if (typeof val === "boolean" || typeof val === "number") {
+      out += pad + k + ": " + val + "\n";
+    } else if (typeof val === "string") {
+      out += pad + k + ": " + (/[:#']/.test(val) ? JSON.stringify(val) : val) + "\n";
+    } else if (Array.isArray(val)) {
+      if (!val.length) return;
+      out += pad + k + ":\n" + val.map((x) => pad + "  - " + (/[:#']/.test(String(x)) ? JSON.stringify(x) : x)).join("\n") + "\n";
+    } else if (typeof val === "object") {
+      out += pad + k + ":\n" + toYaml(val, indent + 1);
+    }
+  });
+  return out;
+}
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function highlightYaml(yaml) {
+  return esc(yaml)
+    .replace(/^(\s*(?:- )?)([\w.-]+)(:)(?=\s|$)/gm, '$1<span class="tok-key">$2</span>$3')
+    .replace(/:\s*(['"])(.*?)\1$/gm, ': <span class="tok-str">$1$2$1</span>')
+    .replace(/:\s*(true|false)\b/gm, ': <span class="tok-bool">$1</span>')
+    .replace(/:\s*(-?\d+(?:\.\d+)?)\b/gm, ': <span class="tok-num">$1</span>')
+    .replace(/(#.*)$/gm, '<span class="tok-comment">$1</span>');
+}
+
+function saveState() {
+  try { localStorage.setItem(CB_STORAGE_KEY, JSON.stringify(currentValues())); } catch (e) {}
+}
+
+function loadState() {
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(CB_STORAGE_KEY) || "null"); } catch (e) {}
+  if (!v || typeof v !== "object") return;
+  SCHEMA.forEach((q) => {
+    if (!(q.key in v)) return;
+    if (q.type === "checks") {
+      (v[q.key] || []).forEach((x) => {
+        const c = document.getElementById(q.key + "__" + x);
+        if (c) c.checked = true;
+      });
+      return;
+    }
+    const el = document.getElementById(q.key);
+    if (!el) return;
+    if (el.checked !== undefined && el.type === "checkbox") el.checked = !!v[q.key];
+    else el.value = v[q.key] === null || v[q.key] === undefined ? "" : String(v[q.key]);
+  });
+}
+
+function resetFormToDefaults() {
+  SCHEMA.forEach((q) => {
+    if (q.type === "checks") {
+      Array.from(document.querySelectorAll('input[data-key="' + q.key + '"]')).forEach((c) => { c.checked = false; });
+      return;
+    }
+    const el = document.getElementById(q.key);
+    if (!el) return;
+    if (el.type === "checkbox") el.checked = !!q.default;
+    else el.value = q.default || "";
+  });
+}
+
+const PRESETS = {
+  "": "No preset",
+  default: "Default",
+  standard: "Standard",
+  basic: "Basic",
+};
+
+function applyPreset(name) {
+  resetFormToDefaults();
+  if (name === "basic") {
+    ["theme.neoabs.components.feedback.show",
+      "theme.neoabs.components.comments.show",
+      "theme.neoabs.components.announcement.show",
+      "theme.features"].forEach((k) => {
+      document.querySelectorAll('input[data-key="' + k + '"]').forEach((c) => { c.checked = false; });
+    });
+  } else if (name === "standard") {
+    ["theme.neoabs.components.comments.show"].forEach((k) => {
+      document.querySelectorAll('input[data-key="' + k + '"]').forEach((c) => { c.checked = false; });
+    });
+  }
+  refresh();
+}
+
+function refresh() {
+  const yaml = toYaml(buildConfigObject());
+  document.getElementById("cb-code").innerHTML = highlightYaml(yaml);
+  saveState();
+  const note = document.getElementById("cb-note");
+  if (note) note.textContent = SCHEMA.length + " questions across " + Object.keys(SCHEMA.reduce((m, q) => (m[q.cat] = 1, m), {})).length + " groups.";
+}
+
+function copyYaml() {
+  const text = toYaml(buildConfigObject());
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true, () => fallbackCopy(text));
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+function downloadYaml() {
+  const blob = new Blob([toYaml(buildConfigObject())], { type: "text/yaml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "mkdocs.yml";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderForm();
+  loadState();
+
+  const form = document.getElementById("cb-form");
+
+  function noteOnce(msg) {
+    const note = document.getElementById("cb-note");
+    if (note) note.textContent = msg;
+  }
+
+  form.addEventListener("input", refresh);
+  form.addEventListener("change", refresh);
+
+  document.getElementById("cb-copy").addEventListener("click", () => {
+    copyYaml().then((ok) => {
+      const b = document.getElementById("cb-copy");
+      b.textContent = ok ? "Copied!" : "Copy failed";
+      window.setTimeout(() => { b.textContent = "Copy YAML"; }, 1400);
+    });
+  });
+
+  document.getElementById("cb-download").addEventListener("click", downloadYaml);
+
+  const preset = document.getElementById("cb-preset");
+  Object.keys(PRESETS).forEach((k) => {
+    const o = document.createElement("option");
+    o.value = k;
+    o.textContent = PRESETS[k];
+    preset.appendChild(o);
+  });
+  preset.addEventListener("change", () => applyPreset(preset.value));
+
+  document.getElementById("cb-reset").addEventListener("click", () => {
+    try { localStorage.removeItem(CB_STORAGE_KEY); } catch (e) {}
+    resetFormToDefaults();
+    refresh();
+  });
+
+  refresh();
+});
+
+console.log("[neoabs-config-builder] source: neoabs-standalone-config-builder");
+</script>
+</body>
+</html>

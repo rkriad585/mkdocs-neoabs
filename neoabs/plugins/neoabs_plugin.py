@@ -392,9 +392,23 @@ _NEOABS_DEFAULT_ACTION_CLUSTER = {
 
 # Allowed enums / keys for the action cluster so a typo fails the build loudly.
 _NEOABS_ACTION_CLUSTER_POSITIONS = ("bottom-left", "bottom-right")
-_NEOABS_ACTION_CLUSTER_ICONS = ("plus", "menu", "notes", "help", "timer", "reading")
+_NEOABS_ACTION_CLUSTER_ICONS = (
+    "plus",
+    "menu",
+    "notes",
+    "help",
+    "timer",
+    "reading",
+    "builder",
+)
 _NEOABS_ACTION_CLUSTER_ANIMATIONS = ("normal", "reduced", "none")
-_NEOABS_ACTION_CLUSTER_IDS = ("keyboard_help", "notes", "timer", "reading_mode")
+_NEOABS_ACTION_CLUSTER_IDS = (
+    "keyboard_help",
+    "notes",
+    "timer",
+    "reading_mode",
+    "config_builder",
+)
 _NEOABS_ACTION_CLUSTER_OFFSET_KEYS = ("bottom", "left", "right")
 _NEOABS_ACTION_CLUSTER_BADGES = ("none", "time")
 _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
@@ -404,6 +418,24 @@ _NEOABS_ACTION_CLUSTER_BEHAVIOR_BOOLS = (
     "tooltips",
     "focus_trap",
 )
+
+# Phase 21 - Standalone mkdocs.yml config builder.
+#
+# A self-contained HTML dev tool (`docs/assets/config-builder.html`) that
+# generates a mkdocs.yml from grouped questions with a live YAML preview and
+# copy/download. It lives entirely outside the theme templates, so this group
+# only wires the entry points: a gear action in the floating cluster (when the
+# tool is enabled) and a pinned button at the bottom of the TOC. A dev tool,
+# not a runtime theme feature, it is the ONE knob that deliberately ships OFF.
+_NEOABS_DEFAULT_CONFIG_BUILDER = {
+    "enabled": False,
+    "url": "assets/config-builder.html",
+    "open_target": "_blank",
+    "cluster_action": True,
+    "toc_footer": True,
+}
+_NEOABS_CONFIG_BUILDER_BOOLS = ("enabled", "cluster_action", "toc_footer")
+_NEOABS_CONFIG_BUILDER_OPEN_TARGETS = ("_blank", "_self")
 
 # Phase 17 - Focus timer.
 #
@@ -1221,6 +1253,40 @@ def _validate_action_cluster(action_cluster):
                 )
 
 
+def _validate_config_builder(config_builder):
+    """Validate a merged `theme.neoabs.config_builder` mapping. The tool is a
+    standalone file, so nothing here builds runtime markup; a malformed entry
+    fails the build loudly instead of shipping a broken entry-point link."""
+    if not isinstance(config_builder, dict):
+        raise ConfigurationError("theme.neoabs.config_builder must be a mapping.")
+
+    for field in _NEOABS_CONFIG_BUILDER_BOOLS:
+        value = config_builder.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ConfigurationError(
+                f"theme.neoabs.config_builder.{field} must be a boolean."
+            )
+
+    url = config_builder.get("url")
+    if url is not None and (
+        not isinstance(url, str) or not url.strip() or url.strip().startswith("/")
+    ):
+        raise ConfigurationError(
+            "theme.neoabs.config_builder.url must be a non-empty, slash-less "
+            "path relative to the site root (e.g. 'assets/config-builder.html')."
+        )
+
+    open_target = config_builder.get("open_target")
+    if (
+        open_target is not None
+        and open_target not in _NEOABS_CONFIG_BUILDER_OPEN_TARGETS
+    ):
+        raise ConfigurationError(
+            f"theme.neoabs.config_builder.open_target must be one of "
+            f"{sorted(_NEOABS_CONFIG_BUILDER_OPEN_TARGETS)}; got {open_target!r}."
+        )
+
+
 def _validate_timer(timer):
     """Validate a merged `theme.neoabs.timer` mapping, raising a clear MkDocs
     configuration error for malformed entries instead of silently degrading
@@ -1810,6 +1876,7 @@ class NeoAbsPlugin(BasePlugin):
         ("reading_mode", Type(dict)),
         ("action_cluster", Type(dict)),
         ("timer", Type(dict)),
+        ("config_builder", Type(dict)),
         ("ai_reader", Type(dict)),
         ("social_cards", Type(dict)),
         ("meta", Type(dict)),
@@ -1935,7 +2002,38 @@ class NeoAbsPlugin(BasePlugin):
             _NEOABS_DEFAULT_ACTION_CLUSTER, provided_action_cluster
         )
         _validate_action_cluster(action_cluster)
+
+        # Phase 21: wire the standalone config builder. The tool itself is a
+        # plain HTML file shipped in the docs tree; enabled only means "expose
+        # its entry points" (an action-cluster gear slot + a pinned TOC-bottom
+        # button). OFF by default because it is a dev tool, not a runtime
+        # feature. The cluster action is appended after the validator has run so
+        # the merged, validated action list stays the single source of truth.
+        provided_config_builder = neoabs.get("config_builder")
+        if not isinstance(provided_config_builder, dict):
+            provided_config_builder = {}
+        config_builder = _deep_merge(
+            _NEOABS_DEFAULT_CONFIG_BUILDER, provided_config_builder
+        )
+        _validate_config_builder(config_builder)
+        _cb_actions = action_cluster.setdefault("actions", [])
+        if (
+            config_builder.get("enabled")
+            and config_builder.get("cluster_action", True)
+            and not any(a.get("id") == "config_builder" for a in _cb_actions)
+        ):
+            _cb_actions.append(
+                {
+                    "id": "config_builder",
+                    "icon": "builder",
+                    "label": "Open config builder",
+                    "shortcut": "",
+                    "badge": "none",
+                    "enabled": True,
+                }
+            )
         neoabs["action_cluster"] = action_cluster
+        neoabs["config_builder"] = config_builder
         theme["neoabs"] = neoabs
 
         # Phase 17: resolve the focus timer. Defaults ship fully ON (TOC
@@ -2248,6 +2346,7 @@ class NeoAbsPlugin(BasePlugin):
         extra["neoabs_reading_mode"] = reading_mode
         extra["neoabs_action_cluster"] = action_cluster
         extra["neoabs_timer"] = timer
+        extra["neoabs_config_builder"] = config_builder
         extra["neoabs_ai_reader"] = ai_reader
         extra["neoabs_social_cards"] = social_cards
         extra["neoabs_meta"] = meta

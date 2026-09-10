@@ -33,6 +33,7 @@ function makeNode() {
     type: "",
     listeners: {},
     value: "",
+    style: { setProperty() {} },
     setAttribute(attr, val) { this._attrs[attr] = String(val) },
     getAttribute(attr) { return this._attrs[attr] },
     hasAttribute(attr) { return attr in this._attrs },
@@ -220,6 +221,7 @@ const documentStub = {
       if (sel === ".neoabs-search__close") return _searchDom.closeBtn
     }
     if (_repoFixture && sel === ".neoabs-header__repo") return _repoFixture.link
+    if (_tocInner && sel === ".neoabs-toc__inner") return _tocInner
     if (sel === "article .neoabs-typeset") return _typesetNode
     return null
   },
@@ -267,6 +269,7 @@ let _configEl = null
 let _typesetNode = null
 let _repoFixture = null
 let _schemeImgs = []
+let _tocInner = null
 
 // Capture Node's real WHATWG URL before it is stubbed away, so "<a>.href" in the
 // harness can resolve relative paths the way a real browser does.
@@ -339,6 +342,7 @@ function bootIIFE(overrides) {
   _searchDom = overrides.searchDom || null
   if (overrides.stored !== undefined) stored = overrides.stored
   if (overrides.clipboard !== undefined) clipboardCaptured = overrides.clipboard
+  _tocInner = overrides.tocInner || null
 
   try {
     new Function(
@@ -1330,6 +1334,86 @@ const assetBoot2 = bootIIFE({
 })
 globalThis.URL = savedURL
 check("Phase 8 boots in local + bundle asset modes without throwing", assetBoot && assetBoot2)
+
+// ============================================================================
+// Phase 21: standalone config builder entry points
+// ============================================================================
+
+// Static file checks: the standalone tool must exist, be dependency-free, and
+// carry every marker the theme and the acceptance criteria rely on.
+const cbHtml = fs.readFileSync(
+  path.join(__dirname, "..", "docs", "assets", "config-builder.html"),
+  "utf-8"
+)
+check("Phase 21: standalone config builder ships in docs/assets/", cbHtml.length > 1000)
+check("Phase 21: builder carries preview/copy/download anchors", ["id=\"cb-preview\"", "id=\"cb-copy\"", "id=\"cb-download\""].every(m => cbHtml.includes(m)))
+check("Phase 21: builder implements renderForm/toYaml/highlightYaml/SCHEMA", ["function renderForm", "function toYaml", "function highlightYaml", "const SCHEMA", "CB_STORAGE_KEY"].every(m => cbHtml.includes(m)))
+check("Phase 21: builder is dependency-free (no <script src / <link>)", !/<script\s+src=|<link\s/i.test(cbHtml))
+check("Phase 21: builder carries the provenance marker", cbHtml.indexOf("neoabs-standalone-config-builder") !== -1)
+
+// Disabled -> no entry point surfaces at all.
+const cbTocInnerOff = makeNode()
+const cbOffBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", config_builder: { enabled: false }, action_cluster: {}, timer: { enabled: false } },
+  searchDom: null, stored: {}, tocInner: cbTocInnerOff,
+})
+check("Phase 21: disabled builder adds no TOC trigger", cbOffBoot && cbTocInnerOff._children.length === 0)
+
+// Enabled -> pinned TOC-bottom trigger opens the standalone file in a new tab.
+windowStub._opened = []
+const cbTocInner = makeNode()
+const cbOnBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: { base: "/", config_builder: { enabled: true, url: "assets/config-builder.html", toc_footer: true }, action_cluster: {}, timer: { enabled: false } },
+  searchDom: null, stored: {}, tocInner: cbTocInner,
+})
+const cbTriggerList = cbTocInner._children.filter(c => c.className === "neoabs-config-builder__toc-trigger")
+check("Phase 21: enabled builder appends a pinned TOC-bottom trigger", cbOnBoot && cbTriggerList.length === 1)
+const cbTrigger = cbTriggerList[0]
+windowStub._opened = []
+if (cbTrigger && Array.isArray(cbTrigger.listeners.click)) {
+  cbTrigger.listeners.click.forEach(fn => fn())
+}
+const cbOpened = windowStub._opened[windowStub._opened.length - 1] || {}
+check("Phase 21: TOC trigger opens standalone file in a new tab", cbOpened.url === "/assets/config-builder.html" && cbOpened.name === "_blank")
+
+// Enter/Space activates the trigger the same way a click does.
+windowStub._opened = []
+if (cbTrigger && Array.isArray(cbTrigger.listeners.keydown)) {
+  cbTrigger.listeners.keydown.forEach(fn => fn({ preventDefault() {}, key: "Enter" }))
+}
+const cbOpenedKey = windowStub._opened[windowStub._opened.length - 1] || {}
+check("Phase 21: TOC trigger answers Enter/Space", cbOpenedKey.url === "/assets/config-builder.html")
+
+// Enabled + cluster -> the injected gear action dispatches to the builder.
+windowStub._opened = []
+const cbClusterBoot = bootIIFE({
+  location: { origin: "https://x", pathname: "/page/", search: "", href: "https://x/page/", hash: "" },
+  config: {
+    base: "/",
+    config_builder: { enabled: true, url: "assets/config-builder.html", cluster_action: true },
+    action_cluster: { enabled: true, behavior: {}, actions: [
+      { id: "keyboard_help", icon: "help", label: "Keyboard shortcuts", shortcut: "", badge: "none", enabled: true },
+      { id: "config_builder", icon: "builder", label: "Open config builder", shortcut: "", badge: "none", enabled: true },
+    ] },
+    timer: { enabled: false },
+  },
+  searchDom: null, stored: {},
+})
+const cbClusters = (body._children || []).filter(c => c.className === "neoabs-action-cluster")
+const cbCluster = cbClusters[cbClusters.length - 1] || null
+let cbClusterBtn = null
+if (cbCluster) {
+  const menu = cbCluster._children.find(c => c.className === "neoabs-action-cluster__menu") || cbCluster._children[0] || null
+  cbClusterBtn = (menu._children || []).find(b => b._attrs["data-md-neoabs-cluster-action"] === "config_builder") || null
+}
+check("Phase 21: cluster gains the config_builder gear action", cbClusterBoot && !!cbClusterBtn)
+if (cbClusterBtn && Array.isArray(cbClusterBtn.listeners.click)) {
+  cbClusterBtn.listeners.click.forEach(fn => fn())
+}
+const cbClusterOpened = windowStub._opened[windowStub._opened.length - 1] || {}
+check("Phase 21: cluster gear action opens the standalone file", cbClusterOpened.url === "/assets/config-builder.html")
 
 // ============================================================================
 // Report

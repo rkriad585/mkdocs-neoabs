@@ -6391,6 +6391,55 @@ img.neoabs-repo-pop__avatar {
 	}
 }
 
+// --- Phase 21: config builder TOC trigger (.neoabs-config-builder) ---------
+// Pinned trigger at the very bottom of the TOC column pointing at the
+// standalone `config-builder.html` tool. It is injected by the JS
+// (`configBuilderEnsureTocTrigger`) into `.neoabs-toc__inner`, which is a flex
+// column, so `margin-top: auto` pushes it to the bottom. Inert/absent when the
+// tool is disabled; the trigger only exists when `config_builder.enabled`.
+.neoabs-config-builder__toc-trigger {
+	display: flex;
+	align-items: center;
+	gap: var(--neoabs-space-3);
+	margin-top: auto;
+	padding: var(--neoabs-space-2) var(--neoabs-space-3);
+	min-width: 0;
+	border: var(--neoabs-border-width, 1px) solid var(--neoabs-glass-border);
+	border-radius: var(--neoabs-radius-md);
+	background: var(--neoabs-glass-bg);
+	backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	-webkit-backdrop-filter: blur(var(--neoabs-glass-blur)) saturate(var(--neoabs-glass-saturation));
+	color: var(--neoabs-text);
+	cursor: pointer;
+	user-select: none;
+
+	&:hover {
+		border-color: var(--neoabs-accent, #3b82f6);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--neoabs-accent, #3b82f6);
+		outline-offset: 2px;
+	}
+
+	&__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		svg {
+			width: 16px;
+			height: 16px;
+			display: block;
+		}
+	}
+
+	&__label {
+		font-size: 13px;
+		font-weight: 500;
+	}
+}
+
 // --- Reading-mode chip (.neoabs-timer-reading) -----------------------------
 // Floating status chip rendered only while reading mode is active (the TOC --
 // and therefore the widget -- is hidden there). Bound to

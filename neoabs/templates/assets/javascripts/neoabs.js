@@ -6,7 +6,7 @@
 ;(function () {
   "use strict"
 
-  var NEOABS_VERSION = "22"
+  var NEOABS_VERSION = "23"
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel)
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)]
@@ -3764,7 +3764,8 @@
     help: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
     notes: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>',
     timer: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><line x1="12" y1="9" x2="12" y2="13"></line><line x1="14.5" y1="16.5" x2="17" y2="18.5"></line><line x1="9" y1="2" x2="15" y2="2"></line></svg>',
-    reading: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 4.5 7.5 4 4 4v13c3.5 0 6.5.5 8 2.5 1.5-2 4.5-2.5 8-2.5V4c-3.5 0-6.5.5-8 2.5z"></path><line x1="12" y1="6.5" x2="12" y2="19.5"></line></svg>'
+    reading: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 4.5 7.5 4 4 4v13c3.5 0 6.5.5 8 2.5 1.5-2 4.5-2.5 8-2.5V4c-3.5 0-6.5.5-8 2.5z"></path><line x1="12" y1="6.5" x2="12" y2="19.5"></line></svg>',
+    builder: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>'
   }
 
   let _actionClusterOpen = false
@@ -3798,7 +3799,8 @@
     const name = id === "keyboard_help" ? "open_help"
       : id === "notes" ? "toggle_notes"
       : id === "reading_mode" ? "toggle_reading_mode"
-      : id === "timer" ? "timer_toggle" : id
+      : id === "timer" ? "timer_toggle"
+      : id === "config_builder" ? "open_config_builder" : id
     const fn = keyboardActions[name] || resolveKeyboardAction(name)
     if (typeof fn === "function") fn()
     const cfg = _config.action_cluster || {}
@@ -3942,6 +3944,50 @@ actionClusterEnsureUi(cfg)
     })
 
     keyboardActions.toggle_action_cluster = toggleActionCluster
+  }
+
+  // Phase 21: standalone config builder links. The tool itself is a plain
+  // single-file HTML page shipped in the docs tree (`docs/assets/
+  // config-builder.html`); these wiring hooks only resolve that page's URL and
+  // surface its entry points (an action-cluster gear slot + a pinned trigger at
+  // the bottom of the TOC). Every builder behaviour lives in the standalone
+  // file, never in the theme JS.
+  function openConfigBuilder() {
+    const cfg = _config.config_builder || {}
+    if (cfg.enabled === false) return
+    const base = (_config.base || "").replace(/\/$/, "")
+    const url = base + "/" + (cfg.url || "assets/config-builder.html")
+    window.open(url, cfg.open_target || "_blank", "noopener")
+  }
+
+  // Inject (once) the pinned TOC-bottom trigger. `.neoabs-toc__inner` is a flex
+  // column, so `margin-top: auto` in the CSS pushes it to the very bottom, the
+  // same injection family as the focus-timer TOC widget.
+  function configBuilderEnsureTocTrigger() {
+    if (document.querySelector(".neoabs-config-builder__toc-trigger")) return
+    const inner = $(".neoabs-toc__inner")
+    if (!inner) return
+    const node = document.createElement("div")
+    node.className = "neoabs-config-builder__toc-trigger"
+    node.setAttribute("role", "button")
+    node.setAttribute("tabindex", "0")
+    node.setAttribute("title", "Open config builder")
+    node.setAttribute("aria-label", "Open config builder")
+    node.innerHTML =
+      '<span class="neoabs-config-builder__toc-icon">' + (ACTION_CLUSTER_ICONS.builder || "") + "</span>" +
+      '<span class="neoabs-config-builder__toc-label">Config builder</span>'
+    node.addEventListener("click", openConfigBuilder)
+    node.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openConfigBuilder() }
+    })
+    inner.appendChild(node)
+  }
+
+  function initConfigBuilder(config) {
+    const cfg = config.config_builder || {}
+    if (cfg.enabled === false) return
+    keyboardActions.open_config_builder = openConfigBuilder
+    if (cfg.toc_footer !== false) configBuilderEnsureTocTrigger()
   }
 
   // Phase 18: cluster action id -> built-in keyboard shortcut name it aliases.
@@ -5507,7 +5553,7 @@ actionClusterEnsureUi(cfg)
       initScrollBehavior, initHighlighting, initCodeLineNumbers, initContentMedia,
       initContentTables, initMermaid, initImageZoom, initCodeAnnotations,
       () => initCopyButtons(config), initTabs, initTaskLists,
-      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
+      () => initNotes(config), () => initReadingMode(config), () => initActionCluster(config), () => initConfigBuilder(config), () => initFocusTimer(config), initAnchorLinks, initPermalinks, initKeyboardNav,
       initNavToggle, initSidebarToggle, initHeaderControls, initUIExamples,
       initCodeFenceLinks,
       () => initMath(config), () => initRepoPopover(config),

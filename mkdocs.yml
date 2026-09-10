@@ -727,6 +727,29 @@ theme:
     #   display_format: "mm:ss"        #  mm:ss | m:ss | SS (seconds only)
     #   document_title: false          # Opt-in: live mm:ss + " — <page>" in the tab title while running
     #   badge_in_cluster: true         # Mirror the remaining time into the cluster timer action badge
+    # --- Phase 21: Standalone config builder (demo: ON to showcase the tool) --
+    # The demo enables the dev tool so its two entry points are visible in
+    # these docs: a gear action inside the action cluster and a pinned trigger
+    # at the bottom of the TOC. Real sites keep the feature OFF by default.
+    config_builder:
+      enabled: true               # Dev tool master switch (default false)
+      url: assets/config-builder.html  # Path relative to the site root (no leading slash)
+      open_target: _blank         # _blank | _self
+      cluster_action: true        # Gear action in the cluster when enabled
+      toc_footer: true            # Pinned trigger at the bottom of the TOC
+    # --- Phase 21: Standalone config builder (optional, OFF by default) -----
+    # A completely self-contained HTML tool (`docs/assets/config-builder.html`)
+    # that generates a mkdocs.yml from grouped questions, with a live YAML
+    # preview and copy/download. It is a dev tool, NOT a runtime theme feature,
+    # so it ships OFF: `enabled: true` only exposes its entry points — a gear
+    # action inside the cluster and a pinned trigger at the bottom of the TOC —
+    # both of which open the standalone file in a new tab.
+    # config_builder:
+    #   enabled: false                   # Master switch (dev tool — default OFF)
+    #   url: "assets/config-builder.html"   # Path relative to the site root (no leading slash)
+    #   open_target: "_blank"            #  _blank | _self
+    #   cluster_action: true             # Gear action in the cluster when enabled
+    #   toc_footer: true                 # Pinned trigger at the bottom of the TOC
     # --- Phase 19: AI-readable content mode (optional) ------------------------
     # Every page ships a watermarked markdown mirror alongside its HTML so AI
     # agents can `curl`/`webfetch` the raw source directly. The HTML output gains
@@ -781,7 +804,7 @@ theme:
     #   timeout: 20                   # build-time fetch timeout (seconds) per file
 
 extra:
-  neoabs_version: 22
+  neoabs_version: 23
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg

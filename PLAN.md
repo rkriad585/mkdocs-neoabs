@@ -2133,6 +2133,512 @@ L154 + SCSS neoabs.scss L473–489 already hide native scrollbars for
 
 ---
 
+## Phase 21: Standalone mkdocs.yml Config Builder (single-file HTML dev tool)
+
+**Goal:** Ship a completely **new** config builder as a self-contained standalone HTML
+file (`docs/assets/config-builder.html`) — inline CSS + JS, zero external resources,
+zero dependencies, works offline at `file://` and over HTTP. The user answers grouped
+questions (and optionally applies a preset), sees a live syntax-highlighted YAML
+preview for their `mkdocs.yml`, and can copy or download the result. Two theme entry
+points open the tool in a new tab: a gear action inside the floating **action
+cluster**, and a pinned button at the bottom of the **TOC sidebar**.
+
+> **Fresh start rule:** Do NOT copy, port, or reference the previous Phase 21
+> implementation. No config-builder partial (the old `partials/config_builder.html`
+> no longer exists), no 30-group schema literals, no i18n group, no validator, no
+> in-page dialog code. Only the feature name and the general UX intent
+> (questions → YAML → copy/download) carry over. Everything in this phase is
+> authored from scratch, with the builder living entirely outside the theme
+> templates.
+>
+> **Must follow (mandatory rules):** no deletions, no typos, no out-of-scope edits,
+> no skipped items in this phase, everything else stays on by default, no new
+> dependencies; `npm test`, `npm run build`, and `mkdocs build --strict` must stay
+> green. The new HTML file must contain no Jinja markers (`{{`, `{%`, `{#`) and no
+> `<script src=...>` / `<link href=...>` tags so MkDocs copies it verbatim and it
+> works standalone.
+
+### Config additions
+
+Add to the `theme.neoabs` block in `mkdocs.yml` (default commented reference):
+
+```yaml
+    config_builder:
+      enabled: false                 # dev tool: OFF by default (the ONLY default-off feature)
+      url: "assets/config-builder.html"   # relative to site root, no leading slash
+      open_target: "_blank"
+      cluster_action: true           # add a gear action to the floating cluster when enabled
+      toc_footer: true               # add the pinned button at the bottom of the TOC when enabled
+```
+
+### File list (exactly these files)
+
+| File | Change |
+|------|--------|
+| `neoabs/plugins/neoabs_plugin.py` | defaults, validator, scheme entry, merge, cluster icons/ids, auto-inject cluster action |
+| `neoabs/templates/base.html` | emit `config_builder` into `#__config`; `<html>` data flag |
+| `neoabs/templates/assets/javascripts/neoabs.js` | `builder` icon, dispatch mapping, `openConfigBuilder`, `initConfigBuilder`, TOC trigger injection, init array entry |
+| `neoabs/templates/assets/stylesheets/components.scss` | `.neoabs-config-builder__toc-trigger` styles |
+| `docs/assets/config-builder.html` | **NEW** standalone tool (full spec below) |
+| `mkdocs.yml` | `config_builder` reference block; bump `extra.neoabs_version` |
+| `tests/neoabs.test.js` | Phase 21 harness checks (below) |
+| `PLAN.md` | this section + the Implementation Order row |
+
+### Implementation — plugin (`neoabs/plugins/neoabs_plugin.py`)
+
+1. Near the other `_NEOABS_DEFAULT_*` constants (~line 455), add:
+
+```python
+_NEOABS_DEFAULT_CONFIG_BUILDER = {
+    "enabled": False,
+    "url": "assets/config-builder.html",
+    "open_target": "_blank",
+    "cluster_action": True,
+    "toc_footer": True,
+}
+_NEOABS_CONFIG_BUILDER_BOOLS = ("enabled", "cluster_action", "toc_footer")
+```
+
+2. Add `_NEOABS_ACTION_CLUSTER_ICONS` (line ~395) member `"builder"` and
+   `_NEOABS_ACTION_CLUSTER_IDS` (line ~397) member `"config_builder"` so the schema
+   accepts the new action id/icon.
+3. Add `_validate_config_builder(cfg)` next to `_validate_action_cluster` (~line 1067):
+   coerce the three bool members (accept only booleans), require `url` be a
+   non-empty string without a leading slash, require `open_target` in
+   `("_blank", "_self")`. Raise `ConfigurationError` on violations. Register the
+   gate in the config scheme (`config_builder` entry near line ~1929) and merge at
+   assembly time (~line 2065): `deep_merge(_NEOABS_DEFAULT_CONFIG_BUILDER, provided)`,
+   then emit `extra["neoabs_config_builder"]` next to the other `extra["neoabs_*"]`
+   emissions (~line 2249).
+4. Auto-inject the cluster action only when the tool is enabled. In the section
+   where the effective action-cluster `actions` list is finalized (~line 1934),
+   after the user merge, add:
+
+```python
+_cb_cfg = extra.get("neoabs_config_builder", {})
+_cb_actions = extra.get("neoabs_action_cluster", {}).get("actions", [])
+if _cb_cfg.get("enabled") and _cb_cfg.get("cluster_action", True) and \
+        not any(a.get("id") == "config_builder" for a in _cb_actions):
+    _cb_actions.append({
+        "id": "config_builder", "icon": "builder",
+        "label": "Open config builder",
+        "shortcut": "", "badge": "none", "enabled": True,
+    })
+```
+
+### Implementation — templates (`base.html`)
+
+- Near line ~196 define `{% set _cb = config.extra.neoabs_config_builder | default({}) %}`.
+- On the `<html>` element (~line 212) append
+  `{% if _cb.enabled | default(false) %} data-md-neoabs-config-builder="true"{% endif %}`.
+- Inside `#__config` (~line 718) add
+  `"config_builder": {{ _cb | tojson }},`.
+
+### Implementation — theme JS (`neoabs.js`) with code
+
+Add a gear icon to `ACTION_CLUSTER_ICONS` (after line ~3767):
+
+```js
+builder: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+```
+
+Add the dispatch route in `actionClusterDispatch` (line ~3797-3801) so the ternary
+ends with: `: id === "config_builder" ? "open_config_builder" : id`.
+
+Add these three functions right after `initActionCluster` (~line 3945):
+
+```js
+function openConfigBuilder() {
+    const cfg = _config.config_builder || {}
+    if (cfg.enabled === false) return
+    const base = (_config.base || "").replace(/\/$/, "")
+    const url = base + "/" + (cfg.url || "assets/config-builder.html")
+    window.open(url, cfg.open_target || "_blank", "noopener")
+}
+
+function configBuilderEnsureTocTrigger() {
+    if ($(".neoabs-config-builder__toc-trigger")) return
+    const inner = $(".neoabs-toc__inner")
+    if (!inner) return
+    const node = document.createElement("div")
+    node.className = "neoabs-config-builder__toc-trigger"
+    node.setAttribute("role", "button")
+    node.setAttribute("tabindex", "0")
+    node.setAttribute("title", "Open config builder")
+    node.setAttribute("aria-label", "Open config builder")
+    node.innerHTML =
+        '<span class="neoabs-config-builder__toc-icon">' + ACTION_CLUSTER_ICONS.builder + '</span>' +
+        '<span class="neoabs-config-builder__toc-label">Config builder</span>'
+    node.addEventListener("click", openConfigBuilder)
+    node.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openConfigBuilder() }
+    })
+    inner.appendChild(node)
+}
+
+function initConfigBuilder(config) {
+    const cfg = config.config_builder || {}
+    if (cfg.enabled === false) return
+    keyboardActions.open_config_builder = openConfigBuilder
+    if (cfg.toc_footer !== false) configBuilderEnsureTocTrigger()
+}
+```
+
+Register it in the `init` array (~line 5505) right after `() => initActionCluster(config)`
+as `() => initConfigBuilder(config)`.
+
+### Implementation — SCSS (`components.scss`)
+
+Add next to the `.neoabs-timer-toc` widget styles (~line 6203-6249):
+
+```scss
+.neoabs-config-builder__toc-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;                 /* `.neoabs-toc__inner` is a flex column → pins to bottom */
+    padding: 8px 10px;
+    border: 1px solid var(--neoabs-border, rgba(128, 128, 128, 0.2));
+    border-radius: 10px;
+    background: var(--neoabs-glass-bg, rgba(255, 255, 255, 0.55));
+    backdrop-filter: var(--neoabs-glass-blur, blur(10px));
+    color: var(--neoabs-fg, inherit);
+    cursor: pointer;
+    font-size: 13px;
+}
+.neoabs-config-builder__toc-trigger:hover { border-color: var(--neoabs-accent, #3b82f6); }
+.neoabs-config-builder__toc-trigger .neoabs-config-builder__toc-icon svg {
+    width: 16px; height: 16px; display: block;
+}
+.neoabs-config-builder__toc-trigger:focus-visible {
+    outline: 2px solid var(--neoabs-accent, #3b82f6);
+    outline-offset: 2px;
+}
+```
+
+Then run `npm run build` to regenerate `neoabs.css`.
+
+### Implementation — the standalone file `docs/assets/config-builder.html`
+
+NEW file. Architecturally (per research): schema array → dynamic form → hand-rolled
+YAML emitter → regex-highlighted preview → copy/download → localStorage persist.
+Aim for ~800-1300 lines, no external references. The file is a plain HTML document
+in the docs tree; MkDocs copies it to `site/assets/config-builder.html` verbatim
+(the theme JS opens it at `base_url + "/assets/config-builder.html"`).
+
+Outline:
+
+```
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>neoabs config builder</title>
+  <style> /* all CSS, ~250 lines (variables, 2-column grid, form controls, token colors, buttons) */ </style>
+</head><body>
+  <header><h1>neoabs config builder</h1><p>Generate your mkdocs.yml — copy or download when done.</p></header>
+  <main class="cb-shell">
+    <section aria-label="Questions">
+      toolbar: <select id="cb-preset">…</select> <button id="cb-reset">Reset</button>
+      <form id="cb-form"><!-- groups rendered by JS --></form>
+    </section>
+    <section aria-label="YAML preview">
+      toolbar: <button id="cb-copy">Copy YAML</button> <button id="cb-download">Download mkdocs.yml</button>
+      <pre id="cb-preview"><code id="cb-code"></code></pre>
+    </section>
+  </main>
+  <script> /* all JS, ~700 lines */ </script>
+</body></html>
+```
+
+CSS variables + dark mode (dependency-free):
+
+```css
+:root {
+    --cb-bg: #ffffff; --cb-fg: #1f2430; --cb-border: #d0d7de;
+    --cb-accent: #3b82f6; --cb-key: #8250df; --cb-str: #0a7d38;
+    --cb-bool: #0550ae; --cb-num: #953800; --cb-comment: #6e7781;
+}
+@media (prefers-color-scheme: dark) {
+    :root { --cb-bg: #16181d; --cb-fg: #cdd6f4; --cb-border: #30363d;
+        --cb-accent: #58a6ff; --cb-key: #89b4fa; --cb-str: #a6e3a1;
+        --cb-bool: #f38ba8; --cb-num: #fab387; --cb-comment: #7f849c; }
+}
+.cb-shell { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 18px; max-width: 1500px; margin: 0 auto; padding: 16px; }
+#cb-preview { margin: 0; padding: 12px; border: 1px solid var(--cb-border);
+    border-radius: 10px; overflow: auto; min-height: 60vh; white-space: pre;
+    font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.tok-key { color: var(--cb-key); } .tok-str { color: var(--cb-str); }
+.tok-bool { color: var(--cb-bool); } .tok-num { color: var(--cb-num); } .tok-comment { color: var(--cb-comment); }
+/* form controls: stacked .field blocks (label + input/select/checks), fieldsets with legend */
+```
+
+The schema — single source of truth (curated starter set; hand-author ~50-70 entries,
+grouped; each `key` is a dotted YAML path):
+
+```js
+const SCHEMA = [
+    // ---------------- Site ----------------
+    { cat: "Site",   key: "site_name",  type: "text",  label: "Site name",  req: true, placeholder: "My Docs" },
+    { cat: "Site",   key: "site_url",   type: "text",  label: "Site URL",   placeholder: "https://example.com" },
+    { cat: "Site",   key: "repo_url",   type: "text",  label: "Repo URL" },
+    { cat: "Site",   key: "site_description", type: "text", label: "Description" },
+    // ---------------- Theme ----------------
+    { cat: "Theme",  key: "theme.name", type: "select", label: "Theme name",
+      options: ["neoabs"], default: "neoabs" },
+    { cat: "Theme",  key: "theme.palette.primary", type: "select", label: "Primary color",
+      options: ["indigo", "blue", "green", "amber", "red", "slate"], default: "indigo" },
+    { cat: "Theme",  key: "theme.features", type: "checks", label: "Theme features", options: [
+      { label: "Navigation tabs",     value: "navigation.tabs" },
+      { label: "Search suggestions",  value: "search.suggest" },
+      { label: "Code copy button",    value: "content.code.copy" },
+      { label: "Back to top",         value: "navigation.top" } ] },
+    // ---------------- NeoAbs components ----------------
+    { cat: "NeoAbs components", key: "theme.neoabs.components.search.show", type: "toggle", label: "Search", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.toc.show",    type: "toggle", label: "Table of contents", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.reading_mode.show", type: "toggle", label: "Reading mode", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.action_cluster.show", type: "toggle", label: "Action cluster", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.focus_timer.show", type: "toggle", label: "Focus timer", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.repo_popover.show", type: "toggle", label: "Repo popover", default: true },
+    { cat: "NeoAbs components", key: "theme.neoabs.components.feedback.show", type: "toggle", label: "Feedback", default: true },
+    // ---------------- Plugins ----------------
+    { cat: "Plugins", key: "theme.neoabs.plugins", type: "checks", label: "Plugins", options: [
+      { label: "Search",   value: "search" },
+      { label: "Tags",     value: "tags" },
+      { label: "Minify",   value: "minify" },
+      { label: "Social",   value: "social" } ] },
+    // ---------------- Markdown extensions ----------------
+    { cat: "Markdown extensions", key: "markdown_extensions", type: "checks", label: "Extensions", options: [
+      { label: "Admonition",     value: "admonition" },
+      { label: "Attr list",      value: "attr_list" },
+      { label: "SuperFences",    value: "pymdownx.superfences" },
+      { label: "Highlight",      value: "pymdownx.highlight" },
+      { label: "Tabbed",         value: "pymdownx.tabbed" },
+      { label: "Emoji",          value: "pymdownx.emoji" } ] },
+]
+```
+
+Render the form (vanilla DOM, fieldset per category, switch on `type`):
+
+```js
+function renderForm() {
+    const form = document.getElementById("cb-form")
+    const groups = {}
+    SCHEMA.forEach((q) => { (groups[q.cat] = groups[q.cat] || []).push(q) })
+    for (const cat of Object.keys(groups)) {
+        const fs = document.createElement("fieldset")
+        const lg = document.createElement("legend"); lg.textContent = cat; fs.appendChild(lg)
+        groups[cat].forEach((q) => {
+            const w = document.createElement("div"); w.className = "field"
+            if (q.type === "text") {
+                const inp = document.createElement("input")
+                inp.type = "text"; inp.id = q.key; inp.dataset.key = q.key
+                if (q.placeholder) inp.placeholder = q.placeholder
+                if (q.req) inp.setAttribute("required", "")
+                w.appendChild(labelFor(q, inp)); w.appendChild(inp)
+            } else if (q.type === "select") {
+                const sel = document.createElement("select"); sel.id = q.key; sel.dataset.key = q.key
+                q.options.forEach((o) => { const op = document.createElement("option")
+                    op.value = typeof o === "string" ? o : o.value
+                    op.textContent = typeof o === "string" ? o : o.label; sel.appendChild(op) })
+                w.appendChild(labelFor(q, sel)); w.appendChild(sel)
+            } else if (q.type === "checks") {
+                const lbl = document.createElement("label"); lbl.className = "field-title"
+                lbl.textContent = q.label; w.appendChild(lbl)
+                q.options.forEach((o) => {
+                    const idb = q.key + "__" + o.value
+                    const cb = document.createElement("input"); cb.type = "checkbox"
+                    cb.id = idb; cb.dataset.key = q.key; cb.value = o.value
+                    const cbl = document.createElement("label"); cbl.setAttribute("for", idb)
+                    cbl.textContent = o.label; cbl.prepend(cb)
+                    w.appendChild(cbl)
+                })
+            } else if (q.type === "toggle") {
+                const cb = document.createElement("input"); cb.type = "checkbox"
+                cb.id = q.key; cb.dataset.key = q.key; cb.dataset.toggle = "1"
+                cb.checked = !!q.default
+                w.appendChild(labelFor(q, cb)); w.appendChild(cb)
+            }
+            fs.appendChild(w)
+        })
+        form.appendChild(fs)
+    }
+}
+function labelFor(q, el) { const l = document.createElement("label"); l.setAttribute("for", q.key); l.textContent = (q.req ? q.label + " *" : q.label); return l }
+```
+
+Collect + build the config object (dotted path → nested), then emit YAML:
+
+```js
+function currentValues() {
+    const v = {}
+    SCHEMA.forEach((q) => {
+        const el = q.type === "checks" ? null : document.getElementById(q.key)
+        if (q.type === "text") v[q.key] = (el && el.value || "").trim()
+        else if (q.type === "select") v[q.key] = el ? el.value : q.default
+        else if (q.type === "toggle") v[q.key] = !!el.checked
+        else if (q.type === "checks")
+            v[q.key] = Array.from(document.querySelectorAll('input[data-key="' + q.key + '"]:checked')).map((c) => c.value)
+    })
+    return v
+}
+function setByPath(obj, path, value) {
+    const parts = path.split(".")
+    let node = obj
+    for (let i = 0; i < parts.length - 1; i++) { node[parts[i]] = node[parts[i]] || {}; node = node[parts[i]] }
+    node[parts[parts.length - 1]] = value
+    return obj
+}
+function buildConfigObject() {
+    const out = {}
+    const v = currentValues()
+    Object.keys(v).forEach((path) => { setByPath(out, path, v[path]) })
+    return out
+}
+function toYaml(obj, indent = 0) {
+    const pad = "  ".repeat(indent)
+    let out = ""
+    for (const k of Object.keys(obj)) {
+        const val = obj[k]
+        if (val === "" || val === undefined || val === null) continue
+        if (typeof val === "boolean" || typeof val === "number")
+            out += pad + k + ": " + val + "\n"
+        else if (typeof val === "string")
+            out += pad + k + ": " + (/[:#'\n]/.test(val) ? JSON.stringify(val) : val) + "\n"
+        else if (Array.isArray(val)) {
+            if (!val.length) continue
+            out += pad + k + ":\n" + val.map((x) => pad + "  - " + (/[:#'\n]/.test(String(x)) ? JSON.stringify(x) : x)).join("\n") + "\n"
+        } else if (typeof val === "object")
+            out += pad + k + ":\n" + toYaml(val, indent + 1)
+    }
+    return out
+}
+```
+
+Preview + highlighting (regex tokenizer, HTML-escape first):
+
+```js
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }
+function highlightYaml(yaml) {
+    return esc(yaml)
+        .replace(/^(\s*(?:- )?)([\w.-]+)(:)(?=\s|$)/gm, '$1<span class="tok-key">$2</span>$3')
+        .replace(/:\s*(['"])(.*?)\1$/gm, ': <span class="tok-str">$1$2$1</span>')
+        .replace(/:\s*(true|false)\b/gm, ': <span class="tok-bool">$1</span>')
+        .replace(/:\s*(-?\d+(?:\.\d+)?)\b/gm, ': <span class="tok-num">$1</span>')
+        .replace(/(#.*)$/gm, '<span class="tok-comment">$1</span>')
+}
+function refresh() {
+    const yaml = toYaml(buildConfigObject())
+    document.getElementById("cb-code").innerHTML = highlightYaml(yaml)
+    saveState()
+}
+```
+
+Copy + download (offline-safe):
+
+```js
+async function copyYaml() {
+    const text = toYaml(buildConfigObject())
+    try { await navigator.clipboard.writeText(text); return true }
+    catch {
+        const ta = document.createElement("textarea")
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"
+        document.body.appendChild(ta); ta.select()
+        const ok = document.execCommand("copy") // execCommand fallback: works at file://
+        document.body.removeChild(ta); return ok
+    }
+}
+function downloadYaml() {
+    const blob = new Blob([toYaml(buildConfigObject())], { type: "text/yaml" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a"); a.href = url; a.download = "mkdocs.yml"
+    a.click(); URL.revokeObjectURL(url)
+}
+```
+
+Persistence + presets + init:
+
+```js
+const CB_STORAGE_KEY = "neoabs-config-builder-v1"
+function saveState() { try { localStorage.setItem(CB_STORAGE_KEY, JSON.stringify(currentValues())) } catch (e) {} }
+function loadState() {
+    try {
+        const raw = localStorage.getItem(CB_STORAGE_KEY); if (!raw) return
+        const v = JSON.parse(raw)
+        SCHEMA.forEach((q) => {
+            if (!(q.key in v)) return
+            if (q.type === "checks")
+                (v[q.key] || []).forEach((x) => { const c = document.getElementById(q.key + "__" + x); if (c) c.checked = true })
+            else { const el = document.getElementById(q.key); if (el) { if (el.checked !== undefined && el.type === "checkbox") el.checked = !!v[q.key]; else el.value = v[q.key] } }
+        })
+    } catch (e) {}
+}
+const PRESETS = { "": "No preset", default: "Default", standard: "Standard", basic: "Basic" }
+function applyPreset(name) {
+    SCHEMA.forEach((q) => {
+        const el = document.getElementById(q.key)
+        if (el && el.checked !== undefined && el.type === "checkbox") el.checked = false
+        else if (el && q.type === "select") el.value = q.default || ""
+    })
+    // preset overrides (fresh, author-me): Default = everything on; Basic = minimal docs-only; Standard = middle ground
+    if (name === "basic") ["theme.neoabs.components.feedback.show", "theme.neoabs.components.repo_popover.show", "theme.features"].forEach((k) => {
+        const el = document.getElementById(k); if (el && el.checked !== undefined) el.checked = false })
+    refresh()
+}
+document.addEventListener("DOMContentLoaded", () => {
+    renderForm(); loadState()
+    document.getElementById("cb-form").addEventListener("input", refresh)
+    document.getElementById("cb-form").addEventListener("change", refresh)
+    document.getElementById("cb-copy").addEventListener("click", () => {
+        copyYaml().then((ok) => { const b = document.getElementById("cb-copy")
+            b.textContent = ok ? "Copied!" : "Copy failed"; setTimeout(() => { b.textContent = "Copy YAML" }, 1400) })
+    })
+    document.getElementById("cb-download").addEventListener("click", downloadYaml)
+    const preset = document.getElementById("cb-preset")
+    Object.keys(PRESETS).forEach((k) => { const o = document.createElement("option"); o.value = k; o.textContent = PRESETS[k]; preset.appendChild(o) })
+    preset.addEventListener("change", () => applyPreset(preset.value))
+    document.getElementById("cb-reset").addEventListener("click", () => { try { localStorage.removeItem(CB_STORAGE_KEY) } catch (e) {} ; applyPreset("") })
+    refresh()
+})
+```
+
+The HTML file must end by logging
+`console.log("[neoabs-config-builder] source: neoabs-standalone-config-builder")`
+so tests can assert provenance.
+
+### Verifiable acceptance checks (tests)
+
+Add to `tests/neoabs.test.js`. Harness notes: `overrides.config` is passed to
+`readConfig()`; provide `base: "/"` and (for window.open checks) supply a
+`window.open` stub via the harness stubs.
+
+1. `bootIIFE({ config: { config_builder: { enabled: false }, base: "/" } })` →
+   check no `keyboardActions.open_config_builder` is registered.
+2. `bootIIFE({ config: { config_builder: { enabled: true, url: "assets/config-builder.html", toc_footer: true }, base: "/", action_cluster: {} } })`
+   with a TOC fixture (`.neoabs-toc__inner` node) → check a
+   `.neoabs-config-builder__toc-trigger` node was appended as the **last child** of
+   `.neoabs-toc__inner`.
+3. Clicking that trigger → `window.open` stub called once with
+   `"/assets/config-builder.html"` and target `"_blank"`.
+4. `bootIIFE` with `config_builder.enabled: true` and an action-cluster config whose
+   `actions` include `{ id: "config_builder", icon: "builder", ... }` → check the
+   cluster button for `data-md-neoabs-cluster-action="config_builder"` exists and
+   dispatching it calls the `window.open` stub.
+5. New static file checks (read `docs/assets/config-builder.html` with `fs`):
+   the file contains `id="cb-preview"`, `id="cb-copy"`, `id="cb-download"`,
+   `function renderForm`, `function toYaml`, `function highlightYaml`, `const SCHEMA`,
+   `CB_STORAGE_KEY`, and the `console.log` provenance marker; and contains
+   **no** `<script src=` and **no** `<link ` tag (dependency-free proof).
+
+**Acceptance:** file lives at `docs/assets/config-builder.html` and opens standalone
+(double-click; also at `/assets/config-builder.html` in the built site); the cluster
+gear asks toggles it and opens the tool in a new tab; the TOC-bottom button appears
+pinned at the very bottom of the TOC and opens the tool; copy/download/preview/
+presets/persistence all work; all 45 existing checks plus the Phase 21 checks pass;
+`npm run build` regenerates CSS; `mkdocs build --strict` is clean; `NEOABS_VERSION`
+in `neoabs.js` and `extra.neoabs_version` in `mkdocs.yml` are each bumped by one.
+
+---
+
 ## Implementation Order
 
 | Phase | Priority | Effort | Description |
@@ -2157,6 +2663,7 @@ L154 + SCSS neoabs.scss L473–489 already hide native scrollbars for
 | 18 | Low | Small | Action shortcuts & cluster customization ("and more") |
 | 19 | Medium | Medium | AI-readable content mode (markdown mirrors, llms.txt, watermark) |
 | 20 | Medium | Medium | Keyboard scheme/repo shortcuts, hidden scrollbar default, mermaid diagram controls |
+| 21 | Low | Medium | Standalone mkdocs.yml config builder (single-file HTML tool + cluster & TOC-bottom buttons, OFF by default) |
 
 > **Per-phase checklist (rule 6):** each phase's config block above IS the
 > acceptance list. Implement every listed key and behavior; a phase is done only
