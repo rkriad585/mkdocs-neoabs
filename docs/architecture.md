@@ -12,7 +12,7 @@ This page describes the internal structure and design of mkdocs-void.
 ```tree
 mkdocs-void/
 ├── void/                          # Python package
-│   ├── __init__.py                  # Version (0.1.2)
+│   ├── __init__.py                  # Version (0.2.0)
 │   ├── plugins/
 │   │   └── void_plugin.py         # MkDocs plugin
 │   ├── templates/

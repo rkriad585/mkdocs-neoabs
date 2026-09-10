@@ -14,7 +14,7 @@ Wrap the tree in a `tree` fenced code block:
 ```tree
 mkdocs-void/
 ├── void/                          # Python package
-│   ├── __init__.py                  # Version (0.1.2)
+│   ├── __init__.py                  # Version (0.2.0)
 │   ├── templates/
 │   │   ├── base.html
 │   │   ├── main.html
@@ -34,7 +34,7 @@ mkdocs-void/
 ```tree
 mkdocs-void/
 ├── void/                          # Python package
-│   ├── __init__.py                  # Version (0.1.2)
+│   ├── __init__.py                  # Version (0.2.0)
 ...
 ```
 ````
