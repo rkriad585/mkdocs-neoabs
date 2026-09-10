@@ -47,6 +47,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 <!-- AUTO-CHANGELOG:start -->
 ### Commits since the last release (auto)
+- [Added] feat: Phase 21 standalone config builder (single-file HTML dev tool) - docs/assets/config-builder.html renders a grouped mkdocs.yml form with live syntax-highlighted YAML preview, presets, local persistence, copy (clipboard + execCommand fallback) and Blob download; entry points wired via the config_builder group (cluster gear action auto-injected + pinned TOC-bottom trigger, OFF by default, demo ON) with plugin validation/resolution, base.html html-flag + #__config emission, SCSS, harness style-stub fix; tests 56/56 + strict build green
+- [Added] feat: Phase 21 interactive config builder (mkdocs.yml wizard) - left-pane highlighted YAML preview, presets, download/copy, always-on cluster icon
+- [Added] feat: Phase 10 community flywheel (benchmarks page + CI regen, opt-in 'Powered by NeoAbs' footer credit, FUNDING + Discussions, contributor path + translation onboarding, auto-changelog wired to releases) + PyPI metadata (funding credits, extras, tags)
 - [Added] feat: Phase 9 ecosystem & tooling (neoabs doctor, integrations guide + recipe CI, MkDocs 1.5/1.6/2.0.dev compat matrix, PyPI publish) + README footer
 - [Added] feat: Phase 8 performance & PWA (prefetch on hover, cdn/local/bundle asset modes, inline critical CSS, sw v4, Lighthouse CI)
 - [Added] feat: Phase 7 identity & i18n (i18n overrides, breadcrumbs, nav icons, dark-aware images, auto PWA manifest with dynamic icon fetch)
@@ -96,7 +99,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - [Fixed] fix: cache-busted assets, hardened SPA base-guard, SW cache v2, build signature
 - [Fixed] fix: resume to stale/404 pages stays on landing page; fetch directory URLs
 - [Fixed] fix: close search overlay on SPA nav, auto-run restored query
-- [Changed] ï»¿feat: Phase 5 content superpowers + docs date front matter
+- [Changed] revert: remove Phase 21 interactive config builder (mkdocs.yml wizard) entirely - restore all touched files to the pre-Phase-21 baseline, delete the partial, drop i18n/validator/JS/SCSS/harness surface; tests 45/45 + strict build green
+- [Changed] docs: mark WHY_PLAN gap rows 12/19 done + regenerate config reference (Phase 10 footer.poweredBy i18n key)
+- [Changed] ﻿feat: Phase 5 content superpowers + docs date front matter
 - [Changed] docs: add phase 10 search customization config reference to mkdocs.yml
 - [Changed] docs: add phase 9 advanced visual customization config reference to mkdocs.yml
 - [Changed] docs: expand phase 8 custom css/js & head injection config reference
