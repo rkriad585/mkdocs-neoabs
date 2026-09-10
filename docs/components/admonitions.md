@@ -4,7 +4,7 @@ date: 2026-09-07
 
 # Admonitions
 
-NeoAbs styles the standard MkDocs `admonition` extension, plus collapsible
+Void styles the standard MkDocs `admonition` extension, plus collapsible
 `???` (details) blocks and inline variants. Every type maps to a themed accent
 color and a small icon in the title.
 

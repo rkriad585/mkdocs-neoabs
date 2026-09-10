@@ -1,0 +1,630 @@
+////
+/// Void Design System
+/// Combines Glass + NothingOS UI/UX Design
+/// Pure black canvas, glass morphism, dot-matrix typography
+////
+
+// Component library is pulled in via @use (Dart Sass modules). @use rules must
+// appear before any other statement, so the module is loaded up here and its
+// rules are emitted first; see the merged selectors note before the EOF marker.
+@use "components";
+
+// ============================================================================
+// VOID DESIGN TOKENS
+// ============================================================================
+
+:root {
+  // ---------------------------------------------------------------------------
+  // Core Colors - NothingOS Foundation
+  // ---------------------------------------------------------------------------
+  
+  // Pure black canvas - NothingOS signature
+  --void-ink: #000000;
+  --void-ghost: rgba(255, 255, 255, 0.06);
+  --void-ghost-strong: rgba(255, 255, 255, 0.12);
+  
+  // Text hierarchy - monochrome first
+  --void-text-primary: #ffffff;
+  --void-text-secondary: rgba(255, 255, 255, 0.7);
+  --void-text-muted: #888888;
+  --void-text-accent: #ff3030;
+  
+  // Accent - Nothing Red (used sparingly)
+  --void-accent: #ff3030;
+  --void-accent-dim: rgba(255, 48, 48, 0.15);
+  --void-accent-glow: rgba(255, 48, 48, 0.3);
+  // Stronger accent for solid fills/buttons (passes WCAG AA with white text)
+  --void-accent-strong: #c62828;
+  --void-accent-strong-hover: #b71c1c;
+  
+  // Glass system - Glass
+  --void-glass-bg: rgba(255, 255, 255, 0.08);
+  --void-glass-bg-strong: rgba(255, 255, 255, 0.15);
+  --void-glass-border: rgba(255, 255, 255, 0.18);
+  --void-glass-border-strong: rgba(255, 255, 255, 0.35);
+  --void-glass-blur: 20px;
+  --void-glass-blur-heavy: 40px;
+  --void-glass-saturation: 1.2;
+  
+  // Shadows - minimal, industrial
+  --void-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --void-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --void-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --void-shadow-glass: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  // Typography scale
+  --void-font-display: 'Space Grotesk', sans-serif;
+  --void-font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --void-font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+  
+  // Spacing scale (4px base)
+  --void-space-1: 4px;
+  --void-space-2: 8px;
+  --void-space-3: 12px;
+  --void-space-4: 16px;
+  --void-space-5: 20px;
+  --void-space-6: 24px;
+  --void-space-8: 32px;
+  --void-space-10: 40px;
+  --void-space-12: 48px;
+  --void-space-16: 64px;
+  
+  // Border radius - NothingOS precision
+  --void-radius-sm: 4px;
+  --void-radius-md: 8px;
+  --void-radius-lg: 12px;
+  --void-radius-xl: 16px;
+  --void-radius-pill: 999px;
+  
+  // Transitions - Apple fluid motion
+  --void-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --void-transition-normal: var(--void-transition-duration) var(--void-transition-easing);
+  --void-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --void-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  // Z-index scale
+  --void-z-base: 1;
+  --void-z-dropdown: 100;
+  --void-z-sticky: 200;
+  --void-z-header: 300;
+  --void-z-overlay: 400;
+  --void-z-modal: 500;
+  --void-z-toast: 600;
+  
+  // Dot matrix overlay
+  --void-dot-size: 2px;
+  --void-dot-gap: 6px;
+  --void-dot-opacity: 0.03;
+
+  // Border system (configurable via void.border)
+  --void-border-width: 1px;
+
+ //Visual system (overridable via theme.void)
+  --void-border-style: solid;
+  --void-dot-color: var(--void-text-primary);
+  --void-scrollbar-thumb: var(--void-glass-border);
+
+ //Search UI (overridable via theme.void.search)
+  --void-search-overlay-color: rgba(0, 0, 0, 0.8);
+  --void-search-glass-bg: rgba(0, 0, 0, 0.9);
+
+  // Typography tokens (overridable via theme.void.typography)
+  --void-font-size-base: 16px;
+  --void-font-size-sm: 14px;
+  --void-font-size-lg: 18px;
+  --void-line-height: 1.7;
+  --void-heading-weight: 700;
+  --void-heading-letter-spacing: -0.02em;
+
+  // Layout tokens (overridable via theme.void.spacing)
+  --void-sidebar-width: 280px;
+  --void-toc-width: 240px;
+  --void-header-height: 56px;
+  --void-content-max-width: 900px;
+  --void-content-padding: 40px 32px;
+  --void-section-gap: 40px;
+
+ //Reading mode (overridable via theme.void.reading_mode)
+  --void-reading-font-size: 1.125rem;
+  --void-reading-line-height: 1.75;
+  --void-reading-measure: 100%;
+
+ //Action cluster (overridable via theme.void.action_cluster)
+  --void-action-cluster-bottom: 16px;
+  --void-action-cluster-left: 16px;
+  --void-action-cluster-size: 44px;
+
+ //Focus timer accent (overridable via theme.void.timer.colors.progress)
+  --void-timer-accent: #8a5a33;
+
+ //Content area (overridable via theme.void.content)
+  --void-content-glass-bg: var(--void-glass-bg);
+  --void-content-glass-blur: var(--void-glass-blur);
+  --void-progress-color-1: var(--void-accent);
+  --void-progress-color-2: #ff6060;
+  --void-code-line-number-color: var(--void-text-muted);
+  --void-table-striped-bg: var(--void-ghost);
+  --void-table-border-color: var(--void-glass-border);
+  --void-admonition-note: #4488ff;
+  --void-admonition-tip: #00cc6a;
+  --void-admonition-warning: #ffaa00;
+  --void-admonition-danger: var(--void-accent);
+  --void-admonition-info: #4488ff;
+  --void-admonition-success: #00cc6a;
+
+  // Header tokens (overridable via theme.void.header)
+  --void-header-position: sticky;
+  --void-header-z: var(--void-z-header);
+  --void-header-bg: rgba(0, 0, 0, 0.72);
+  --void-header-bg-scrolled: rgba(0, 0, 0, 0.88);
+  --void-header-blur: var(--void-glass-blur-heavy);
+  --void-header-saturate: var(--void-glass-saturation);
+  --void-header-border-width: var(--void-border-width, 1px);
+  --void-header-border-color: var(--void-glass-border);
+  --void-header-border-color-strong: var(--void-glass-border-strong);
+  --void-header-logo-size: 26px;
+
+  // Footer tokens (overridable via theme.void.footer)
+  --void-footer-position: relative;
+  --void-footer-bg: rgba(0, 0, 0, 0.5);
+  --void-footer-blur: var(--void-glass-blur);
+  --void-footer-saturate: var(--void-glass-saturation);
+  --void-footer-border-width: var(--void-border-width, 1px);
+  --void-footer-border-color: var(--void-glass-border);
+
+  // Sidebar tokens (overridable via theme.void.sidebar)
+  --void-sidebar-bg: rgba(0, 0, 0, 0.6);
+  --void-sidebar-blur: var(--void-glass-blur);
+  --void-sidebar-saturate: var(--void-glass-saturation);
+  --void-nav-indent: var(--void-space-4);
+  --void-nav-active-border-color: var(--void-accent);
+
+  // Overlay backdrop (overridable via theme.void.colors.overlay)
+  --void-overlay-color: rgba(0, 0, 0, 0.5);
+
+  // Transition easing/duration (overridable via theme.void.transitions)
+  --void-transition-duration: 250ms;
+  --void-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ============================================================================
+// LIGHT MODE OVERRIDES
+// ============================================================================
+
+[data-md-color-scheme="default"] {
+  --void-ink: #ffffff;
+  --void-ghost: rgba(0, 0, 0, 0.04);
+  --void-ghost-strong: rgba(0, 0, 0, 0.08);
+  
+  --void-text-primary: #000000;
+  --void-text-secondary: rgba(0, 0, 0, 0.7);
+  --void-text-muted: #767676;
+  
+  --void-glass-bg: rgba(0, 0, 0, 0.05);
+  --void-glass-bg-strong: rgba(0, 0, 0, 0.1);
+  --void-glass-border: rgba(0, 0, 0, 0.12);
+  --void-glass-border-strong: rgba(0, 0, 0, 0.25);
+  
+  --void-header-bg: rgba(255, 255, 255, 0.8);
+  --void-header-bg-scrolled: rgba(255, 255, 255, 0.95);
+  
+  --void-footer-bg: rgba(255, 255, 255, 0.7);
+
+--void-sidebar-bg: rgba(255, 255, 255, 0.7);
+
+  --void-search-overlay-color: rgba(255, 255, 255, 0.85);
+  --void-search-glass-bg: rgba(255, 255, 255, 0.95);
+
+  --void-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --void-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --void-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+  --void-shadow-glass: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  
+  --void-dot-opacity: 0.02;
+}
+
+// ============================================================================
+// GLASS INTENSITY VARIANTS
+// ============================================================================
+
+// Light glass effect (only when no explicit color scheme override)
+[data-md-void-glass="light"]:not([data-md-color-scheme="default"]) {
+  --void-glass-bg: rgba(255, 255, 255, 0.05);
+  --void-glass-blur: 10px;
+  --void-glass-saturation: 1.0;
+}
+
+[data-md-void-glass="light"][data-md-color-scheme="default"] {
+  --void-glass-bg: rgba(0, 0, 0, 0.03);
+  --void-glass-blur: 10px;
+  --void-glass-saturation: 1.0;
+}
+
+// Medium glass effect (default)
+[data-md-void-glass="medium"]:not([data-md-color-scheme="default"]),
+[data-md-void-glass=""][data-md-color-scheme="slate"] {
+  --void-glass-bg: rgba(255, 255, 255, 0.08);
+  --void-glass-blur: 20px;
+  --void-glass-saturation: 1.2;
+}
+
+[data-md-void-glass="medium"][data-md-color-scheme="default"],
+[data-md-void-glass=""][data-md-color-scheme="default"] {
+  --void-glass-bg: rgba(0, 0, 0, 0.05);
+  --void-glass-blur: 20px;
+  --void-glass-saturation: 1.2;
+}
+
+// Heavy glass effect
+[data-md-void-glass="heavy"]:not([data-md-color-scheme="default"]) {
+  --void-glass-bg: rgba(255, 255, 255, 0.12);
+  --void-glass-blur: 30px;
+  --void-glass-saturation: 1.4;
+}
+
+[data-md-void-glass="heavy"][data-md-color-scheme="default"] {
+  --void-glass-bg: rgba(0, 0, 0, 0.08);
+  --void-glass-blur: 30px;
+  --void-glass-saturation: 1.4;
+}
+
+// No glass effect (void.glass.intensity = "none")
+[data-md-void-glass="none"]:not([data-md-color-scheme="default"]),
+[data-md-void-glass="none"][data-md-color-scheme="default"] {
+  --void-glass-bg: transparent;
+  --void-glass-bg-strong: transparent;
+  --void-glass-border: transparent;
+  --void-glass-border-strong: transparent;
+  --void-glass-blur: 0px;
+  --void-glass-blur-heavy: 0px;
+  --void-glass-saturation: 1;
+}
+
+// ============================================================================
+// BASE RESETS
+// ============================================================================
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--void-font-body);
+  color: var(--void-text-primary);
+  background-color: var(--void-ink);
+  line-height: 1.6;
+}
+
+// Anchor targets clear the fixed header when scrolled into view (native
+// hash navigation and JS-driven anchor/scrolling both benefit).
+[id] {
+  scroll-margin-top: calc(var(--void-header-height) + var(--void-space-3));
+}
+
+// Disable transitions for reduced motion
+@media (prefers-reduced-motion) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+// ============================================================================
+// THEME OPTION: ANIMATION
+// void.animation = none disables all motion (unless user prefers reduced motion)
+// ============================================================================
+
+[data-md-void-animation="none"] *,
+[data-md-void-animation="none"] *::before,
+[data-md-void-animation="none"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+// void.animation.mode = reduced keeps motion events but drops most movement
+// (mirrors the prefers-reduced-motion handling above).
+[data-md-void-animation="reduced"] *,
+[data-md-void-animation="reduced"] *::before,
+[data-md-void-animation="reduced"] *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+}
+
+// ============================================================================
+// THEME OPTION: BORDER
+// void.border overrides the base border width used across components
+// ============================================================================
+
+[data-md-void-border="thick"] {
+  --void-border-width: 2px;
+}
+
+[data-md-void-border="none"] {
+  --void-border-width: 0px;
+}
+
+// void.border.style overrides the border style used across the theme
+// (only affects borders that are actually rendered, i.e. with a width).
+[data-md-void-border-style="dashed"] *,
+[data-md-void-border-style="dashed"] *::before,
+[data-md-void-border-style="dashed"] *::after {
+  border-style: dashed !important;
+}
+
+[data-md-void-border-style="dotted"] *,
+[data-md-void-border-style="dotted"] *::before,
+[data-md-void-border-style="dotted"] *::after {
+  border-style: dotted !important;
+}
+
+// ============================================================================
+// DOT MATRIX OVERLAY
+// ============================================================================
+
+.void-dot-matrix {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(
+    circle,
+    var(--void-dot-color, var(--void-text-primary)) var(--void-dot-size),
+    transparent var(--void-dot-size)
+  );
+  background-size: var(--void-dot-gap) var(--void-dot-gap);
+  opacity: var(--void-dot-opacity);
+}
+
+// void.dot_matrix.position = absolute (fixed is the default)
+.void-dot-matrix[data-md-void-dot-position="absolute"] {
+  position: absolute;
+}
+
+// ============================================================================
+// GLASS COMPONENTS
+// ============================================================================
+
+// Glass panel base
+.void-glass {
+  background: var(--void-glass-bg);
+  backdrop-filter: blur(var(--void-glass-blur)) saturate(var(--void-glass-saturation));
+  -webkit-backdrop-filter: blur(var(--void-glass-blur)) saturate(var(--void-glass-saturation));
+  border: var(--void-border-width, 1px) solid var(--void-glass-border);
+  border-radius: var(--void-radius-md);
+  box-shadow: var(--void-shadow-glass);
+}
+
+// Glass panel strong
+.void-glass--strong {
+  background: var(--void-glass-bg-strong);
+  border-color: var(--void-glass-border-strong);
+}
+
+// ============================================================================
+// TYPOGRAPHY - NothingOS Inspired
+// ============================================================================
+
+// Display headings - dot-matrix inspired
+.void-display {
+  font-family: var(--void-font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+// Body text
+.void-body {
+  font-family: var(--void-font-body);
+  font-size: var(--void-font-size-base);
+  line-height: 1.6;
+  color: var(--void-text-primary);
+}
+
+// Code text (inline variant — renamed to avoid collision with block-level .void-code in components.scss)
+.void-code-inline {
+  font-family: var(--void-font-mono);
+  font-size: 14px;
+  color: var(--void-text-primary);
+  background: var(--void-glass-bg);
+  padding: 2px 6px;
+  border-radius: var(--void-radius-sm);
+}
+
+// ============================================================================
+// SCROLLBAR
+// ============================================================================
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--void-scrollbar-thumb, var(--void-glass-border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--void-accent);
+}
+
+// Firefox scrollbar
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--void-scrollbar-thumb, var(--void-glass-border)) transparent;
+}
+
+//Scrollbar customization (void.scrollbar)
+html[data-md-void-scrollbar="false"],
+html[data-md-void-scrollbar-style="none"] {
+  scrollbar-width: none;
+}
+
+html[data-md-void-scrollbar="false"] ::-webkit-scrollbar,
+html[data-md-void-scrollbar-style="none"] ::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-md-void-scrollbar-style="default"] {
+  scrollbar-width: auto;
+}
+
+html[data-md-void-scrollbar-style="default"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+// ============================================================================
+// ANIMATIONS
+// ============================================================================
+
+@keyframes void-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes void-glass-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes void-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes void-dot-pulse {
+  0%, 100% {
+    opacity: var(--void-dot-opacity);
+  }
+  50% {
+    opacity: calc(var(--void-dot-opacity) * 2);
+  }
+}
+
+// Animation utilities
+.void-animate-fade-in {
+  animation: void-fade-in 0.5s ease-out;
+}
+
+//Scroll reveal (void.animation.scroll_animations).
+// Progressive enhancement: only browsers with scroll-timeline support get the
+// reveal; everywhere else the element stays visible (no animation at all).
+@keyframes void-scroll-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .void-animate-reveal {
+    animation: void-scroll-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 25%;
+  }
+}
+
+html[data-md-void-scroll-animations="false"] .void-animate-reveal {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+//Hover toggle (void.animation.hover_effects) - disables the theme's
+// hover lift transforms (footer nav links, pagination items, error page action).
+html[data-md-void-hover-effects="false"] .void-footer__link:hover,
+html[data-md-void-hover-effects="false"] .void-pagination__item:hover,
+html[data-md-void-hover-effects="false"] .void-error__action:hover {
+  transform: none !important;
+}
+
+.void-animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--void-glass-bg-strong) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: void-glass-shimmer 2s infinite;
+}
+
+.void-animate-pulse {
+  animation: void-pulse 2s ease-in-out infinite;
+}
+
+// ============================================================================
+// UTILITY CLASSES
+// ============================================================================
+
+.void-flex { display: flex; }
+.void-flex-col { flex-direction: column; }
+.void-items-center { align-items: center; }
+.void-justify-center { justify-content: center; }
+.void-justify-between { justify-content: space-between; }
+.void-gap-1 { gap: var(--void-space-1); }
+.void-gap-2 { gap: var(--void-space-2); }
+.void-gap-3 { gap: var(--void-space-3); }
+.void-gap-4 { gap: var(--void-space-4); }
+.void-gap-6 { gap: var(--void-space-6); }
+.void-gap-8 { gap: var(--void-space-8); }
+.void-p-2 { padding: var(--void-space-2); }
+.void-p-3 { padding: var(--void-space-3); }
+.void-p-4 { padding: var(--void-space-4); }
+.void-p-6 { padding: var(--void-space-6); }
+.void-m-0 { margin: 0; }
+.void-mt-2 { margin-top: var(--void-space-2); }
+.void-mt-4 { margin-top: var(--void-space-4); }
+.void-mt-6 { margin-top: var(--void-space-6); }
+.void-mb-2 { margin-bottom: var(--void-space-2); }
+.void-mb-4 { margin-bottom: var(--void-space-4); }
+.void-mb-6 { margin-bottom: var(--void-space-6); }
+.void-w-full { width: 100%; }
+.void-h-full { height: 100%; }
+.void-relative { position: relative; }
+.void-absolute { position: absolute; }
+.void-fixed { position: fixed; }
+.void-inset-0 { inset: 0; }
+.void-overflow-hidden { overflow: hidden; }
+.void-text-center { text-align: center; }
+.void-text-right { text-align: right; }
+
+// ============================================================================
+// Components are loaded via `@use "components"` at the top of this file
+// (Dart Sass module rules require @use before other statements).
+// ============================================================================

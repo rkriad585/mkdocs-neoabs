@@ -5,14 +5,14 @@ title: Getting Started
 
 # Getting Started
 
-This section covers installation, setup, and configuration of the NeoAbs theme.
+This section covers installation, setup, and configuration of the Void theme.
 
 ## Installation
 
 Install the theme from PyPI:
 
 ```bash
-pip install mkdocs-neoabs
+pip install mkdocs-void
 ```
 
 This installs both the theme and the companion MkDocs plugin.
@@ -31,7 +31,7 @@ This installs both the theme and the companion MkDocs plugin.
    ```yaml
    site_name: My Docs
    theme:
-     name: neoabs
+     name: void
    ```
 
 3. Start the dev server:

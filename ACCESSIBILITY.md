@@ -1,6 +1,6 @@
 # Accessibility Statement
 
-mkdocs-neoabs is committed to ensuring digital accessibility for people with disabilities.
+mkdocs-void is committed to ensuring digital accessibility for people with disabilities.
 
 ## Features
 
@@ -23,7 +23,7 @@ mkdocs-neoabs is committed to ensuring digital accessibility for people with dis
 
 ## Browser Support
 
-NeoAbs uses `backdrop-filter` for glass effects. This is supported in:
+Void uses `backdrop-filter` for glass effects. This is supported in:
 
 - Chrome 76+
 - Edge 79+
@@ -38,4 +38,4 @@ This theme aims to conform with [WCAG 2.1](https://www.w3.org/TR/WCAG21/) Level 
 
 ## Feedback
 
-If you encounter any accessibility issues, please [open an issue](https://github.com/rkriad585/mkdocs-neoabs/issues).
+If you encounter any accessibility issues, please [open an issue](https://github.com/rkriad585/mkdocs-void/issues).

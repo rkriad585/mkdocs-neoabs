@@ -1,0 +1,175 @@
+{% set _ftr_cfg = config.theme.void.footer if (config.theme.void is mapping and config.theme.void.footer is mapping) else {} %}
+{#Page-level front-matter override — whole-footer hide is applied by
+   base.html; keep the flag consistent if this partial is included standalone. #}
+{% set _pg_footer_hide = _pg_footer_hide if (_pg_footer_hide is defined) else ((page.meta.void is mapping and page.meta.void.footer is mapping and page.meta.void.footer.show == false) if (page and page.meta and page.meta.void is mapping) else false) %}
+{% set _ftr_position = _ftr_cfg.position if (_ftr_cfg.position is defined) else "relative" %}
+{% set _ftr_layout = _ftr_cfg.layout if (_ftr_cfg.layout is defined) else "default" %}
+{% set _ftr_prev_next_cfg = _ftr_cfg.get("prev_next") if (_ftr_cfg.get("prev_next") is mapping) else {} %}
+{% set _ftr_copy_cfg = _ftr_cfg.get("copyright") if (_ftr_cfg.get("copyright") is mapping) else {} %}
+{% set _ftr_social = _ftr_cfg.social if (_ftr_cfg.social is defined) else [] %}
+{% set _ftr_columns = _ftr_cfg.columns if (_ftr_cfg.columns is defined) else [] %}
+{% set _meta_cfg = config.extra.void_meta if (config.extra and config.extra.void_meta is mapping) else {} %}
+{% set _ftr_style = namespace(parts=[]) %}
+{% if _ftr_position != "relative" %}
+{% set _ftr_style.parts = _ftr_style.parts + ["--void-footer-position: " ~ _ftr_position] %}
+{% endif %}
+{% macro void_footer_social_icon(icon, item) %}
+{% set _icon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' %}
+{% if icon == "github" %}
+{{ _icon_svg | safe }}<path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
+{% elif icon == "twitter" %}
+{{ _icon_svg | safe }}<path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.11 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.3 4.3 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.52 8.52 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.9 18.17 6.03 19 8.35 19c7.59 0 11.74-6.29 11.74-11.74 0-.18 0-.36-.01-.53.8-.58 1.5-1.3 2.38-2.05z"/></svg>
+{% elif icon == "discord" %}
+{{ _icon_svg | safe }}<path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.78 13.78 0 0 0-.64 1.28 18.27 18.27 0 0 0-5.5 0 12.64 12.64 0 0 0-.64-1.28A19.74 19.74 0 0 0 4.2 4.6C.53 9.5-.31 14.4.19 19.24a20.16 20.16 0 0 0 5.83 2.76 14.62 14.62 0 0 0 1.22-1.98 12.87 12.87 0 0 1-1.93-.92c.16-.12.32-.24.47-.37a14.13 14.13 0 0 0 12.44 0c.15.13.31.26.47.37a12.83 12.83 0 0 1-1.93.92 14.51 14.51 0 0 0 1.22 1.98 20.14 20.14 0 0 0 5.83-2.76c.6-5.65-1.01-10.5-4.27-14.87zM8.02 16.59c-1.18 0-2.14-1.08-2.14-2.42 0-1.33.95-2.42 2.14-2.42s2.16 1.09 2.14 2.42c0 1.34-.95 2.42-2.14 2.42zm7.96 0c-1.18 0-2.14-1.08-2.14-2.42 0-1.33.95-2.42 2.14-2.42 1.19 0 2.16 1.09 2.14 2.42 0 1.34-.94 2.42-2.14 2.42z"/></svg>
+{% elif icon == "custom" and (item.svg is defined and item.svg) %}
+{{ item.svg | safe }}
+{% else %}
+{{ _icon_svg | safe }}<path d="{{ icon }}"/></svg>
+{% endif %}
+{% endmacro %}
+<footer class="void-footer" data-md-component="footer"{% if _ftr_position != "relative" %} data-md-void-footer-position="{{ _ftr_position }}"{% endif %}{% if _ftr_style.parts %} style="{{ _ftr_style.parts | join('; ') }}"{% endif %}{% if _ftr_layout != "default" %} data-md-void-footer-layout="{{ _ftr_layout }}"{% endif %}{% if not (_ftr_cfg.glass | default(true)) %} data-md-void-footer-glass="false"{% endif %}{% if not (_ftr_cfg.border_top | default(true)) %} data-md-void-footer-border="false"{% endif %}>
+  {% if (_ftr_layout != "minimal") and (_ftr_prev_next_cfg.show | default(true)) and (_comp.footer.show_prev_next | default(true)) %}
+  <div class="void-footer__inner">
+    {% if page.previous_page %}
+    <a href="{{ page.previous_page.url | url }}" class="void-footer__link void-footer__link--prev" title="{{ page.previous_page.title }}">
+      <span class="void-footer__link-label">
+        {% if _ftr_prev_next_cfg.show_arrow | default(true) %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+        {% endif %}
+        {{ _i18n.get("footer", {}).get("previous", "Previous") if (_i18n is mapping) else "Previous" }}
+      </span>
+      {% if _ftr_prev_next_cfg.show_title | default(true) %}
+      <span class="void-footer__link-title">{{ page.previous_page.title }}</span>
+      {% endif %}
+    </a>
+    {% else %}
+    <div class="void-footer__link void-footer__link--placeholder"></div>
+    {% endif %}
+
+    {% if page.next_page %}
+    <a href="{{ page.next_page.url | url }}" class="void-footer__link void-footer__link--next" title="{{ page.next_page.title }}">
+      <span class="void-footer__link-label">
+        {{ _i18n.get("footer", {}).get("next", "Next") if (_i18n is mapping) else "Next" }}
+        {% if _ftr_prev_next_cfg.show_arrow | default(true) %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+        </svg>
+        {% endif %}
+      </span>
+      {% if _ftr_prev_next_cfg.show_title | default(true) %}
+      <span class="void-footer__link-title">{{ page.next_page.title }}</span>
+      {% endif %}
+    </a>
+    {% else %}
+    <div class="void-footer__link void-footer__link--placeholder"></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if (_ftr_layout == "extended") and _ftr_columns %}
+  <div class="void-footer__columns">
+    {% for _col in _ftr_columns if _col is mapping %}
+    <div class="void-footer__column">
+      {% if _col.title is defined and _col.title %}
+      <div class="void-footer__column-title">{{ _col.title }}</div>
+      {% endif %}
+      {% if _col.links is defined and _col.links %}
+      <ul class="void-footer__column-list">
+        {% for _link in _col.links if _link is mapping %}
+        <li class="void-footer__column-item">
+          <a href="{{ _link.url | default('#', true) | string }}" class="void-footer__column-link"{% if _link.new_tab is defined and _link.new_tab %} target="_blank" rel="noopener"{% endif %}>{{ _link.label | default('') }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if (_meta_cfg.enabled | default(true)) and (_comp.footer.show_meta | default(true)) %}
+  {% set _pg_meta = ((_pg.meta) if (_pg is defined and _pg is mapping and _pg.meta is mapping) else {}) %}
+  {% set _meta_show_last = (_pg_meta.show_last_updated if (_pg_meta.show_last_updated is defined) else _meta_cfg.show_last_updated | default(true)) %}
+  {% set _meta_show_edit = (_pg_meta.show_edit_on_github if (_pg_meta.show_edit_on_github is defined) else _meta_cfg.show_edit_on_github | default(true)) %}
+  <div class="void-footer__meta">
+    {% if _meta_show_last %}
+    {% set _git_date = page.meta.git_revision_date_localized if (page and page.meta and page.meta.git_revision_date_localized) else "" %}
+    {% set _page_date = page.meta.date if (page and page.meta and page.meta.date) else "" %}
+    {% set _date_source = ((_pg_meta.date_source | default('')) | string) if (_pg_meta.date_source is defined) else (_meta_cfg.date_source | default('auto')) %}
+    {% set _use_git = (false if (_date_source == "front_matter") else (true if (_date_source == "git") else (_git_date | trim))) %}
+    {% if _git_date and _use_git %}
+    <span class="void-last-updated">{{ _meta_cfg.last_updated_label | default("Last updated") }}: {{ _git_date }}</span>
+    {% elif _page_date %}
+    <span class="void-last-updated">{{ _meta_cfg.last_updated_label | default("Last updated") }}: {{ _page_date }}</span>
+    {% endif %}
+    {% endif %}
+
+    {% if _meta_show_edit and config.repo_url and page and page.file and page.file.src_uri %}
+    <a class="void-edit" href="{{ config.repo_url }}/blob/{{ _meta_cfg.branch | default('main') }}/{{ _meta_cfg.source_dir | default('docs') }}/{{ page.file.src_uri }}">
+      {{ _meta_cfg.edit_label | default("Edit this page") }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="void-footer__bottom">
+    {% if (_ftr_copy_cfg.show | default(true)) and (_comp.footer.show_copyright | default(true)) %}
+    <div class="void-footer__copyright">
+      {% set _ftr_copy_text = (_ftr_copy_cfg.text | default('', true)) | string %}
+      {% set _footer_copyright = _comp.footer.copyright_text | default('', true) %}
+      {% if _ftr_copy_text %}
+      {{ _ftr_copy_text }}
+      {% elif _footer_copyright %}
+      {{ _footer_copyright }}
+      {% elif config.copyright %}
+      {{ config.copyright }}
+      {% elif _ftr_copy_cfg.show_year | default(true) %}
+      {% set _year = config.extra.void_copyright_year if config.extra and config.extra.void_copyright_year else "" %}
+      &copy; {{ _year }} {{ config.site_name }}
+      {% else %}
+      {{ config.site_name }}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if _ftr_social %}
+    <div class="void-footer__social">
+      {% for _soc in _ftr_social if _soc is mapping %}
+      {% set _soc_icon = (_soc.icon | default('')) | string %}
+      {% set _soc_url = (_soc.url | default('#', true)) | string %}
+      {% set _soc_label = (_soc.label | default(_soc_icon)) | string %}
+      <a href="{{ _soc_url }}" class="void-footer__social-link" title="{{ _soc_label }}" aria-label="{{ _soc_label }}" target="_blank" rel="noopener">
+        {{ void_footer_social_icon(_soc_icon, _soc) }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if (config.extra and config.extra.void_showcase) %}
+    {% set _powered_label = _i18n.get("footer", {}).get("poweredBy", "Powered by Void") if (_i18n is mapping) else "Powered by Void" %}
+    {% set _showcase_target = (config.extra.void_showcase_url | default('')) if (config.extra.void_showcase_url is defined and config.extra.void_showcase_url) else "https://github.com/rkriad585/mkdocs-void" %}
+    <div class="void-footer__powered">
+      <a href="{{ _showcase_target }}" class="void-footer__powered-link" title="{{ _powered_label }}" rel="noopener">
+        <span class="void-footer__powered-mark" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+            <rect x="0.5" y="0.5" width="19" height="19" rx="4"/>
+            <circle cx="5" cy="5" r="1.1" fill="currentColor" opacity="0.9"/>
+            <circle cx="10" cy="5" r="1.1" fill="currentColor" opacity="0.55"/>
+            <circle cx="15" cy="5" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="5" cy="10" r="1.1" fill="currentColor" opacity="0.55"/>
+            <circle cx="10" cy="10" r="1.1" fill="currentColor" fill-opacity="0.9"/>
+            <circle cx="15" cy="10" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="5" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="10" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="15" cy="15" r="1.1" fill="currentColor" opacity="0.25"/>
+            <circle cx="15" cy="15" r="1.1" fill="var(--void-accent)"/>
+          </svg>
+        </span>
+        <span class="void-footer__powered-text">{{ _powered_label }}</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</footer>

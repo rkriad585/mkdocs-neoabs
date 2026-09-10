@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - "neoabs/**"
+      - "void/**"
       - "mkdocs.yml"
       - "pyproject.toml"
       - "requirements.txt"

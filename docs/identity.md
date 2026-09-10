@@ -5,7 +5,7 @@ title: Identity & i18n
 
 # Identity & i18n
 
-Phase 7 makes a NeoAbs site feel like *your* app, in *your* language: UI strings
+Identity makes a Void site feel like *your* app, in *your* language: UI strings
 are centralized and overridable, pages get an automatic breadcrumb trail and
 optional nav icons, images can follow the dark/light scheme, and every build
 ships an install-ready PWA manifest — all on by default.
@@ -18,14 +18,14 @@ ships an install-ready PWA manifest — all on by default.
 
 ## Breadcrumbs
 
-A `<nav class="neoabs-breadcrumbs">` trail is injected at the top of `<article>` for
+A `<nav class="void-breadcrumbs">` trail is injected at the top of `<article>` for
 every page that has ancestors (the section the page lives in, plus the page
 itself). A home link is prepended only when `site_url` is configured, so local
 builds keep a clean trail.
 
 ```yaml
 theme:
-  neoabs:
+  void:
     breadcrumbs:
       show: true        # Auto trail above content when ancestors exist
 ```
@@ -50,7 +50,7 @@ title: Installation
 ```
 
 The value can be an emoji, a shortcode string, or inline SVG; it is wrapped in
-`<span class="neoabs-nav__icon" aria-hidden="true">` so screen readers skip it.
+`<span class="void-nav__icon" aria-hidden="true">` so screen readers skip it.
 This page lives under Designer section headers with emoji icons as a living example.
 
 ## Dark-aware images
@@ -69,11 +69,11 @@ first paint, even when no preference exists.
 ## UI-string i18n
 
 Every chrome string is centralized in `__config.translations` and defaulted to
-English. Override any of them with a flat `i18n:` block under `theme.neoabs`:
+English. Override any of them with a flat `i18n:` block under `theme.void`:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     i18n:
       search_placeholder: "Partout dans la docs."
       toc_title: "Sur cette page"
@@ -104,21 +104,21 @@ Full key list (group → key):
 | `comments_title` | Comments header |
 | `skip_to_content`, `breadcrumb_label` | Accessibility chrome |
 | `previous_page`, `next_page` | Footer paging links |
-| `footer_powered_by` | "Powered by NeoAbs" footer credit |
+| `footer_powered_by` | "Powered by Void" footer credit |
 
-### Translating NeoAbs
+### Translating Void
 
 Adding a language (or fixing a string) takes two edits in
-`neoabs/plugins/neoabs_plugin.py`; no template touches a hardcoded English
+`void/plugins/void_plugin.py`; no template touches a hardcoded English
 string.
 
-1. **Add the default** in `_NEOABS_DEFAULT_I18N` — every chrome string ships an
+1. **Add the default** in `_VOID_DEFAULT_I18N` — every chrome string ships an
    English value there, grouped by surface (`search`, `toc`, `clipboard`,
    `comments`, `zoom`, `repo`, `notes`, `timer`, `footer`, `navigation`,
    `help`). Use the `footer.previous` / `footer.next` entries as the template
    for a new group key.
-2. **Register a flat alias** in `_NEOABS_I18N_FLAT_ALIASES` so the documented
-   one-level `theme.neoabs.i18n.<key>` spelling keeps working — the alias maps
+2. **Register a flat alias** in `_VOID_I18N_FLAT_ALIASES` so the documented
+   one-level `theme.void.i18n.<key>` spelling keeps working — the alias maps
    a flat key to `(group, child)`, e.g. `previous_page` →
    `("footer", "previous")`.
 
@@ -126,17 +126,17 @@ A site then overrides any string without touching templates:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     i18n:
-      footer_powered_by: "Propulsé par NeoAbs"
+      footer_powered_by: "Propulsé par Void"
       previous_page: "Précédent"
 ```
 
 Because the alias has to exist for a string to be overridable, an unknown key
 aborts the build instead of silently staying English. Verify a translation by
-building the docs `mkdocs build --strict` (or `neoabs new` + `mkdocs serve`)
+building the docs `mkdocs build --strict` (or `void new` + `mkdocs serve`)
 and checking the chrome in both dark and light modes — see
-[Contributing — Translations](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CONTRIBUTING.md#translations)
+[Contributing — Translations](https://github.com/rkriad585/mkdocs-void/blob/main/CONTRIBUTING.md#translations)
 for the suggested workflow.
 
 ## Auto PWA manifest
@@ -149,19 +149,19 @@ installable out of the box — no extra files to maintain.
 
 ```yaml
 theme:
-  neoabs:
+  void:
     pwa:
       manifest: true            # Emit manifest.webmanifest (default true)
       display: standalone       # standalone | fullscreen | minimal-ui | browser
       icons: true               # Reuse the site logo as the manifest icon
-      theme_color: ""           # extra.neoabs_theme_color, then background_color
+      theme_color: ""           # extra.void_theme_color, then background_color
       background_color: "#111114"
       start_url: ""             # site_url, then "/"
 ```
 
-`theme_color`/`start_url` resolve against `extra.neoabs_theme_color` /
+`theme_color`/`start_url` resolve against `extra.void_theme_color` /
 `site_url` when left empty. The icon list uses the site logo chain
-(`extra.neoabs_logo_light` → `extra.neoabs_logo_dark` → `theme.logo`, with
+(`extra.void_logo_light` → `extra.void_logo_dark` → `theme.logo`, with
 `theme.favicon` as a last resort): a local logo is linked as-is, while a remote
 `https://` logo is **fetched at build time** into `assets/` and served from the
 site root — no CDN dependency in the browser and no manual icon file to

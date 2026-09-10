@@ -51,4 +51,4 @@ coverage.xml
 .tox/
 
 # Build artifacts
-neoabs.egg-info/
+void.egg-info/

@@ -1,0 +1,160 @@
+{% set _hdr_cfg = config.theme.void.header if (config.theme.void is mapping and config.theme.void.header is mapping) else {} %}
+{#Page-level front-matter override — whole-header hide is applied by
+   base.html; keep the flag consistent if this partial is included standalone. #}
+{% set _pg_header_hide = _pg_header_hide if (_pg_header_hide is defined) else ((page.meta.void is mapping and page.meta.void.header is mapping and page.meta.void.header.show == false) if (page and page.meta and page.meta.void is mapping) else false) %}
+{% set _hdr_position = _hdr_cfg.position if (_hdr_cfg.position is defined) else "sticky" %}
+{% set _hdr_height = _hdr_cfg.height if (_hdr_cfg.height is defined) else "56px" %}
+{% set _hdr_z_index = _hdr_cfg.z_index if (_hdr_cfg.z_index is defined) else none %}
+{% set _hdr_brand_cfg = _hdr_cfg.get("brand") if (_hdr_cfg.get("brand") is mapping) else {} %}
+{% set _hdr_left_cfg = _hdr_cfg.get("left") if (_hdr_cfg.get("left") is mapping) else {} %}
+{% set _hdr_logo_size = _hdr_brand_cfg.logo_height if (_hdr_brand_cfg.logo_height is defined) else 26 %}
+{% set _hdr_right_defaults = [{"type": "palette_toggle"}, {"type": "search"}, {"type": "repo_link"}] %}
+{% set _hdr_right = _hdr_cfg.right if (_hdr_cfg.right is defined) else _hdr_right_defaults %}
+{% set _hdr_style = namespace(parts=[]) %}
+{% if _hdr_position != "sticky" %}
+{% set _hdr_style.parts = _hdr_style.parts + ["--void-header-position: " ~ _hdr_position] %}
+{% endif %}
+{% if _hdr_height != "56px" %}
+{% set _hdr_style.parts = _hdr_style.parts + ["--void-header-height: " ~ _hdr_height] %}
+{% endif %}
+{% if _hdr_z_index is not none %}
+{% set _hdr_style.parts = _hdr_style.parts + ["--void-header-z: " ~ _hdr_z_index] %}
+{% endif %}
+
+{% macro void_header_icon(icon) %}
+{% set _icon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' %}
+{% if icon == "github" %}
+{{ _icon_svg | safe }}<path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
+{% elif icon == "gitlab" %}
+{{ _icon_svg | safe }}<path d="M12 2l2.09 6.35h6.86l-5.55 4.02 2.12 6.35L12 14.66 6.48 18.72l2.12-6.35-5.55-4.02h6.86L12 2z"/></svg>
+{% elif icon == "external" %}
+{{ _icon_svg | safe }}<path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42L17.59 5H14V3zm-9 3.2C5 5.54 5.54 5 6.2 5H11v2H6.5v11h11V13h2v4.8c0 .66-.54 1.2-1.2 1.2H6.2c-.66 0-1.2-.54-1.2-1.2V6.2z"/></svg>
+{% elif icon == "code" %}
+{{ _icon_svg | safe }}<path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+{% elif icon == "star" %}
+{{ _icon_svg | safe }}<path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+{% else %}
+{{ _icon_svg | safe }}<path d="{{ icon }}"/></svg>
+{% endif %}
+{% endmacro %}
+
+<header class="void-header" data-md-component="header"{% if _hdr_style.parts %} style="{{ _hdr_style.parts | join('; ') }}"{% endif %}{% if not (_hdr_cfg.glass | default(true)) %} data-md-void-header-glass="false"{% endif %}{% if not (_hdr_cfg.blur | default(true)) %} data-md-void-header-blur="false"{% endif %}{% if not (_hdr_cfg.border_bottom | default(true)) %} data-md-void-header-border="false"{% endif %}>
+  <div class="void-header__inner">
+    <div class="void-header__left">
+      {% if page.title and (_hdr_left_cfg.show_page_title | default(true)) and (_comp.header.show_page_title | default(true)) %}
+      <span class="void-header__page-title">{{ page.title }}</span>
+      {% endif %}
+      {% if _hdr_left_cfg.show_hamburger | default(true) %}
+      <button type="button" class="void-header__hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="void-drawer">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="void-header__center">
+      {% if _hdr_brand_cfg.show | default(true) %}
+      {% set _brand = config.site_name | replace(" Documentation", "") | replace(" Docs", "") %}
+      {% set _logo_dark = config.extra.void_logo_dark | default(config.extra.void_logo_url | default(config.theme.logo, true), true) %}
+      {% set _logo_light = config.extra.void_logo_light | default(config.extra.void_logo_url | default(config.theme.logo, true), true) %}
+      {% set _two_tone = (_logo_dark | string) != (_logo_light | string) and _logo_light %}
+      {% set _site_name = (_brand ~ (_hdr_brand_cfg.site_name_suffix | default(""))) if ((_comp.header.show_site_name | default(true)) and (_hdr_brand_cfg.show_site_name | default(true))) else '' %}
+      <a href="{{ config.site_url | default('/', true) | url }}" class="void-header__brand"{% if _hdr_logo_size != 26 %} style="--void-header-logo-size: {{ _hdr_logo_size }}px"{% endif %} title="{{ config.site_name }}">
+        {% if _logo_dark and (_comp.header.show_logo | default(true)) %}
+        {% if _logo_dark.startswith("http") %}
+        <img src="{{ _logo_dark }}" alt="" width="{{ _hdr_logo_size }}" height="{{ _hdr_logo_size }}" class="void-header__brand-logo{{ '' if not _two_tone else ' void-header__brand-logo--dark' }}">
+        {% else %}
+        <img src="{{ _logo_dark | url }}" alt="" width="{{ _hdr_logo_size }}" height="{{ _hdr_logo_size }}" class="void-header__brand-logo{{ '' if not _two_tone else ' void-header__brand-logo--dark' }}">
+        {% endif %}
+        {% endif %}
+        {% if _two_tone and (_comp.header.show_logo | default(true)) %}
+        {% if _logo_light.startswith("http") %}
+        <img src="{{ _logo_light }}" alt="" width="{{ _hdr_logo_size }}" height="{{ _hdr_logo_size }}" class="void-header__brand-logo void-header__brand-logo--light">
+        {% else %}
+        <img src="{{ _logo_light | url }}" alt="" width="{{ _hdr_logo_size }}" height="{{ _hdr_logo_size }}" class="void-header__brand-logo void-header__brand-logo--light">
+        {% endif %}
+        {% endif %}
+        <span class="void-header__brand-text">
+          <span class="void-header__site-name">{{ _site_name }}</span>
+          {% if config.extra and config.extra.void_site_tagline %}
+          <span class="void-header__tagline">{{ config.extra.void_site_tagline }}</span>
+          {% endif %}
+        </span>
+        {% if config.extra and config.extra.void_site_badge %}
+        <span class="void-header__badge">{{ config.extra.void_site_badge }}</span>
+        {% endif %}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="void-header__right">
+      {% for _item in _hdr_right %}
+      {% set _item_type = _item.type if _item is mapping else _item | string %}
+      {% if _item_type == "palette_toggle" and (_comp.header.show_palette_toggle | default(true)) %}
+      {% include "partials/palette.html" %}
+      {% elif _item_type == "search" and "search" in config.plugins and (_comp.header.show_search | default(true)) %}
+      <button type="button" class="void-header__search" aria-label="Toggle search" aria-controls="void-search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <span class="void-header__btn-label">Search</span>
+      </button>
+      {% elif _item_type == "repo_link" and config.repo_url and (_comp.header.show_repo_link | default(true)) %}
+      {% set _repo_clean = config.repo_url | replace("https://", "") | replace("http://", "") | replace("git@", "") | replace("ssh://", "") | replace(".git", "") %}
+      {% set _repo_host = _repo_clean.split("/")[0] if "/" in _repo_clean else _repo_clean %}
+      {% set _repo_parts = _repo_clean.split("/") %}
+      {% set _repo_owner = _repo_parts[1] if _repo_parts | length > 1 else "" %}
+      {% set _repo_name = _repo_parts[2] if _repo_parts | length > 2 else "" %}
+      <span class="void-header__repo-wrap">
+        <a href="{{ config.repo_url }}" class="void-header__repo" target="_blank" rel="noopener">
+          <span class="void-header__repo-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="void-header__repo-icon">            {% if "github" in _repo_host %}
+            <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.21.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
+            {% elif "gitlab" in _repo_host %}
+            <path d="M12 2l2.09 6.35h6.86l-5.55 4.02 2.12 6.35L12 14.66 6.48 18.72l2.12-6.35-5.55-4.02h6.86L12 2z"/>
+            {% elif "bitbucket" in _repo_host %}
+            <path d="M2.92 3.2a.8.8 0 0 0-.78.94l3.1 16.03c.08.44.46.75.91.75h11.95c.45 0 .83-.31.91-.75l3.1-16.03a.8.8 0 0 0-.78-.94L2.92 3.2zm10.16 11.45H10.9L9.9 8.01h4.2l-1.02 6.64z"/>
+            {% elif "gitea" in _repo_host %}
+            <path d="M5.5 4a4.5 4.5 0 0 0 0 9h.6l.9-1H5.5a3.5 3.5 0 0 1 0-7h.6l.9-1H5.5zm7 0a4.5 4.5 0 0 1 0 9h-.6l-.9-1h1.5a3.5 3.5 0 0 0 0-7h-1.5l.9-1h.6zM5 5.5a1 1 0 1 0 0 2h9a1 1 0 1 0 0-2H5z"/>
+            {% elif "codeberg" in _repo_host %}
+            <path d="M11.1 2.18a1.4 1.4 0 0 1 1.8 0l7.14 6.1c.6.51.94 1.27.94 2.06v9.9c0 .98-.8 1.78-1.78 1.78h-4.15a2.73 2.73 0 1 1-1.46-2.18v-4.1a6.24 6.24 0 0 1-4.53 0v4.1a2.73 2.73 0 1 1-1.46 2.18H2.8a1.78 1.78 0 0 1-1.78-1.78v-9.9c0-.79.34-1.55.94-2.06l7.14-6.1z"/>
+            {% else %}
+            <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7.5a1.5 1.5 0 0 0-1.06.44L4.59 20.3A1 1 0 0 1 3 19.57V5zm3 0v3h12V5H6zm0 5v2h12v-2H6zm0 4v1h8v-1H6z"/>
+            {% endif %}
+          </svg>
+          <span class="void-header__btn-label">{{ _repo_host | capitalize }}</span>
+        </span>
+        </a>
+        <div class="void-repo-pop" role="tooltip" aria-label="Repo information">
+          <div class="void-repo-pop__head">
+            <span class="void-repo-pop__avatar">{{ (_repo_owner[:1] if _repo_owner else "R") | upper }}</span>
+            <span class="void-repo-pop__title">
+              <a class="void-repo-pop__name" href="{{ config.repo_url }}" target="_blank" rel="noopener">{{ _repo_owner }}/{{ _repo_name }}</a>
+            </span>
+          </div>
+          <div class="void-repo-pop__body">
+            <div class="void-repo-pop__row"><span class="void-repo-pop__k">Status</span><span class="void-repo-pop__v">Loading…</span></div>
+          </div>
+        </div>
+      </span>
+      {% elif _item_type == "link" or _item_type == "button" %}
+      {% set _item_label = (_item.label | default("")) | string %}
+      {% set _item_url = _item.url | default("#", true) | string %}
+      {% set _item_class = "void-header__item" %}
+      {% if _item_type == "button" %}
+      {% set _item_style = _item.style | default("primary") | string %}
+      {% set _item_class = _item_class ~ " void-header__item--" ~ _item_style %}
+      {% endif %}
+      {% if not _item_label %}
+      {% set _item_class = _item_class ~ " void-header__item--icon" %}
+      {% endif %}
+      <a href="{{ _item_url }}" class="{{ _item_class }}"{% if _item.new_tab | default(false) %} target="_blank" rel="noopener"{% endif %}>
+        {% if _item.icon is defined and _item.icon %}{{ void_header_icon(_item.icon | string) }}{% endif %}
+        {% if _item_label %}<span class="void-header__item-label">{{ _item_label }}</span>{% endif %}
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</header>

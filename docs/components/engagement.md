@@ -5,7 +5,7 @@ title: Feedback & Announcements
 
 # Feedback & Privacy Features
 
-Phase 6 adds three engagement surfaces and one privacy rule to a NeoAbs site — all of them opt-in, none of them ship tracking:
+Three engagement surfaces and one privacy rule round out a Void site — all of them opt-in, none of them ship tracking:
 
 - The **feedback widget** asks "Was this page helpful?" and opens a prefilled GitHub issue (positive or negative) in a new tab.
 - The **announcement bar** is a single line pinned to the bottom of the viewport; dismissal is remembered in `localStorage` and re-shows when the text changes.
@@ -19,18 +19,18 @@ Phase 6 adds three engagement surfaces and one privacy rule to a NeoAbs site —
 The widget renders under the article once the page has a `repo_url` (real GitHub repos only — the click is a plain issue link, no analytics anywhere).
 
 <div>
-  <div class="neoabs-feedback">
-    <div class="neoabs-feedback__title">Was this page helpful?</div>
-    <div class="neoabs-feedback__actions">
-      <button type="button" class="neoabs-btn neoabs-feedback__btn neoabs-feedback__btn--yes">Yes — thanks!</button>
-      <button type="button" class="neoabs-btn neoabs-btn--accent neoabs-feedback__btn neoabs-feedback__btn--no">No — open an issue</button>
+  <div class="void-feedback">
+    <div class="void-feedback__title">Was this page helpful?</div>
+    <div class="void-feedback__actions">
+      <button type="button" class="void-btn void-feedback__btn void-feedback__btn--yes">Yes — thanks!</button>
+      <button type="button" class="void-btn void-btn--accent void-feedback__btn void-feedback__btn--no">No — open an issue</button>
     </div>
   </div>
 </div>
 
 ```yaml
 theme:
-  neoabs:
+  void:
     feedback:
       enabled: true        # Master on/off (default true)
       show: true           # Render the widget (default true)
@@ -45,18 +45,18 @@ Clicking **Yes** opens `repo/issues/new` with a `Positive feedback` body; clicki
 
 ## Announcement bar
 
-The bar is fixed to the bottom of the viewport. Set the text either on `announcement_bar.text` or with the legacy `extra.neoabs_announce` string (the dict wins).
+The bar is fixed to the bottom of the viewport. Set the text either on `announcement_bar.text` or with the legacy `extra.void_announce` string (the dict wins).
 
 ```yaml
 extra:
-  neoabs_announce: New in v0.2 — glass components!   # Legacy string fallback
+  void_announce: New in v0.2 — glass components!   # Legacy string fallback
 
 theme:
-  neoabs:
+  void:
     announcement_bar:
       enabled: true        # Master on/off (default true)
       show: true           # Render the bar (default true)
-      text: ""             # Dict text wins; empty falls back to neoabs_announce
+      text: ""             # Dict text wins; empty falls back to void_announce
       dismissable: true    # Show the × button
 ```
 
@@ -64,11 +64,11 @@ Dismissal is stored per site under a key derived from the announcement text, so 
 
 ## Cookie consent banner
 
-NeoAbs stores **nothing** about readers beyond explicit opt-in flags (`consent`, `announcement-dismissed-*`, notes). The banner is purely a courtesy: it renders only when the build detects a configured integration, and clicking **Accept** unlocks delayed integrations (e.g. giscus) that are otherwise never loaded.
+Void stores **nothing** about readers beyond explicit opt-in flags (`consent`, `announcement-dismissed-*`, notes). The banner is purely a courtesy: it renders only when the build detects a configured integration, and clicking **Accept** unlocks delayed integrations (e.g. giscus) that are otherwise never loaded.
 
 ```yaml
 theme:
-  neoabs:
+  void:
     cookie_consent:
       enabled: true
       show: true
@@ -83,7 +83,7 @@ A browser's choice is remembered; changing it requires clearing site data. The b
 
 ## Opt-in comments (giscus)
 
-Comments are a separate, fully opt-in integration. See [Plugins → NeoAbs Plugin](../plugins/neoabs.md) for the full giscus setup. Highlights:
+Comments are a separate, fully opt-in integration. See [Plugins → Void Plugin](../plugins/void.md) for the full giscus setup. Highlights:
 
 - Only the `giscus` provider is supported today.
 - Nothing is loaded until both `repo` and `repo_id` are configured.
@@ -92,7 +92,7 @@ Comments are a separate, fully opt-in integration. See [Plugins → NeoAbs Plugi
 
 ```yaml
 theme:
-  neoabs:
+  void:
     comments:
       enabled: true
       provider: giscus

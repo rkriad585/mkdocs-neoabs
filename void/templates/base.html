@@ -1,0 +1,788 @@
+{% set _comp = config.extra.void_components | default({}) %}
+{% set _ct_cfg = config.extra.void_content if (config.extra and config.extra.void_content is mapping) else {} %}
+{% set _i18n = config.extra.void_i18n if (config.extra and config.extra.void_i18n is mapping) else {} %}
+{#Page-level front-matter overrides. A page may declare an optional
+   `void:` block in its YAML front matter (`page.meta.void`) to override
+   theme settings for that page only. Only the keys named here take effect;
+   anything unset falls through to the site-wide behavior. #}
+{% set _pg = page.meta.void if (page and page.meta and page.meta.void is mapping) else {} %}
+{% set _pg_header_hide = (_pg.header is mapping and _pg.header.show == false) %}
+{% set _pg_sidebar_hide = (_pg.sidebar is mapping and _pg.sidebar.show == false) %}
+{% set _pg_toc_hide = (_pg.toc is mapping and _pg.toc.show == false) %}
+{% set _pg_footer_hide = (_pg.footer is mapping and _pg.footer.show == false) %}
+{% set _pg_ct = _pg.content if (_pg.content is mapping) else {} %}
+{% set _pg_ct_glass = _pg_ct.glass if (_pg_ct.glass is defined) else none %}
+{% set _pg_ct_progress_hide = (_pg_ct.show_progress_bar == false) %}
+{% set _pg_layout = _pg.layout if (_pg.layout is string and _pg.layout in ["default", "wide", "full"]) else none %}
+{% set _pg_custom_css = _pg.custom_css if (_pg.custom_css is defined and _pg.custom_css) else [] %}
+{% set _ct_max_width = _ct_cfg.max_width if (_ct_cfg.max_width is defined and _ct_cfg.max_width) else none %}
+{% set _ct_padding = _ct_cfg.padding if (_ct_cfg.padding is defined and _ct_cfg.padding) else none %}
+{% set _ct_progress_color = _ct_cfg.progress_bar_color if (_ct_cfg.progress_bar_color is defined and _ct_cfg.progress_bar_color) else none %}
+{% set _ct_line_number_color = _ct_cfg.code.line_number_color if (_ct_cfg.code.line_number_color is defined and _ct_cfg.code.line_number_color) else none %}
+{% set _ct_content_glass = _pg_ct_glass if (_pg_ct_glass is not none) else (_ct_cfg.glass if (_ct_cfg.glass is defined) else false) %}
+{% set _ct_tables = _ct_cfg.tables if (_ct_cfg.tables is mapping) else {} %}
+{% set _ct_tables_responsive = _ct_tables.responsive if (_ct_tables.responsive is defined) else true %}
+{% set _ct_tables_striped = _ct_tables.striped if (_ct_tables.striped is defined) else false %}
+{% set _ct_tables_bordered = _ct_tables.bordered if (_ct_tables.bordered is defined) else false %}
+{% set _ct_task = _ct_cfg.task_lists if (_ct_cfg.task_lists is mapping) else {} %}
+{% set _ct_task_custom = _ct_task.custom_checkbox if (_ct_task.custom_checkbox is defined) else true %}
+{% set _ct_admonitions_enabled = (((_ct_cfg.admonitions.enabled if (_ct_cfg.admonitions is mapping and _ct_cfg.admonitions.enabled is defined) else true)) and (_comp.admonitions.show | default(true))) %}
+{% set _all_css = (config.theme.extra_css if (config.theme.extra_css is defined and config.theme.extra_css) else []) + ((config.theme.void.custom_css | default([])) if (config.theme.void is mapping) else []) + (config.extra_css | default([])) %}
+{% set _all_js = (config.theme.extra_javascript if (config.theme.extra_javascript is defined and config.theme.extra_javascript) else []) + ((config.theme.void.custom_js | default([])) if (config.theme.void is mapping) else []) + (config.extra_javascript | default([])) %}
+{% set _sbr_cfg = config.theme.void.sidebar if (config.theme.void is mapping and config.theme.void.sidebar is mapping) else {} %}
+{% set _sbr_position = _sbr_cfg.position if (_sbr_cfg.position is defined) else "left" %}
+{% set _sbr_width = _sbr_cfg.width if (_sbr_cfg.width is defined) else none %}
+{% set _sbr_collapsible = _sbr_cfg.collapsible if (_sbr_cfg.collapsible is defined) else true %}
+{% set _sbr_default_collapsed = _sbr_cfg.default_collapsed if (_sbr_cfg.default_collapsed is defined) else false %}
+{% set _sbr_style = namespace(parts=[]) %}
+{% if _sbr_width %}
+{% set _sbr_style.parts = _sbr_style.parts + ["--void-sidebar-width: " ~ _sbr_width] %}
+{% endif %}
+{% set _toc_cfg = config.theme.void.toc if (config.theme.void is mapping and config.theme.void.toc is mapping) else {} %}
+{% set _toc_position = _toc_cfg.position if (_toc_cfg.position is defined) else "right" %}
+{% set _toc_width = _toc_cfg.width if (_toc_cfg.width is defined) else none %}
+{% set _toc_title = _toc_cfg.title if (_toc_cfg.title is defined) else (_comp.toc.title | default("On this page")) %}
+{% set _toc_title_style = _toc_cfg.title_style if (_toc_cfg.title_style is defined) else "uppercase" %}
+{% set _toc_collapsible = _toc_cfg.collapsible if (_toc_cfg.collapsible is defined) else true %}
+{% set _toc_default_collapsed = _toc_cfg.default_collapsed if (_toc_cfg.default_collapsed is defined) else false %}
+{% set _toc_glass = _toc_cfg.glass if (_toc_cfg.glass is defined) else true %}
+{% set _toc_tracking_enabled = _toc_cfg.tracking.enabled if (_toc_cfg.tracking is mapping and _toc_cfg.tracking.enabled is defined) else true %}
+{% set _toc_tracking_offset = _toc_cfg.tracking.offset if (_toc_cfg.tracking is mapping and _toc_cfg.tracking.offset is defined) else none %}
+{% set _toc_permalink = _toc_cfg.permalink if (_toc_cfg.permalink is defined) else true %}
+{% set _toc_permalink_symbol = _toc_cfg.permalink_symbol if (_toc_cfg.permalink_symbol is defined and _toc_cfg.permalink_symbol) else none %}
+{% set _toc_levels = _toc_cfg.levels if (_toc_cfg.levels is mapping) else none %}
+{% set _toc_levels_effective = {
+    "h2": _toc_levels.h2 | default(_comp.toc.show_level_h2 | default(true)),
+    "h3": _toc_levels.h3 | default(_comp.toc.show_level_h3 | default(true)),
+    "h4": _toc_levels.h4 | default(_comp.toc.show_level_h4 | default(true)),
+    "h5": _toc_levels.h5 | default(false),
+    "h6": _toc_levels.h6 | default(false)
+  } if (_toc_levels is mapping) else {
+    "h2": _comp.toc.show_level_h2 | default(true),
+    "h3": _comp.toc.show_level_h3 | default(true),
+    "h4": _comp.toc.show_level_h4 | default(true),
+    "h5": false,
+    "h6": false
+  } %}
+{% if _pg.toc is mapping and _pg.toc.levels is mapping %}
+{% set _toc_levels_effective = {
+    "h2": _pg.toc.levels.h2 | default(_toc_levels_effective.get("h2", true)),
+    "h3": _pg.toc.levels.h3 | default(_toc_levels_effective.get("h3", true)),
+    "h4": _pg.toc.levels.h4 | default(_toc_levels_effective.get("h4", true)),
+    "h5": _pg.toc.levels.h5 | default(_toc_levels_effective.get("h5", false)),
+    "h6": _pg.toc.levels.h6 | default(_toc_levels_effective.get("h6", false))
+  } %}
+{% endif %}
+{% set _toc_style = namespace(parts=[]) %}
+{% if _toc_width %}
+{% set _toc_style.parts = _toc_style.parts + ["--void-toc-width: " ~ _toc_width] %}
+{% endif %}
+{#Advanced visual customization. Each group below accepts either the
+   legacy scalar form (glass: "medium", dot_matrix: true, animation: "normal",
+   border: "thin") or the enhanced object form. Everything defaults to the
+   current behavior / empty overrides. #}
+{% set _vis_cfg = config.theme.void if (config.theme.void is mapping) else {} %}
+{% set _glass_key = _vis_cfg.glass if (_vis_cfg.glass is defined) else (config.extra.void_glass if (config.extra and config.extra.void_glass is defined) else none) %}
+{% if _glass_key is mapping %}
+{% set _glass_intensity = _glass_key.intensity | default('medium', true) %}
+{% set _glass_blur_on = _glass_key.blur | default(true) %}
+{% set _glass_blur_amt = _glass_key.blur_amount | default(none) %}
+{% set _glass_opacity = _glass_key.opacity | default(none) %}
+{% set _glass_sat_on = _glass_key.saturation | default(true) %}
+{% else %}
+{% set _glass_intensity = _glass_key if (_glass_key is defined and _glass_key) else 'medium' %}
+{% set _glass_blur_on = true %}
+{% set _glass_blur_amt = none %}
+{% set _glass_opacity = none %}
+{% set _glass_sat_on = true %}
+{% endif %}
+{% if _pg.glass is string and _pg.glass %}
+{% set _glass_intensity = _pg.glass %}
+{% elif _pg.glass == false %}
+{% set _glass_intensity = "none" %}
+{% endif %}
+{% set _dot_key = _vis_cfg.dot_matrix if (_vis_cfg.dot_matrix is defined) else (config.extra.void_dot_matrix | default(true)) %}
+{% if _dot_key is mapping %}
+{% set _dot_enabled = _dot_key.enabled | default(true) %}
+{% set _dot_color = _dot_key.color | default(none) %}
+{% set _dot_size = _dot_key.size | default(none) %}
+{% set _dot_gap = _dot_key.gap | default(none) %}
+{% set _dot_opacity = _dot_key.opacity | default(none) %}
+{% set _dot_position = _dot_key.position | default('fixed', true) %}
+{% else %}
+{% set _dot_enabled = _dot_key | default(true) %}
+{% set _dot_color = none %}
+{% set _dot_size = none %}
+{% set _dot_gap = none %}
+{% set _dot_opacity = none %}
+{% set _dot_position = none %}
+{% endif %}
+{% if _pg.dot_matrix is defined %}
+{% if _pg.dot_matrix is boolean %}
+{% set _dot_enabled = _pg.dot_matrix %}
+{% elif _pg.dot_matrix is mapping and _pg.dot_matrix.enabled is defined %}
+{% set _dot_enabled = _pg.dot_matrix.enabled %}
+{% endif %}
+{% endif %}
+{% set _anim_key = _vis_cfg.animation if (_vis_cfg.animation is defined) else (config.extra.void_animation if (config.extra and config.extra.void_animation is defined) else none) %}
+{% if _anim_key is mapping %}
+{% set _anim_mode = _anim_key.mode | default('normal', true) %}
+{% set _anim_page_transition = _anim_key.page_transition | default(true) %}
+{% set _anim_hover = _anim_key.hover_effects | default(true) %}
+{% set _anim_scroll = _anim_key.scroll_animations | default(true) %}
+{% set _anim_toast = _anim_key.toast_animation | default(true) %}
+{% else %}
+{% set _anim_mode = _anim_key if (_anim_key is defined and _anim_key) else 'normal' %}
+{% set _anim_page_transition = true %}
+{% set _anim_hover = true %}
+{% set _anim_scroll = true %}
+{% set _anim_toast = true %}
+{% endif %}
+{% set _border_key = _vis_cfg.border if (_vis_cfg.border is defined) else (config.extra.void_border if (config.extra and config.extra.void_border is defined) else none) %}
+{% if _border_key is mapping %}
+{% set _border_width = _border_key.width | default('thin', true) %}
+{% set _border_style = _border_key.style | default(none) %}
+{% set _border_color = _border_key.color | default(none) %}
+{% else %}
+{% set _border_width = _border_key if (_border_key is defined and _border_key) else 'thin' %}
+{% set _border_style = none %}
+{% set _border_color = none %}
+{% endif %}
+{% set _shadow_cfg = _vis_cfg.shadows if (_vis_cfg.shadows is mapping) else {} %}
+{% set _shadow_enabled = _shadow_cfg.enabled | default(true) %}
+{% set _shadow_style = _shadow_cfg.style | default('default', true) %}
+{% set _sb_cfg = _vis_cfg.scrollbar if (_vis_cfg.scrollbar is mapping) else {} %}
+{% set _sb_show = _sb_cfg.show | default(false) %}
+{% set _sb_style = _sb_cfg.style | default('thin', true) %}
+{% set _sb_color = _sb_cfg.color | default(none) %}
+{% set _sel_cfg = _vis_cfg.selection if (_vis_cfg.selection is mapping) else {} %}
+{% set _sel_bg = _sel_cfg.background | default(none) %}
+{% set _sel_color = _sel_cfg.color | default(none) %}
+{% set _search_cfg = config.theme.void.search if (config.theme.void is mapping and config.theme.void.search is mapping) else {} %}
+{% set _search_enabled = _search_cfg.enabled | default(true) %}
+{% set _search_shortcut = _search_cfg.shortcut_key | default(none) %}
+{% set _search_placeholder = _search_cfg.placeholder | default(_comp.search.placeholder | default('Search...')) %}
+{% set _search_min_chars = _search_cfg.min_chars | default(none) %}
+{% set _search_max_results = _search_cfg.max_results | default(10) %}
+{% set _search_show_context = _search_cfg.show_context | default(true) %}
+{% set _search_context_length = _search_cfg.context_length | default(120) %}
+{% set _search_highlight = _search_cfg.highlight_results | default(true) %}
+{% set _search_suggest = _search_cfg.suggest | default(true) %}
+{% set _search_style = _search_cfg.style | default('modal', true) %}
+{% set _search_ui_cfg = _search_cfg.ui if (_search_cfg.ui is mapping) else {} %}
+{% set _search_ui_glass = _search_ui_cfg.glass | default(true) %}
+{% set _search_overlay_opacity = none %}
+{% if _search_ui_cfg.overlay_opacity is defined and _search_ui_cfg.overlay_opacity %}
+{% set _search_overlay_opacity = _search_ui_cfg.overlay_opacity %}
+{% endif %}
+{% set _search_show_shortcuts = _search_ui_cfg.show_shortcuts | default(true) %}
+{% set _search_res_cfg = _search_cfg.result if (_search_cfg.result is mapping) else {} %}
+{% set _search_show_icon = _search_res_cfg.show_icon | default(true) %}
+{% set _search_show_breadcrumb = _search_res_cfg.show_breadcrumb | default(true) %}
+{% set _search_show_highlights = _search_res_cfg.show_highlights | default(true) %}
+{% set _search_show_share = _search_res_cfg.show_share | default(true) %}
+{% set _reading = config.extra.void_reading_mode | default({}) %}
+{% set _reading_hide = [] %}
+{% if _reading.sections %}
+{% if _reading.sections.header %} {% set _reading_hide = _reading_hide + ['header'] %} {% endif %}
+{% if _reading.sections.sidebar %} {% set _reading_hide = _reading_hide + ['sidebar'] %} {% endif %}
+{% if _reading.sections.toc %} {% set _reading_hide = _reading_hide + ['toc'] %} {% endif %}
+{% if _reading.sections.footer %} {% set _reading_hide = _reading_hide + ['footer'] %} {% endif %}
+{% if _reading.sections.progress %} {% set _reading_hide = _reading_hide + ['progress'] %} {% endif %}
+{% endif %}
+{% set _reading_hide_list = _reading_hide | join(' ') %}
+{% set _reading_notes_show = _reading.notes.show | default(true) %}
+{% set _ac = config.extra.void_action_cluster | default({}) %}
+{% set _cb = config.extra.void_config_builder | default({}) %}
+<!doctype html>
+<html lang="{{ config.theme.language | default('en') }}"
+      class="no-js"
+      dir="{{ config.theme.direction | default('ltr') }}"
+      {% if config.theme.palette %}
+        {% set _palette = config.theme.palette %}
+        {% if not _palette is mapping %}
+          {% set _palette = _palette | first %}
+        {% endif %}
+        {% set _scheme = _palette.scheme | default("slate", true) %}
+      {% else %}
+        {% set _scheme = "slate" %}
+      {% endif %}
+      data-md-color-scheme="{{ _scheme }}"
+      data-md-void-glass="{{ _glass_intensity }}"
+      data-md-void-animation="{{ _anim_mode }}"
+      data-md-void-border="{{ _border_width }}"{% if _anim_hover == false %} data-md-void-hover-effects="false"{% endif %}{% if _anim_scroll == false %} data-md-void-scroll-animations="false"{% endif %}{% if _anim_toast == false %} data-md-void-toast-animation="false"{% endif %}{% if _border_style %} data-md-void-border-style="{{ _border_style }}"{% endif %}{% if _sb_show == false %} data-md-void-scrollbar="false"{% endif %}{% if _sb_style and _sb_style != "thin" %} data-md-void-scrollbar-style="{{ _sb_style }}"{% endif %}{% if _search_ui_glass == false %} data-md-void-search-glass="false"{% endif %}{% if _search_style and _search_style != "modal" %} data-md-void-search-style="{{ _search_style }}"{% endif %}{% if _search_enabled == false %} data-md-void-search="false"{% endif %}{% if _ct_content_glass %} data-md-void-content-glass="true"{% endif %}{% if _ct_tables_responsive == false %} data-md-void-tables-responsive="false"{% endif %}{% if _ct_tables_striped %} data-md-void-tables-striped="true"{% endif %}{% if _ct_tables_bordered %} data-md-void-tables-bordered="true"{% endif %}{% if _ct_admonitions_enabled == false %} data-md-void-admonitions="false"{% endif %}{% if (_comp.tags.show | default(true)) == false %} data-md-void-tags="false"{% endif %}{% if _ct_task_custom == false %} data-md-void-task-checkbox-native="true"{% endif %}{% if _pg_layout and _pg_layout != "default" %} data-md-void-layout="{{ _pg_layout }}"{% endif %}{% if _reading_hide_list %} data-md-void-reading-hide="{{ _reading_hide_list }}"{% endif %}{% if _reading_notes_show == false %} data-md-void-reading-notes="false"{% endif %}{% if _ac.enabled | default(true) and _ac.replaces_notes_button %} data-md-void-action-cluster="replace-notes"{% endif %}{% if _cb.enabled | default(false) %} data-md-void-config-builder="true"{% endif %}{% if config.extra and config.extra.void_custom_html_attrs %} {{ config.extra.void_custom_html_attrs | safe }}{% endif %}>
+  <head>
+    {% set _asset_version = config.extra.void_version | default('1') %}
+    {% block site_meta %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    {% if page.meta and page.meta.description %}
+    <meta name="description" content="{{ page.meta.description }}">
+    {% elif config.site_description %}
+    <meta name="description" content="{{ config.site_description }}">
+    {% endif %}
+    {% if page.canonical_url %}
+    <link rel="canonical" href="{{ page.canonical_url }}">
+    {% endif %}
+    {% if page.previous_page %}
+    <link rel="prev" href="{{ page.previous_page.url | url }}">
+    {% endif %}
+    {% if page.next_page %}
+    <link rel="next" href="{{ page.next_page.url | url }}">
+    {% endif %}
+    {% endblock %}
+
+    {% block htmltitle %}
+    <title>
+      {%- if page.meta and page.meta.title -%}
+        {{ page.meta.title }} - {{ config.site_name }}
+      {%- elif page and page.title -%}
+        {{ page.title }} - {{ config.site_name }}
+      {%- else -%}
+        {{ config.site_name }}
+      {%- endif -%}
+    </title>
+    {% endblock %}
+
+    {% block branding_meta %}
+    {% if config.extra %}
+    {% set _brand_theme_color = config.extra.void_theme_color | default('') %}
+    {% set _brand_manifest = config.extra.void_manifest | default('') %}
+    {% set _brand_og_image = config.extra.void_og_image | default('') %}
+    {% set _brand_twitter = config.extra.void_twitter_handle | default('') %}
+    {% set _social_cfg = config.extra.void_social_cards | default({}) %}
+    {% set _social_enabled = _social_cfg.enabled | default(true) %}
+    {% set _social_jsonld = _social_enabled and (_social_cfg.jsonld is not sameas false) %}
+    {% set _pwa_cfg = config.extra.void_pwa %}
+    {% set _pwa_active = _pwa_cfg is mapping and (_pwa_cfg.manifest | default(true)) %}
+    {% if _brand_theme_color %}
+    <meta name="theme-color" content="{{ _brand_theme_color }}">
+    {% endif %}
+    {% if _brand_manifest %}
+    {% set _brand_manifest_url = _brand_manifest if _brand_manifest.startswith("http") else (_brand_manifest | url if _brand_manifest else '') %}
+    <link rel="manifest" href="{{ _brand_manifest_url }}">
+    {% elif _pwa_active %}
+    <link rel="manifest" href="{{ 'manifest.webmanifest' | url }}">
+    {% endif %}
+    {% if _pwa_active %}
+    <meta name="application-name" content="{{ config.site_name }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    {% endif %}
+    {% if _brand_og_image or _brand_twitter %}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config.site_name }}">
+    {% if page and page.title %}<meta property="og:title" content="{{ page.title }}">{% endif %}
+    {% if page.meta and page.meta.description %}<meta property="og:description" content="{{ page.meta.description }}">
+    {% elif config.site_description %}<meta property="og:description" content="{{ config.site_description }}">{% endif %}
+    {% if page.canonical_url %}<meta property="og:url" content="{{ page.canonical_url }}">{% endif %}
+    {% if _brand_og_image %}
+    {% if _brand_og_image == "__auto__" and page and page.meta and page.meta.image %}
+    {% set _brand_og_image_url = page.meta.image | url %}
+    <meta property="og:image" content="{{ _brand_og_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% elif _brand_og_image == "__auto__" %}
+    <meta name="twitter:card" content="summary">
+    {% elif _brand_og_image.startswith("http") %}
+    {% set _brand_og_image_url = _brand_og_image %}
+    <meta property="og:image" content="{{ _brand_og_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% else %}
+    {% set _brand_og_image_url = _brand_og_image | url if _brand_og_image else '' %}
+    <meta property="og:image" content="{{ _brand_og_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {% endif %}
+    {% else %}
+    <meta name="twitter:card" content="summary">
+    {% endif %}
+    {% if _brand_twitter %}
+    <meta name="twitter:site" content="{{ _brand_twitter }}">
+    <meta name="twitter:creator" content="{{ _brand_twitter }}">
+    {% endif %}
+    {% endif %}
+    {% if _social_jsonld and page and page.title %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": {{ (page.title | default(config.site_name, true)) | tojson }},
+      {% if page.meta and page.meta.date %}"datePublished": {{ (page.meta.date | string) | tojson }},{% endif %}
+      {% if page.meta and page.meta.author %}"author": { "@type": "Person", "name": {{ (page.meta.author | string) | tojson }} },{% endif %}
+      "description": {{ (page.meta.description if (page.meta and page.meta.description) else (config.site_description | default(''))) | tojson }},
+      "url": {{ (page.canonical_url if page.canonical_url else (page.url | url)) | tojson }},
+      "publisher": { "@type": "Organization", "name": {{ (config.site_name | default('')) | tojson }} }
+    }
+    </script>
+    {% endif %}
+    {% endif %}
+    {% endblock %}
+
+    {% block favicon %}
+    {% set _favicon_dark = config.extra.void_favicon_dark | default(config.theme.favicon, true) %}
+    {% set _favicon_light = config.extra.void_favicon_light | default(config.theme.favicon, true) %}
+    {% set _favicon_dark_url = _favicon_dark if _favicon_dark and _favicon_dark.startswith("http") else (_favicon_dark | url if _favicon_dark else '') %}
+    {% set _favicon_light_url = _favicon_light if _favicon_light and _favicon_light.startswith("http") else (_favicon_light | url if _favicon_light else '') %}
+    {% if _favicon_dark %}
+    <link id="void-favicon" rel="icon" href="{{ _favicon_dark_url }}"
+          data-md-favicon-dark="{{ _favicon_dark_url }}" data-md-favicon-light="{{ _favicon_light_url }}">
+    {% endif %}
+    <script>
+      (function(){
+        var link = document.getElementById("void-favicon");
+        if (!link) return;
+        var dark = ("{{ _favicon_dark_url }}" || "").replace(/&amp;/g, "&");
+        var light = ("{{ _favicon_light_url }}" || "").replace(/&amp;/g, "&");
+        var s = localStorage.getItem("void-color-scheme");
+        var d = !s || s === "slate";
+        if (!light || dark === light) return;
+        link.href = d ? dark : light;
+      })();
+    </script>
+    {% endblock %}
+
+    {% block styles %}
+    <link rel="stylesheet" href="{{ 'assets/void.css' | url }}?v={{ _asset_version }}">
+    {% endblock %}
+
+    {% block hljs_styles %}
+    {% set _assets_cfg = config.extra.void_assets | default({}) %}
+    {% set _assets_mode = _assets_cfg.mode | default('cdn', true) %}
+    {% set _hljs_css_inline_dark = config.extra.void_hljs_css_inline_dark | default('', true) %}
+    {% set _hljs_css_inline_light = config.extra.void_hljs_css_inline_light | default('', true) %}
+    {% set _hljs_dark = _comp.highlighting.theme_dark | default("github-dark", true) %}
+    {% set _hljs_light = _comp.highlighting.theme_light | default("github", true) %}
+    {% if config.extra and config.extra.void_highlight and (_comp.highlighting.show | default(true)) %}
+    {% set _hljs_base = _comp.highlighting.cdn_css_url | default(_comp.highlighting.cdn_url | default("", true), true) %}
+    {% if not _hljs_base %}
+    {% set _hljs_base = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/" %}
+    {% endif %}
+    {% if _assets_mode != 'cdn' and _hljs_css_inline_dark and _hljs_css_inline_light %}
+    <style id="void-hljs-theme-dark">{{ _hljs_css_inline_dark | safe }}</style>
+    <style id="void-hljs-theme-light" disabled>{{ _hljs_css_inline_light | safe }}</style>
+    {% else %}
+    {% set _hljs_dark_href = (_hljs_base ~ _hljs_dark ~ '.min.css') | url %}
+    {% set _hljs_light_href = (_hljs_base ~ _hljs_light ~ '.min.css') | url %}
+    <link id="void-hljs-theme-dark" rel="stylesheet"
+          href="{{ _hljs_dark_href }}">
+    <link id="void-hljs-theme-light" rel="stylesheet" disabled
+          href="{{ _hljs_light_href }}">
+    {% endif %}
+    {% endif %}
+    {% endblock %}
+
+    {% block math_styles %}
+    {% set _math_css_inline = config.extra.void_math_css_inline | default('', true) %}
+    {% set _math_css_font_base = config.extra.void_math_css_font_base | default('', true) %}
+    {% set _math_on = (config.extra.void_math | default(true)) and (_comp.math.show | default(true)) %}
+    {% set _math_on_page = page and page.content and (('katex' in page.content) or ('arithmatex' in page.content)) %}
+    {% if _math_on and _math_on_page and _math_css_inline and _math_css_font_base %}
+    <style id="void-math-css">{{ _math_css_inline | replace('url(fonts/', 'url(' ~ base_url ~ '/' ~ _math_css_font_base) | replace('url("fonts/', 'url("' ~ base_url ~ '/' ~ _math_css_font_base) | replace("url('fonts/", "url('" ~ base_url ~ '/' ~ _math_css_font_base) | safe }}</style>
+    {% endif %}
+    {% endblock %}
+
+    {% block fonts %}
+    {% set _theme_font = config.theme.get('font') or {} %}
+    {% set _ftext = _theme_font.get('text', 'Space Grotesk') %}
+    {% set _fcode = _theme_font.get('code', 'Space Mono') %}
+    {% set _ftext_uri = _ftext | replace(' ', '+') %}
+    {% set _fcode_uri = _fcode | replace(' ', '+') %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ _ftext_uri }}:wght@300;400;500;600;700&family={{ _fcode_uri }}:wght@400;700&display=swap" rel="stylesheet">
+    {% endblock %}
+
+    {% for path in _all_css %}
+    <link rel="stylesheet" href="{{ path | url }}">
+    {% endfor %}
+
+    {% if _pg_custom_css %}
+    {% if _pg_custom_css is string %}
+    <link rel="stylesheet" href="{{ _pg_custom_css | url }}">
+    {% elif _pg_custom_css is iterable %}
+    {% for path in _pg_custom_css %}
+    <link rel="stylesheet" href="{{ path | url }}">
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+
+    {% block void_tokens %}
+    {% set _tokens = config.extra.void_tokens if config.extra and config.extra.void_tokens else [] %}
+    {% set _p9 = namespace(parts=[], dark=[], light=[]) %}
+    {% set _p10 = namespace(parts=[], light=[]) %}
+    {% if _search_overlay_opacity is defined and _search_overlay_opacity %}
+    {% set _overlay_alpha = "%.2f" | format(_search_overlay_opacity | float) %}
+    {% set _p10.parts = _p10.parts + ["--void-search-overlay-color: rgba(0, 0, 0, " ~ _overlay_alpha ~ ")"] %}
+    {% set _p10.light = _p10.light + ["--void-search-overlay-color: rgba(255, 255, 255, " ~ _overlay_alpha ~ ")"] %}
+    {% endif %}
+    {% if _glass_blur_on == false %}
+    {% set _p9.parts = _p9.parts + ["--void-glass-blur: 0px", "--void-glass-blur-heavy: 0px"] %}
+    {% endif %}
+    {% if _glass_blur_amt %}
+    {% set _p9.parts = _p9.parts + ["--void-glass-blur: " ~ _glass_blur_amt] %}
+    {% endif %}
+    {% if _glass_sat_on == false %}
+    {% set _p9.parts = _p9.parts + ["--void-glass-saturation: 1"] %}
+    {% endif %}
+    {% if _glass_opacity is defined and _glass_opacity %}
+    {% set _p9_dark_alphas = {"bg": 0.08, "bg-strong": 0.15, "border": 0.18, "border-strong": 0.35} %}
+    {% set _p9_light_alphas = {"bg": 0.05, "bg-strong": 0.10, "border": 0.12, "border-strong": 0.25} %}
+    {% for _k, _a in _p9_dark_alphas.items() %}
+    {% set _p9.dark = _p9.dark + ["--void-glass-" ~ _k ~ ": rgba(255, 255, 255, " ~ ("%.4f" | format(_a * (_glass_opacity | float))) ~ ")"] %}
+    {% endfor %}
+    {% for _k, _a in _p9_light_alphas.items() %}
+    {% set _p9.light = _p9.light + ["--void-glass-" ~ _k ~ ": rgba(0, 0, 0, " ~ ("%.4f" | format(_a * (_glass_opacity | float))) ~ ")"] %}
+    {% endfor %}
+    {% endif %}
+    {% if _dot_color %}
+    {% set _p9.parts = _p9.parts + ["--void-dot-color: " ~ _dot_color] %}
+    {% endif %}
+    {% if _dot_size %}
+    {% set _p9.parts = _p9.parts + ["--void-dot-size: " ~ _dot_size] %}
+    {% endif %}
+    {% if _dot_gap %}
+    {% set _p9.parts = _p9.parts + ["--void-dot-gap: " ~ _dot_gap] %}
+    {% endif %}
+    {% if _dot_opacity is defined and _dot_opacity %}
+    {% set _p9.parts = _p9.parts + ["--void-dot-opacity: " ~ _dot_opacity] %}
+    {% endif %}
+    {% if _border_color %}
+    {% set _p9.parts = _p9.parts + ["--void-glass-border: " ~ _border_color, "--void-glass-border-strong: " ~ _border_color] %}
+    {% endif %}
+    {% if (_shadow_enabled == false) or (_shadow_style == "none") %}
+    {% set _p9.parts = _p9.parts + ["--void-shadow-sm: none", "--void-shadow-md: none", "--void-shadow-lg: none", "--void-shadow-glass: none"] %}
+    {% elif _shadow_style == "subtle" %}
+    {% set _p9.parts = _p9.parts + ["--void-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12)", "--void-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.18)", "--void-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.22)", "--void-shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08)"] %}
+    {% endif %}
+    {% if _sb_color %}
+    {% set _p9.parts = _p9.parts + ["--void-scrollbar-thumb: " ~ _sb_color] %}
+    {% endif %}
+    {% if _tokens or _p9.parts or _p9.dark or _p9.light or _sel_bg or _sel_color or _p10.parts or _p10.light %}
+    <style id="void-tokens">
+      :root {
+      {% for t in _tokens %}
+        {{ t.var }}: {{ t.value }} !important;
+      {% endfor %}
+      {% for p in _p9.parts %}
+        {{ p }} !important;
+      {% endfor %}
+      {% for p in _p10.parts %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% if _p9.dark or _p10.dark %}
+      :root {
+      {% for p in _p9.dark %}
+        {{ p }} !important;
+      {% endfor %}
+      {% for p in _p10.dark %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% endif %}
+      {% if _p9.light or _p10.light %}
+      [data-md-color-scheme="default"] {
+      {% for p in _p9.light %}
+        {{ p }} !important;
+      {% endfor %}
+      {% for p in _p10.light %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% endif %}
+      {% if _sel_bg or _sel_color %}
+      ::selection {
+      {% if _sel_bg %}
+        background: {{ _sel_bg }};
+      {% endif %}
+      {% if _sel_color %}
+        color: {{ _sel_color }};
+      {% endif %}
+      }
+      {% endif %}
+    </style>
+    {% endif %}
+    {% set _ct_overrides = namespace(parts=[], rules=[]) %}
+    {% if _ct_max_width %}
+    {% set _ct_overrides.parts = _ct_overrides.parts + ["--void-content-max-width: " ~ _ct_max_width] %}
+    {% endif %}
+    {% if _ct_padding %}
+    {% set _ct_overrides.parts = _ct_overrides.parts + ["--void-content-padding: " ~ _ct_padding] %}
+    {% endif %}
+    {% if _ct_line_number_color %}
+    {% set _ct_overrides.parts = _ct_overrides.parts + ["--void-code-line-number-color: " ~ _ct_line_number_color] %}
+    {% endif %}
+    {% if _ct_cfg.admonitions is mapping and _ct_cfg.admonitions.types is mapping %}
+    {% for _t in ["note", "tip", "warning", "danger", "info", "success"] %}
+    {% if _ct_cfg.admonitions.types[_t] is mapping %}
+    {% if _ct_cfg.admonitions.types[_t].color %}
+    {% set _ct_overrides.rules = _ct_overrides.rules + [".void-admonition--" ~ _t ~ ", .admonition." ~ _t ~ " { --void-admonition-" ~ _t ~ ": " ~ _ct_cfg.admonitions.types[_t].color ~ "; }"] %}
+    {% endif %}
+    {% if _ct_cfg.admonitions.types[_t].icon %}
+    {% set _ct_overrides.parts = _ct_overrides.parts + ["--void-admonition-" ~ _t ~ "-icon: " ~ _ct_cfg.admonitions.types[_t].icon] %}
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% if _ct_overrides.parts or _ct_overrides.rules %}
+    <style id="void-content-tokens">
+      {% if _ct_overrides.parts %}
+      :root {
+      {% for p in _ct_overrides.parts %}
+        {{ p }} !important;
+      {% endfor %}
+      }
+      {% endif %}
+      {% for r in _ct_overrides.rules %}
+      {{ r }}
+      {% endfor %}
+    </style>
+    {% endif %}
+    {% if _pg_layout and _pg_layout != "default" %}
+    <style id="void-page-layout">
+      {% if _pg_layout == "wide" %}
+      html[data-md-void-layout="wide"] {
+        --void-content-max-width: 1280px !important;
+      }
+      {% elif _pg_layout == "full" %}
+      html[data-md-void-layout="full"] .void-main,
+      html[data-md-void-layout="full"] .void-footer {
+        margin-left: 0;
+        margin-right: 0;
+      }
+      html[data-md-void-layout="full"] .void-content {
+        max-width: 100%;
+      }
+      {% endif %}
+    </style>
+    {% endif %}
+    {% if _reading and (_reading.scheme or _reading.typography) %}
+    <style id="void-reading-tokens">
+      html[data-md-void-reading="active"] {
+      {% if _reading.scheme and _reading.scheme.enabled|default(true) and _reading.scheme.colors %}
+      {% if _reading.scheme.colors.background %}        --void-ink: {{ _reading.scheme.colors.background }} !important;{% endif %}
+      {% if _reading.scheme.colors.surface %}           --void-glass-bg: {{ _reading.scheme.colors.surface }} !important;{% endif %}
+      {% if _reading.scheme.colors.text %}              --void-text-primary: {{ _reading.scheme.colors.text }} !important;{% endif %}
+      {% if _reading.scheme.colors.text_secondary %}    --void-text-secondary: {{ _reading.scheme.colors.text_secondary }} !important;{% endif %}
+      {% if _reading.scheme.colors.border %}            --void-glass-border: {{ _reading.scheme.colors.border }} !important;{% endif %}
+      {% if _reading.scheme.colors.accent %}            --void-accent: {{ _reading.scheme.colors.accent }} !important;{% endif %}
+      {% endif %}
+      {% if _reading.typography %}
+      {% if _reading.typography.font_size %}            --void-reading-font-size: {{ _reading.typography.font_size }} !important;{% endif %}
+      {% if _reading.typography.line_height %}          --void-reading-line-height: {{ _reading.typography.line_height }} !important;{% endif %}
+      {% if _reading.typography.measure %}              --void-reading-measure: {{ _reading.typography.measure }} !important;{% endif %}
+      {% endif %}
+      }
+    </style>
+    {% endif %}
+    {% endblock %}
+
+    <script>
+      document.documentElement.dataset.mdComponent = "page"
+      document.documentElement.classList.remove("no-js")
+    </script>
+
+    {% block extrahead %}{% endblock %}
+
+    {% block custom_head %}
+    {% if config.extra and config.extra.void_custom_head %}{{ config.extra.void_custom_head | safe }}{% endif %}
+    {% endblock %}
+
+    {% if config.theme.palette %}
+    {% include "partials/javascripts/palette.html" %}
+    {% endif %}
+  </head>
+
+  <body{% if _anim_page_transition %} class="void-animate-fade-in"{% endif %} dir="{{ config.theme.direction | default('ltr') }}"{% if (_sbr_position == "right") or (_toc_position == "left") %} data-md-void-sidebar-position="right"{% endif %}{% if _sbr_style.parts or _toc_style.parts %} style="{{ (_sbr_style.parts + _toc_style.parts) | join('; ') }}"{% endif %}>
+
+    {% block custom_body_start %}
+    {% if config.extra and config.extra.void_custom_body_start %}{{ config.extra.void_custom_body_start | safe }}{% endif %}
+    {% endblock %}
+
+    {% if _dot_enabled %}
+    <div class="void-dot-matrix" aria-hidden="true"{% if _dot_position %} data-md-void-dot-position="{{ _dot_position }}"{% endif %}></div>
+    {% endif %}
+
+    {% block state_toggles %}
+    <input class="void-toggle void-toggle--drawer" type="checkbox" id="void-drawer" aria-label="Toggle navigation">
+    <input class="void-toggle void-toggle--search" type="checkbox" id="void-search" aria-label="Toggle search">
+    {% endblock %}
+
+    <label class="void-overlay void-overlay--drawer" for="void-drawer" aria-hidden="true" tabindex="-1"></label>
+
+    {% block skip_to_content %}
+    <a class="void-skip" href="#void-content" tabindex="0">
+      {{ _i18n.get("a11y", {}).get("skipToContent", "Skip to content") }}
+    </a>
+    {% endblock %}
+
+    {% block header %}
+    {% if _comp.header.show | default(true) and not _pg_header_hide %}
+    {% include "partials/header.html" %}
+    {% endif %}
+    {% endblock %}
+
+    <div class="void-layout">
+      {% block nav %}
+      {% if nav and (_comp.sidebar.show | default(true)) and not _pg_sidebar_hide %}
+      {% include "partials/nav.html" %}
+      {% endif %}
+      {% endblock %}
+
+      <main class="void-main{% if _anim_scroll %} void-animate-reveal{% endif %}" id="void-content" tabindex="-1">
+        <article class="void-article">
+          {% if page and page.ancestors and (config.extra.void_breadcrumbs.show | default(true)) %}
+          <nav class="void-breadcrumbs" aria-label="{{ _i18n.get('a11y', {}).get('breadcrumb', 'Breadcrumb') }}">
+            {% if config.site_url %}
+            <a class="void-breadcrumbs__link" href="{{ config.site_url }}">{{ config.site_name }}</a>
+            {% endif %}
+            {% for _anc in page.ancestors %}
+            {% if _anc.title and _anc.url %}
+            <span class="void-breadcrumbs__sep" aria-hidden="true">/</span>
+            <a class="void-breadcrumbs__link" href="{{ _anc.url | url }}">{{ _anc.title }}</a>
+            {% elif _anc.title %}
+            <span class="void-breadcrumbs__sep" aria-hidden="true">/</span>
+            <span class="void-breadcrumbs__current">{{ _anc.title }}</span>
+            {% endif %}
+            {% endfor %}
+            <span class="void-breadcrumbs__sep" aria-hidden="true">/</span>
+            <span class="void-breadcrumbs__current">{{ page.title | default('') }}</span>
+          </nav>
+          {% endif %}
+          {% block content %}
+          {% if _comp.content.show | default(true) %}
+          <div class="void-content" data-md-component="content">
+            <div class="void-typeset">
+              {% include "partials/content.html" %}
+            </div>
+          </div>
+          {% endif %}
+          {% endblock %}
+        </article>
+      </main>
+
+      {% block toc %}
+      {% if page and page.toc and (_comp.toc.show | default(true)) and not _pg_toc_hide %}
+      {% include "partials/toc.html" %}
+      {% endif %}
+      {% endblock %}
+    </div>
+
+    {% block footer %}
+    {% if _comp.footer.show | default(true) and not _pg_footer_hide %}
+    {% include "partials/footer.html" %}
+    {% endif %}
+    {% endblock %}
+
+    {% block search %}
+    {% if "search" in config.plugins and (_comp.search.show | default(true)) and _search_enabled %}
+    {% include "partials/search.html" %}
+    {% endif %}
+    {% endblock %}
+
+    {% if _comp.content.show_progress_bar | default(true) and not _pg_ct_progress_hide %}
+    {% include "partials/progress.html" %}
+    {% endif %}
+
+    {% block config %}
+    <script>
+      var base_url = "{{ base_url }}";
+    </script>
+    <script id="__config" type="application/json">
+      {
+        "base": "{{ base_url }}",
+        "notes": {
+          "enabled": {{ config.extra.void_notes | tojson }},
+          "ttl_ms": {{ config.extra.void_notes_ttl | default(259200000) | tojson }}
+        },
+        "math": {
+          "enabled": {{ ((config.extra.void_math | default(true)) and (_comp.math.show | default(true))) | tojson }}
+        },
+        "components": {{ config.extra.void_components | default({}) | tojson }},
+        "assets": {{ config.extra.void_assets | default({}) | tojson }},
+        "site_url": {{ config.extra.void_site_url | default('', true) | tojson }},
+        "content": {{ config.extra.void_content | default({}) | tojson }},
+        "page": { "void": {{ _pg | tojson }} },
+        "sidebar": {
+          "collapsible": {{ _sbr_collapsible | tojson }},
+          "default_collapsed": {{ _sbr_default_collapsed | tojson }}
+        },
+        "toc": {
+          "collapsible": {{ _toc_collapsible | tojson }},
+          "default_collapsed": {{ _toc_default_collapsed | tojson }},
+          "levels": {{ _toc_levels_effective | tojson }},
+          "tracking_enabled": {{ _toc_tracking_enabled | tojson }}{% if _toc_tracking_offset %},"tracking_offset": {{ _toc_tracking_offset | tojson }}{% endif %},
+          "permalink": {{ _toc_permalink | tojson }}{% if _toc_permalink_symbol %},"permalink_symbol": {{ _toc_permalink_symbol | tojson }}{% endif %}
+        },
+        "keyboard": {{ config.extra.void_keyboard | default({}) | tojson }},
+        "reading_mode": {{ config.extra.void_reading_mode | default({}) | tojson }},
+        "action_cluster": {{ config.extra.void_action_cluster | default({}) | tojson }},
+        "timer": {{ config.extra.void_timer | default({}) | tojson }},
+        "config_builder": {{ _cb | tojson }},
+        "ai_reader": {{ config.extra.void_ai_reader | default({}) | tojson }},
+        "feedback": {{ config.extra.void_feedback | default({}) | tojson }},
+        "announcement_bar": {{ config.extra.void_announcement_bar | default({}) | tojson }},
+        "cookie_consent": {{ config.extra.void_cookie_consent | default({}) | tojson }},
+        "comments": {{ config.extra.void_comments | default({}) | tojson }},
+        "consent_needed": {{ config.extra.void_consent_needed | default(false) | tojson }},
+        "repo_url": {{ config.repo_url | default('') | string | tojson }},
+        "translations": {{ _i18n | default({}) | tojson }},
+        "search": "{{ 'search/search_index.json' | url }}",
+        "void_search": {
+          "enabled": {{ _search_enabled | tojson }},
+          "shortcut_key": {% if _search_shortcut %}{{ _search_shortcut | tojson }}{% else %}null{% endif %},
+          "placeholder": {{ _search_placeholder | tojson }},
+          "min_chars": {% if _search_min_chars is not none %}{{ _search_min_chars | tojson }}{% else %}null{% endif %},
+          "max_results": {{ _search_max_results | tojson }},
+          "show_context": {{ _search_show_context | tojson }},
+          "context_length": {{ _search_context_length | tojson }},
+          "highlight_results": {{ _search_highlight | tojson }},
+          "suggest": {{ _search_suggest | tojson }},
+          "style": {{ _search_style | tojson }},
+          "result": {
+            "show_icon": {{ _search_show_icon | tojson }},
+            "show_breadcrumb": {{ _search_show_breadcrumb | tojson }},
+            "show_highlights": {{ _search_show_highlights | tojson }},
+            "show_share": {{ _search_show_share | tojson }}
+          }
+        },
+        "version": null
+      }
+    </script>
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ 'assets/javascripts/void.js' | url }}?v={{ _asset_version }}"></script>
+    {% endblock %}
+
+    {% for path in _all_js %}
+    <script src="{{ path | url }}"></script>
+    {% endfor %}
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        var swURL = new URL("{{ 'sw.js' | url }}", location.href).href
+        // The worker's scope is the directory of its script. If the site is
+        // mounted at a subpath while an old root-scoped worker (scope "/")
+        // still controls this origin, that stale worker keeps re-fetching a
+        // script that no longer exists at the origin root (404 spam) and can
+        // interfere with any site on the same host. Clean it up: a root-mounted
+        // site (pathname "/") keeps its legit origin-root worker untouched.
+        if (location.pathname.replace(/\/$/, "") && navigator.serviceWorker.getRegistrations) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            registrations.forEach(function (registration) {
+              if (registration.scope === new URL("/", location.href).href) {
+                registration.unregister()
+              }
+            })
+          })
+        }
+        navigator.serviceWorker.register(swURL).catch(function () {})
+      }
+    </script>
+
+    {% block custom_body_end %}
+    {% if config.extra and config.extra.void_custom_body_end %}{{ config.extra.void_custom_body_end | safe }}{% endif %}
+    {% endblock %}
+  </body>
+</html>

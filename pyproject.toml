@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mkdocs-neoabs"
+name = "mkdocs-void"
 version = "0.1.2"
-description = "NeoAbs - Glass + NothingOS design language for MkDocs"
+description = "Void - Glass + NothingOS design language for MkDocs"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-keywords = ["mkdocs", "theme", "documentation", "rkriad585", "neostore", "glass", "glassmorphism", "nothingos", "neoabs", "mkdocs-theme", "pwa", "static-site", "design-system", "fast", "web"]
+keywords = ["mkdocs", "theme", "documentation", "rkriad585", "neostore", "glass", "glassmorphism", "nothingos", "void", "mkdocs-theme", "pwa", "static-site", "design-system", "fast", "web"]
 authors = [
   { name = "rkriad585", email = "rkriad585@gmail.com" },
 ]
@@ -40,27 +40,27 @@ docs = ["mkdocs-section-index>=0.3.5", "mkdocs-glightbox>=0.4.0", "Pillow>=9.0"]
 dev = ["build>=1.0", "ruff>=0.5"]
 
 [project.urls]
-Homepage = "https://github.com/rkriad585/mkdocs-neoabs"
-Documentation = "https://rkriad585.github.io/mkdocs-neoabs"
-Source = "https://github.com/rkriad585/mkdocs-neoabs"
-Issues = "https://github.com/rkriad585/mkdocs-neoabs/issues"
-Changelog = "https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/rkriad585/mkdocs-void"
+Documentation = "https://rkriad585.github.io/mkdocs-void"
+Source = "https://github.com/rkriad585/mkdocs-void"
+Issues = "https://github.com/rkriad585/mkdocs-void/issues"
+Changelog = "https://github.com/rkriad585/mkdocs-void/blob/main/CHANGELOG.md"
 Funding = "https://github.com/sponsors/rkriad585"
-Tidelift = "https://tidelift.com/funding/github/pypi/mkdocs-neoabs"
+Tidelift = "https://tidelift.com/funding/github/pypi/mkdocs-void"
 Patreon = "https://www.patreon.com/rkriad585"
 
 [project.entry-points."mkdocs.themes"]
-neoabs = "neoabs.templates"
+void = "void.templates"
 
 [project.entry-points."mkdocs.plugins"]
-neoabs = "neoabs.plugins.neoabs_plugin:NeoAbsPlugin"
+void = "void.plugins.void_plugin:VoidPlugin"
 
 [project.scripts]
-neoabs = "neoabs.cli:main"
+void = "void.cli:main"
 
 [tool.hatch.build.targets.wheel]
-include = ["/neoabs"]
-exclude = ["neoabs/templates/assets/stylesheets/*.scss"]
+include = ["/void"]
+exclude = ["void/templates/assets/stylesheets/*.scss"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/neoabs", "/package.json", "/requirements.txt"]
+include = ["/void", "/package.json", "/requirements.txt"]

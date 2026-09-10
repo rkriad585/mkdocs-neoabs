@@ -5,7 +5,7 @@ title: Deployment
 
 # Deployment
 
-How to build and deploy your NeoAbs-powered documentation site.
+How to build and deploy your Void-powered documentation site.
 
 ## Build for Production
 
@@ -44,7 +44,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - "neoabs/**"
+      - "void/**"
       - "mkdocs.yml"
 
 permissions:
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - run: pip install mkdocs-neoabs
+      - run: pip install mkdocs-void
       - run: npm install && npm run build
       - run: mkdocs gh-deploy --force
 ```
@@ -72,7 +72,7 @@ jobs:
 2. Set the build command:
 
    ```bash
-   pip install mkdocs-neoabs && npm install && npm run build && mkdocs build
+   pip install mkdocs-void && npm install && npm run build && mkdocs build
    ```
 
 3. Set the publish directory to `site`
@@ -83,7 +83,7 @@ Create `vercel.json`:
 
 ```json
 {
-  "buildCommand": "pip install mkdocs-neoabs && npm install && npm run build && mkdocs build",
+  "buildCommand": "pip install mkdocs-void && npm install && npm run build && mkdocs build",
   "outputDirectory": "site",
   "framework": null
 }
@@ -92,8 +92,8 @@ Create `vercel.json`:
 ## Deploy with Docker
 
 ```bash
-docker build -t mkdocs-neoabs .
-docker run -p 8000:8000 mkdocs-neoabs
+docker build -t mkdocs-void .
+docker run -p 8000:8000 mkdocs-void
 ```
 
 ## Static Hosting
@@ -116,7 +116,7 @@ After running `mkdocs build`, upload the contents of the `site/` directory to an
 
 - Always run `mkdocs build --clean` in CI to ensure a fresh build
 - Cache `node_modules/` and pip packages for faster builds
-- Pin the `mkdocs-neoabs` version in production to avoid unexpected changes
+- Pin the `mkdocs-void` version in production to avoid unexpected changes
 
 ---
 

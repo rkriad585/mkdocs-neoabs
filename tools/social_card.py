@@ -1,4 +1,4 @@
-"""CLI for NeoAbs social-card generation.
+"""CLI for Void social-card generation.
 
 Usage:
     python tools/social_card.py --title "Page title" --site "My Docs" --out .cache/card
@@ -16,11 +16,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from neoabs.social_card import render_card
+from void.social_card import render_card
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Generate a NeoAbs social-card image.")
+    parser = argparse.ArgumentParser(description="Generate a Void social-card image.")
     parser.add_argument("--title", default="", help="Headline text drawn on the card.")
     parser.add_argument(
         "--site",

@@ -4,8 +4,8 @@ The changelog is a hand-curated Keep-a-Changelog file, so this tool never
 touches the written prose. It regenerates a small, clearly-marked machine
 block inside `## [Unreleased]` listing every commit since the last tag —
 the repo's commit history already follows Conventional Commits prefixes
-(`feat:` / `fix:` / `docs:` / …), which is the "formalise and wire to
-releases" step Phase 10 calls for.
+(`feat:` / `fix:` / `docs:` / …), which formalises and wires the release
+workflow without hand-editing.
 
 Modes:
 

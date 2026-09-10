@@ -5,7 +5,7 @@ title: Development
 
 # Development
 
-How to set up, build, and contribute to mkdocs-neoabs.
+How to set up, build, and contribute to mkdocs-void.
 
 ## Prerequisites
 
@@ -17,8 +17,8 @@ How to set up, build, and contribute to mkdocs-neoabs.
 ## Setup
 
 ```bash
-git clone https://github.com/rkriad585/mkdocs-neoabs.git
-cd mkdocs-neoabs
+git clone https://github.com/rkriad585/mkdocs-void.git
+cd mkdocs-void
 pip install -e .
 npm install
 ```
@@ -29,7 +29,7 @@ npm install
 npm run build
 ```
 
-Compiles `neoabs.scss` + `components.scss` into `neoabs.css` via Sass and PostCSS.
+Compiles `void.scss` + `components.scss` into `void.css` via Sass and PostCSS.
 
 ## Development Mode
 
@@ -58,17 +58,17 @@ Opens a live-reloading dev server at [http://127.0.0.1:8000](http://127.0.0.1:80
 ## Lint
 
 ```bash
-ruff check neoabs/
+ruff check void/
 ```
 
 ## Project Layout
 
 | Path | Description |
 |------|-------------|
-| `neoabs/templates/` | Jinja2 templates and static assets |
-| `neoabs/templates/assets/stylesheets/` | SCSS source files |
-| `neoabs/templates/assets/javascripts/` | JavaScript source |
-| `neoabs/plugins/` | MkDocs plugin |
+| `void/templates/` | Jinja2 templates and static assets |
+| `void/templates/assets/stylesheets/` | SCSS source files |
+| `void/templates/assets/javascripts/` | JavaScript source |
+| `void/plugins/` | MkDocs plugin |
 | `docs/` | Documentation Markdown source |
 | `tools/build.js` | SCSS build script |
 | `tools/emit_benchmarks.py` | Regenerates `docs/benchmarks.md` (page-weight table) |
@@ -79,28 +79,28 @@ ruff check neoabs/
 
 ### CSS Changes
 
-1. Edit files in `neoabs/templates/assets/stylesheets/`
+1. Edit files in `void/templates/assets/stylesheets/`
 2. Run `npm run build` or `npm run start` (watch mode)
 3. Reload the browser
 
 ### Template Changes
 
-1. Edit files in `neoabs/templates/` or `neoabs/templates/partials/`
+1. Edit files in `void/templates/` or `void/templates/partials/`
 2. Run `mkdocs serve` (auto-reloads on template changes)
 
 ### JavaScript Changes
 
-1. Edit `neoabs/templates/assets/javascripts/neoabs.js`
+1. Edit `void/templates/assets/javascripts/void.js`
 2. Reload the browser (no build step required for dev)
 
 ### Plugin Changes
 
-1. Edit `neoabs/plugins/neoabs_plugin.py`
+1. Edit `void/plugins/void_plugin.py`
 2. Restart `mkdocs serve`
 
 ## Code Style
 
-- **CSS**: BEM naming with `neoabs-` prefix. No utility frameworks.
+- **CSS**: BEM naming with `void-` prefix. No utility frameworks.
 - **JavaScript**: Vanilla ES6+, IIFE-wrapped, no dependencies. Uses `$()` and `$$()` helpers.
 - **HTML**: Jinja2 templates. Follow MkDocs template conventions.
 - **Python**: Standard MkDocs plugin pattern. Use `ruff` for linting.
@@ -137,11 +137,11 @@ Other rules:
 - Use clear, descriptive commit messages
 - Do not commit `site/`, `node_modules/`, or `__pycache__/`
 
-## Translating NeoAbs
+## Translating Void
 
-UI strings are centralized in `_NEOABS_DEFAULT_I18N`
-(`neoabs/plugins/neoabs_plugin.py`) and overridable per site via
-`theme.neoabs.i18n`. See [Translating NeoAbs](identity.md#translating-neoabs)
+UI strings are centralized in `_VOID_DEFAULT_I18N`
+(`void/plugins/void_plugin.py`) and overridable per site via
+`theme.void.i18n`. See [Translating Void](identity.md#translating-void)
 for onboarding: which keys exist, how flat aliases map to nested groups, and
 how to verify a translated build.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NeoAbs Screenshot Generator (gold edition)
+Void Screenshot Generator (gold edition)
 
 Captures real, retina-quality screenshots of the project from a running MkDocs
 dev server using Playwright + the system's Chrome/Edge browser, then wraps every
@@ -52,7 +52,7 @@ try:
 except ImportError:  # pragma: no cover - guarded at runtime
     sync_playwright = None
 
-SERVER_URL = os.environ.get("MKDOCS_SERVER", "http://127.0.0.1:8000/mkdocs-neoabs")
+SERVER_URL = os.environ.get("MKDOCS_SERVER", "http://127.0.0.1:8000/mkdocs-void")
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "Screenshots"
 WIDTH = 1440
 HEIGHT = 900
@@ -90,7 +90,7 @@ PAGES = [
     ("buttons.png", "components/buttons/", "Buttons", {}),
     ("cards.png", "components/cards/", "Cards", {}),
     ("forms.png", "components/forms/", "Forms", {}),
-    ("plugin.png", "plugins/neoabs/", "Plugin", {}),
+    ("plugin.png", "plugins/void/", "Plugin", {}),
 ]
 
 
@@ -381,7 +381,7 @@ def capture_page(browser_exe, url, target, opts, settle_ms):
         # script runs, then mirror it through media emulation.
         stored = "default" if scheme == "light" else "slate"
         page.add_init_script(
-            f"try {{ localStorage.setItem('neoabs-color-scheme', '{stored}'); }} catch (e) {{}}"
+            f"try {{ localStorage.setItem('void-color-scheme', '{stored}'); }} catch (e) {{}}"
         )
         page.emulate_media(color_scheme="light" if scheme == "light" else "dark")
 
@@ -390,29 +390,29 @@ def capture_page(browser_exe, url, target, opts, settle_ms):
 
         if opts.get("open_search"):
             try:
-                page.click(".neoabs-header__search", timeout=5000)
+                page.click(".void-header__search", timeout=5000)
             except Exception as e:
                 page.evaluate(
-                    "() => { const el = document.querySelector('.neoabs-search');"
-                    " if (el && el._neoabsOpen) el._neoabsOpen(); }"
+                    "() => { const el = document.querySelector('.void-search');"
+                    " if (el && el._voidOpen) el._voidOpen(); }"
                 )
                 if e:
                     print("      (search button missing \u2014 opened via JS)")
             time.sleep(0.5)
         if opts.get("open_drawer"):
             try:
-                page.click(".neoabs-header__hamburger", timeout=5000)
+                page.click(".void-header__hamburger", timeout=5000)
             except Exception as e:
                 page.evaluate(
-                    "() => { const cb = document.getElementById('neoabs-drawer');"
-                    " if (cb && cb._neoabsToggle) cb._neoabsToggle(); }"
+                    "() => { const cb = document.getElementById('void-drawer');"
+                    " if (cb && cb._voidToggle) cb._voidToggle(); }"
                 )
                 if e:
                     print("      (hamburger missing \u2014 opened drawer via JS)")
             time.sleep(0.6)
         if opts.get("query"):
             try:
-                page.fill(".neoabs-search__input", opts["query"])
+                page.fill(".void-search__input", opts["query"])
             except Exception as e:
                 print(f"      (search input unavailable: {e})")
             time.sleep(0.9)
@@ -431,7 +431,7 @@ def frame_and_save(raw_path, out_path, entry, scheme, opts):
     _, _, caption, _ = entry
     scale = int(opts.get("scale", SCALE))
     frame_style = opts.get("frame", "mac")
-    title = opts.get("title") or f"NeoAbs \u2014 {caption}"
+    title = opts.get("title") or f"Void \u2014 {caption}"
     light = scheme == "light"
 
     content = Image.open(raw_path).convert("RGBA")
@@ -507,14 +507,14 @@ def run_real(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Real retina screenshots of the NeoAbs theme with premium "
+        description="Real retina screenshots of the Void theme with premium "
         "macOS / phone frames.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
   python tools/screenshots_gen.py --real
   python tools/screenshots_gen.py --real --wait 2500
-  python tools/screenshots_gen.py --real --url http://127.0.0.1:8001/mkdocs-neoabs
+  python tools/screenshots_gen.py --real --url http://127.0.0.1:8001/mkdocs-void
 
 Requirements: pip install playwright pillow
 Requires a running MkDocs dev server:  mkdocs serve

@@ -5,7 +5,7 @@ title: Footnotes
 
 # Footnotes
 
-NeoAbs fully styles [Python-Markdown footnotes](https://python-markdown.github.io/extensions/footnotes/).
+Void fully styles [Python-Markdown footnotes](https://python-markdown.github.io/extensions/footnotes/).
 Reference footnote markers appear as numbered pills and the definitions render
 as a tidy glass card at the end of the article.
 
@@ -15,13 +15,13 @@ Use the `[^label]` reference in your text and define it with `[^label]: ...`
 anywhere below (usually at the end of the document):
 
 ```markdown
-NeoAbs ships with glass morphism[^glass] and a privacy-first[^privacy] promise.
+Void ships with glass morphism[^glass] and a privacy-first[^privacy] promise.
 
 [^glass]: Glass *morphism* uses backdrop blur and translucency.
 [^privacy]: No third-party tracking is loaded unless you opt in.
 ```
 
-NeoAbs ships with glass morphism[^glass] and a privacy-first[^privacy] promise.
+Void ships with glass morphism[^glass] and a privacy-first[^privacy] promise.
 
 [^glass]: Glass *morphism* uses backdrop blur and translucency.
 [^privacy]: No third-party tracking is loaded unless you opt in.

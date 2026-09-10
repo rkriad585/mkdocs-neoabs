@@ -16,5 +16,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: treosh/lighthouse-ci-action@v12
         with:
-          urls: https://rkriad585.github.io/mkdocs-neoabs/
+          urls: https://rkriad585.github.io/mkdocs-void/
           configPath: .lighthouseci.json

@@ -7,17 +7,17 @@ title: FAQ
 
 ## General
 
-### What is NeoAbs?
+### What is Void?
 
-NeoAbs is a custom MkDocs theme that combines Glass design (translucent glass panels with backdrop blur) with NothingOS aesthetics (pure black canvas, dot-matrix patterns, monochrome palette, Nothing Red accents).
+Void is a custom MkDocs theme that combines Glass design (translucent glass panels with backdrop blur) with NothingOS aesthetics (pure black canvas, dot-matrix patterns, monochrome palette, Nothing Red accents).
 
-### Is NeoAbs free?
+### Is Void free?
 
-Yes. NeoAbs is open-source under the MIT License.
+Yes. Void is open-source under the MIT License.
 
-### Does NeoAbs work with MkDocs plugins?
+### Does Void work with MkDocs plugins?
 
-NeoAbs is compatible with standard MkDocs plugins (search, etc.).
+Void is compatible with standard MkDocs plugins (search, etc.).
 
 ## Installation
 
@@ -31,11 +31,11 @@ MkDocs 1.5 or higher.
 
 ### Do I need Node.js?
 
-Node.js 18+ is required only for building the CSS from source. If you install via `pip install mkdocs-neoabs`, the pre-compiled `neoabs.css` is included.
+Node.js 18+ is required only for building the CSS from source. If you install via `pip install mkdocs-void`, the pre-compiled `void.css` is included.
 
-### Can I use NeoAbs without the plugin?
+### Can I use Void without the plugin?
 
-Yes. The `neoabs` plugin sets theme defaults. You can configure all options directly in `mkdocs.yml` and remove the plugin from the `plugins` list.
+Yes. The `void` plugin sets theme defaults. You can configure all options directly in `mkdocs.yml` and remove the plugin from the `plugins` list.
 
 ## Theming
 
@@ -45,9 +45,9 @@ The accent color is `#ff3030` (Nothing Red) by default. Override it in a custom 
 
 ```css
 :root {
-  --neoabs-accent: #818cf8;
-  --neoabs-accent-dim: rgba(129, 140, 248, 0.15);
-  --neoabs-accent-glow: rgba(129, 140, 248, 0.3);
+  --void-accent: #818cf8;
+  --void-accent-dim: rgba(129, 140, 248, 0.15);
+  --void-accent-glow: rgba(129, 140, 248, 0.3);
 }
 ```
 
@@ -60,11 +60,11 @@ extra_css:
 
 ### How do I change the glass intensity?
 
-Set `neoabs.glass` in `mkdocs.yml`:
+Set `void.glass` in `mkdocs.yml`:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     glass: light   # light, medium, or heavy
 ```
 
@@ -72,7 +72,7 @@ theme:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     dot_matrix: false
 ```
 
@@ -117,7 +117,7 @@ Yes. The theme is fully responsive with a collapsible sidebar, mobile drawer nav
 
 1. Hard-refresh your browser (`Ctrl+Shift+R` / `Cmd+Shift+R`)
 2. Clear the `site/` directory: `mkdocs build --clean`
-3. Reinstall: `pip install -e .` (for development) or `pip install --force-reinstall mkdocs-neoabs`
+3. Reinstall: `pip install -e .` (for development) or `pip install --force-reinstall mkdocs-void`
 
 ### Search doesn't work
 

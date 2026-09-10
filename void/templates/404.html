@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+
+{% block content %}
+<div class="void-error">
+  <div class="void-error__glass">
+    <h1 class="void-error__title">404</h1>
+    <p class="void-error__subtitle">Page Not Found</p>
+    <p class="void-error__description">
+      The page you are looking for does not exist or has been moved.
+    </p>
+    <a href="{{ config.site_url | default('/') }}" class="void-error__action">
+      Return Home
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 """Stamp every docs Markdown page with a `date:` front-matter key.
 
-The NeoAbs footer renders a "Last updated" line from the page's front matter
+The Void footer renders a "Last updated" line from the page's front matter
 (`date:`), so each page should carry an explicit, current date. This tool walks
 a directory tree (default: `docs/`), skips MkDocs `_`-prefixed files such as
 the generated config reference, and for every `*.md` file either adds a

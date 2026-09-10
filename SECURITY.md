@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within mkdocs-neoabs, please send an email to rkriad585@gmail.com. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within mkdocs-void, please send an email to rkriad585@gmail.com. All security vulnerabilities will be promptly addressed.
 
 Please do not report security vulnerabilities through public GitHub issues.
 
@@ -22,8 +22,8 @@ When the security team receives a security bug report, they will assign it to a 
 
 ## Security Best Practices
 
-When using NeoAbs:
+When using Void:
 
-- Keep MkDocs and mkdocs-neoabs updated to the latest version
+- Keep MkDocs and mkdocs-void updated to the latest version
 - Do not expose your `mkdocs.yml` secrets in public repositories
 - Use environment variables for sensitive configuration

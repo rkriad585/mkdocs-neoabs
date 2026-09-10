@@ -4,7 +4,7 @@ date: 2026-09-07
 
 # Code Highlighting
 
-NeoAbs enhances syntax highlighting with [highlight.js](https://highlightjs.org)
+Void enhances syntax highlighting with [highlight.js](https://highlightjs.org)
 loaded from a CDN. It colorizes code that the base Pygments pipeline leaves
 monochrome, respects your light/dark scheme, and keeps the copy button and
 per-line anchors working.
@@ -38,7 +38,7 @@ fn greet(name: &str) {
 
 ```json
 {
-  "name": "mkdocs-neoabs",
+  "name": "mkdocs-void",
   "version": "0.1.0"
 }
 ```
@@ -50,11 +50,11 @@ the dark theme is used for the slate scheme and the light theme for light mode.
 
 ## Disabling
 
-Highlighting is controlled by the `neoabs.highlight` theme option:
+Highlighting is controlled by the `void.highlight` theme option:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     highlight: false
 ```
 
@@ -89,4 +89,4 @@ directly after the highlighted block; the raw `<ol>` above is the form that
 always renders as a sibling of the code block.
 
 Annotations are applied client-side, so they need no extra Markdown
-extensions. Toggle them off with `theme.neoabs.content.code.annotate: false`.
+extensions. Toggle them off with `theme.void.content.code.annotate: false`.

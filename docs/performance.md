@@ -1,19 +1,19 @@
 # Performance & offline
 
-NeoAbs ships prefetch-on-hover by default so on-site pages feel instant after
+Void ships prefetch-on-hover by default so on-site pages feel instant after
 the first load. A light-weight service worker (`sw.js`) caches static assets
 and CDN resources for repeat visits and full offline coverage.
 
 ## Asset modes
 
-`theme.neoabs.assets.mode` controls how the three lazy-loaded libraries
+`theme.void.assets.mode` controls how the three lazy-loaded libraries
 (highlight.js, KaTeX, Mermaid) are referenced at runtime:
 
 | Mode | Default | Behaviour |
 |------|---------|-----------|
 | `cdn` | **Yes** | Today's runtime CDN loading — deterministic, no build-time network. |
 | `local` | opt-in | Vendors the libraries into `site/<vendor_dir>/` at build; the built site is fully self-hosted and offline-capable for code blocks and math. |
-| `bundle` | opt-in | Like `local`, but all three JS bundles are concatenated into a single file (`neoabs-offline.js`). CSS stays per-library because the dual hljs theme toggle cannot be combined. |
+| `bundle` | opt-in | Like `local`, but all three JS bundles are concatenated into a single file (`void-offline.js`). CSS stays per-library because the dual hljs theme toggle cannot be combined. |
 
 Every downloaded asset is validated — a failed download logs a warning and the
 affected component falls back to its CDN URL instead of leaving a broken local
@@ -21,7 +21,7 @@ reference.
 
 ## Inline critical CSS
 
-`theme.neoabs.assets.inline_critical_css: true` (requires `mode: local` or
+`theme.void.assets.inline_critical_css: true` (requires `mode: local` or
 `bundle`) inlines the vendored highlight.js theme stylesheets as `<style>`
 blocks so switching dark/light never waits for an extra network round-trip. The
 KaTeX stylesheet is inlined only on pages that contain math, with its font URLs
@@ -33,7 +33,7 @@ Internal links are prefetched when the pointer hovers them (`components.prefetch
 
 ```yaml
 theme:
-  neoabs:
+  void:
     components:
       prefetch:
         show: true          # on by default

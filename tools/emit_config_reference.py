@@ -1,7 +1,7 @@
-"""Emit the canonical NeoAbs config reference from the plugin's own source.
+"""Emit the canonical Void config reference from the plugin's own source.
 
-Walks the real `neoabs_plugin` constants (`_NEOABS_TOKEN_MAP`,
-`_neoabs_defaults`, and every `_NEOABS_DEFAULT_*` module dict) and writes
+Walks the real `void_plugin` constants (`_VOID_TOKEN_MAP`,
+`_void_defaults`, and every `_VOID_DEFAULT_*` module dict) and writes
 `docs/_config_ref.generated.md` so the published config page can never drift
 from the shipped code.
 
@@ -26,56 +26,56 @@ OUT_FILE = REPO_ROOT / "docs" / "_config_ref.generated.md"
 
 # Default dicts to document, in declaration order.
 DEFAULT_DICTS = (
-    "_NEOABS_DEFAULT_COMPONENTS",
-    "_NEOABS_DEFAULT_KEYBOARD",
-    "_NEOABS_DEFAULT_READING_MODE",
-    "_NEOABS_DEFAULT_ACTION_CLUSTER",
-    "_NEOABS_DEFAULT_TIMER",
-    "_NEOABS_DEFAULT_CONTENT",
-    "_NEOABS_DEFAULT_AI_READER",
-    "_NEOABS_DEFAULT_SOCIAL_CARDS",
-    "_NEOABS_DEFAULT_META",
-    "_NEOABS_DEFAULT_FEEDBACK",
-    "_NEOABS_DEFAULT_ANNOUNCEMENT_BAR",
-    "_NEOABS_DEFAULT_COOKIE_CONSENT",
-    "_NEOABS_DEFAULT_COMMENTS",
-    "_NEOABS_DEFAULT_I18N",
-    "_NEOABS_DEFAULT_BREADCRUMBS",
-    "_NEOABS_DEFAULT_PWA",
-    "_NEOABS_DEFAULT_ASSETS",
+    "_VOID_DEFAULT_COMPONENTS",
+    "_VOID_DEFAULT_KEYBOARD",
+    "_VOID_DEFAULT_READING_MODE",
+    "_VOID_DEFAULT_ACTION_CLUSTER",
+    "_VOID_DEFAULT_TIMER",
+    "_VOID_DEFAULT_CONTENT",
+    "_VOID_DEFAULT_AI_READER",
+    "_VOID_DEFAULT_SOCIAL_CARDS",
+    "_VOID_DEFAULT_META",
+    "_VOID_DEFAULT_FEEDBACK",
+    "_VOID_DEFAULT_ANNOUNCEMENT_BAR",
+    "_VOID_DEFAULT_COOKIE_CONSENT",
+    "_VOID_DEFAULT_COMMENTS",
+    "_VOID_DEFAULT_I18N",
+    "_VOID_DEFAULT_BREADCRUMBS",
+    "_VOID_DEFAULT_PWA",
+    "_VOID_DEFAULT_ASSETS",
 )
 
 # Human titles for the default dicts, matching the config sections users know.
 DEFAULT_TITLES = {
-    "_NEOABS_DEFAULT_COMPONENTS": "components (visible surfaces)",
-    "_NEOABS_DEFAULT_KEYBOARD": "keyboard (shortcuts)",
-    "_NEOABS_DEFAULT_READING_MODE": "reading_mode",
-    "_NEOABS_DEFAULT_ACTION_CLUSTER": "action_cluster",
-    "_NEOABS_DEFAULT_TIMER": "timer",
-    "_NEOABS_DEFAULT_CONTENT": "content",
-    "_NEOABS_DEFAULT_AI_READER": "ai_reader",
-    "_NEOABS_DEFAULT_SOCIAL_CARDS": "social_cards",
-    "_NEOABS_DEFAULT_META": "meta",
-    "_NEOABS_DEFAULT_FEEDBACK": "feedback",
-    "_NEOABS_DEFAULT_ANNOUNCEMENT_BAR": "announcement_bar",
-    "_NEOABS_DEFAULT_COOKIE_CONSENT": "cookie_consent",
-    "_NEOABS_DEFAULT_COMMENTS": "comments",
-    "_NEOABS_DEFAULT_I18N": "i18n",
-    "_NEOABS_DEFAULT_BREADCRUMBS": "breadcrumbs",
-    "_NEOABS_DEFAULT_PWA": "pwa",
-    "_NEOABS_DEFAULT_ASSETS": "assets (cdn | local | bundle)",
+    "_VOID_DEFAULT_COMPONENTS": "components (visible surfaces)",
+    "_VOID_DEFAULT_KEYBOARD": "keyboard (shortcuts)",
+    "_VOID_DEFAULT_READING_MODE": "reading_mode",
+    "_VOID_DEFAULT_ACTION_CLUSTER": "action_cluster",
+    "_VOID_DEFAULT_TIMER": "timer",
+    "_VOID_DEFAULT_CONTENT": "content",
+    "_VOID_DEFAULT_AI_READER": "ai_reader",
+    "_VOID_DEFAULT_SOCIAL_CARDS": "social_cards",
+    "_VOID_DEFAULT_META": "meta",
+    "_VOID_DEFAULT_FEEDBACK": "feedback",
+    "_VOID_DEFAULT_ANNOUNCEMENT_BAR": "announcement_bar",
+    "_VOID_DEFAULT_COOKIE_CONSENT": "cookie_consent",
+    "_VOID_DEFAULT_COMMENTS": "comments",
+    "_VOID_DEFAULT_I18N": "i18n",
+    "_VOID_DEFAULT_BREADCRUMBS": "breadcrumbs",
+    "_VOID_DEFAULT_PWA": "pwa",
+    "_VOID_DEFAULT_ASSETS": "assets (cdn | local | bundle)",
 }
 
 
 def _collect() -> dict:
     """Pull every canonical config surface out of the plugin module."""
-    import neoabs.plugins.neoabs_plugin as plugin
+    import void.plugins.void_plugin as plugin
 
     token_map = sorted(
         (group, dict(mapping.items()))
-        for group, mapping in plugin._NEOABS_TOKEN_MAP.items()
+        for group, mapping in plugin._VOID_TOKEN_MAP.items()
     )
-    scalar_defaults = dict(plugin.NeoAbsPlugin._neoabs_defaults)
+    scalar_defaults = dict(plugin.VoidPlugin._void_defaults)
     named_defaults = {}
     for name in DEFAULT_DICTS:
         value = getattr(plugin, name)

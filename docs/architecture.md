@@ -5,16 +5,16 @@ title: Architecture
 
 # Architecture
 
-This page describes the internal structure and design of mkdocs-neoabs.
+This page describes the internal structure and design of mkdocs-void.
 
 ## Project Structure
 
 ```tree
-mkdocs-neoabs/
-├── neoabs/                          # Python package
+mkdocs-void/
+├── void/                          # Python package
 │   ├── __init__.py                  # Version (0.1.2)
 │   ├── plugins/
-│   │   └── neoabs_plugin.py         # MkDocs plugin
+│   │   └── void_plugin.py         # MkDocs plugin
 │   ├── templates/
 │   │   ├── base.html                # Root HTML template
 │   │   ├── main.html                # Content wrapper
@@ -59,10 +59,10 @@ The theme is built from Jinja2 templates:
 
 ### Plugin
 
-`neoabs_plugin.py` is a lightweight MkDocs plugin that:
+`void_plugin.py` is a lightweight MkDocs plugin that:
 
 - Sets theme defaults (language, palette, fonts, glass options) if not configured
-- Ensures the `neoabs` key in `theme` always has all required sub-options
+- Ensures the `void` key in `theme` always has all required sub-options
 
 It hooks into `on_config` and modifies the config before templates render.
 
@@ -72,21 +72,21 @@ The stylesheet is organized in layers:
 
 1. **Design Tokens** — CSS custom properties on `:root` for colors, spacing, typography, glass, shadows, z-index, transitions
 2. **Light Mode Overrides** — Token overrides scoped to `[data-md-color-scheme="default"]`
-3. **Glass Intensity Variants** — `light`/`medium`/`heavy` via `[data-md-neoabs-glass]` attribute
+3. **Glass Intensity Variants** — `light`/`medium`/`heavy` via `[data-md-void-glass]` attribute
 4. **Base Resets** — Box-sizing, font smoothing, reduced motion
 5. **Dot Matrix Overlay** — Radial gradient pattern
-6. **Glass Components** — `.neoabs-glass`, `.neoabs-card`
+6. **Glass Components** — `.void-glass`, `.void-card`
 7. **Typography** — Display, labels, body, inline code
 8. **Components** (`components.scss`) — Layout, header, nav, content area, TOC, footer, search, tabs, admonitions, code blocks, tables, scroll utilities, mobile responsive, print styles, MkDocs compatibility
    - **Tabs** — `pymdownx.tabbed` with `alternate_style`, keyboard nav (Arrow keys), localStorage persistence
    - **Task Lists** — Custom checkboxes with localStorage persistence
-   - **Mermaid Diagrams** — `.neoabs-diagram` glass card, loading spinner, error states
-   - **Notes Panel** — `.neoabs-notes-panel`, inline composer, item list, mobile bottom-sheet
-   - **UI Primitives** — `.neoabs-btn`, `.neoabs-card`, `.neoabs-form`
+   - **Mermaid Diagrams** — `.void-diagram` glass card, loading spinner, error states
+   - **Notes Panel** — `.void-notes-panel`, inline composer, item list, mobile bottom-sheet
+   - **UI Primitives** — `.void-btn`, `.void-card`, `.void-form`
 
 ### JavaScript
 
-`neoabs.js` is a single vanilla ES6+ file (no dependencies) that handles:
+`void.js` is a single vanilla ES6+ file (no dependencies) that handles:
 
 1. **Theme initialization** — Reads saved color scheme from localStorage
 2. **Color scheme toggling** — Switches `data-md-color-scheme` attribute
@@ -106,7 +106,7 @@ The stylesheet is organized in layers:
  16. **`initMermaid`** — Lazy CDN loader (`mermaid@10.9.8`), themed rendering, dark/light re-render on scheme change
  17. **`initNotes`** — Inline note composer, localStorage persistence (3-day TTL), export to MD/JSON
  18. **`initSidebarToggle`** — Sidebar collapse/expand via keyboard shortcut
- 19. **`initUIExamples`** — Button press feedback and form submit validation for interactive component docs; also exposes `window.neoabsToast`
+ 19. **`initUIExamples`** — Button press feedback and form submit validation for interactive component docs; also exposes `window.voidToast`
  20. **`initMath`** — Lazy KaTeX CDN loader (`katex@0.16.9`), renders `pymdownx.arithmatex` output, strips `\(\)`/`\[\]` delimiters
 
 ### Build Pipeline
@@ -114,7 +114,7 @@ The stylesheet is organized in layers:
 `tools/build.js` compiles SCSS to CSS:
 
 ```
-neoabs.scss → sass.compile() → postcss(autoprefixer + cssnano) → neoabs.css
+void.scss → sass.compile() → postcss(autoprefixer + cssnano) → void.css
 ```
 
 - `npm run build` — Production (compressed, no sourcemaps)
@@ -126,7 +126,7 @@ neoabs.scss → sass.compile() → postcss(autoprefixer + cssnano) → neoabs.cs
 | Library | Version | Purpose | Loading Strategy |
 |---------|---------|---------|------------------|
 | **highlight.js** | 11.9.0 | Syntax highlighting for code blocks | Lazy — fetched only when `<code>` blocks are present |
-| **Mermaid.js** | 10.9.8 | Diagram rendering | Lazy — fetched only when `.neoabs-diagram` fences are present |
+| **Mermaid.js** | 10.9.8 | Diagram rendering | Lazy — fetched only when `.void-diagram` fences are present |
 | **KaTeX** | 0.16.9 | Math typesetting (`pymdownx.arithmatex`) | Lazy — fetched only when `.arithmatex`/`.math` is present |
 
 Both are deferred and conditionally injected by their respective `init*` functions — no requests on pages without the relevant content.
@@ -137,13 +137,13 @@ All visual properties are defined as CSS custom properties:
 
 ```css
 :root {
-  --neoabs-ink: #000000;           /* Background */
-  --neoabs-text-primary: #ffffff;  /* Primary text */
-  --neoabs-accent: #ff3030;        /* Nothing Red */
-  --neoabs-glass-bg: rgba(255, 255, 255, 0.08);  /* Glass fill */
-  --neoabs-glass-blur: 20px;       /* Blur radius */
-  --neoabs-font-display: 'Space Grotesk';
-  --neoabs-font-mono: 'Space Mono';
+  --void-ink: #000000;           /* Background */
+  --void-text-primary: #ffffff;  /* Primary text */
+  --void-accent: #ff3030;        /* Nothing Red */
+  --void-glass-bg: rgba(255, 255, 255, 0.08);  /* Glass fill */
+  --void-glass-blur: 20px;       /* Blur radius */
+  --void-font-display: 'Space Grotesk';
+  --void-font-mono: 'Space Mono';
   /* ... */
 }
 ```
@@ -152,7 +152,7 @@ Override any token in a custom stylesheet to theme the entire site without touch
 ```mermaid
 graph TD
     A[Markdown Files] --> B[MkDocs]
-    B --> C[neoabs_plugin.py]
+    B --> C[void_plugin.py]
     C --> D[HTML Templates]
     D --> E[base.html]
     E --> F[Header]
@@ -176,7 +176,7 @@ graph TD
     M5 -.->|localStorage| NL[(notes store)]
     M6 -.->|theme swap| HLJS[hljs theme]
     N[SCSS Files] --> O[build.js]
-    O --> P[neoabs.css]
+    O --> P[void.css]
 ```
 ---
 [Back to README](index.md)

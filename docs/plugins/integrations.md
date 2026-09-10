@@ -5,8 +5,8 @@ title: Third-Party Integrations
 
 # Third-Party Integrations
 
-NeoAbs works with the normal MkDocs plugin ecosystem. The recipes below are
-drop-in: add the plugin to `plugins:` in `mkdocs.yml`, keep `- neoabs`, and
+Void works with the normal MkDocs plugin ecosystem. The recipes below are
+drop-in: add the plugin to `plugins:` in `mkdocs.yml`, keep `- void`, and
 the theme handles the rest. Every recipe on this page is built continuously by
 the repository's Integrations CI job — if a recipe stops working, the check
 fails.
@@ -23,21 +23,21 @@ thumb:
    they need a Git checkout (CI clones are fine).
 4. `print-site` usually sits near the end — it renders every page into one
    combined document.
-5. `neoabs` last is always safe: the theme reads the `page.meta` that earlier
+5. `void` last is always safe: the theme reads the `page.meta` that earlier
    plugins have written.
 
 ## mkdocs-git-revision-date-localized
 
-Adds a real "Last updated" date from your Git history. NeoAbs renders it
-natively — the footer's `theme.neoabs.meta` block reads
+Adds a real "Last updated" date from your Git history. Void renders it
+natively — the footer's `theme.void.meta` block reads
 `page.meta.git_revision_date_localized` and shows it with your configured
 label.
 
 ```yaml
 # mkdocs.yml
 theme:
-  name: neoabs
-  neoabs:
+  name: void
+  void:
     meta:
       enabled: true
       show_last_updated: true
@@ -51,7 +51,7 @@ plugins:
       fallback_to_build_date: true
       type: date
       enable_creation_date: false
-  - neoabs
+  - void
 ```
 
 - `auto` (default) prefers the Git date and falls back to the page's `date:`
@@ -61,16 +61,16 @@ plugins:
 
 ## mkdocs-glightbox
 
-Adds a lightbox to your images. NeoAbs already ships a built-in vanilla
-lightbox (`theme.neoabs.content.typography.image_lightbox`, on by default), so
+Adds a lightbox to your images. Void already ships a built-in vanilla
+lightbox (`theme.void.content.typography.image_lightbox`, on by default), so
 use `glightbox` instead only if you want its feature set — and turn the built-in
 one off to avoid double handling:
 
 ```yaml
 # mkdocs.yml
 theme:
-  name: neoabs
-  neoabs:
+  name: void
+  void:
     content:
       typography:
         image_lightbox: false
@@ -80,7 +80,7 @@ plugins:
   - glightbox:
       compact: false
       auto_caption: true
-  - neoabs
+  - void
 ```
 
 The built-in lightbox needs no JavaScript library and no extra pip install —
@@ -89,7 +89,7 @@ consider keeping it if you only need click-to-zoom.
 ## mkdocs-print-site
 
 Renders a combined "print site" (single-page HTML you can save as PDF). It
-can reuse the NeoAbs theme for the generated print pages:
+can reuse the Void theme for the generated print pages:
 
 ```yaml
 # mkdocs.yml
@@ -98,13 +98,13 @@ plugins:
   - print-site:
       add_to_navigation: true
       print_page_path: print_page
-      theme: neoabs
+      theme: void
       numbered_headings: true
-  - neoabs
+  - void
 ```
 
 The generated page lands at `print_page/index.html` and ships with the rest of
-the site, so it works offline like every other NeoAbs page.
+the site, so it works offline like every other Void page.
 
 ## mkdocs-section-index
 
@@ -120,7 +120,7 @@ nav:
 plugins:
   - search
   - section-index
-  - neoabs
+  - void
 ```
 
 ```text
@@ -132,7 +132,7 @@ docs/
 ```
 
 > **Note:** section-index only *adapts* themes on its internal allowlist and
-> logs a one-line warning for any other theme. NeoAbs' nav renders section
+> logs a one-line warning for any other theme. Void' nav renders section
 > pages natively (the section title becomes a clickable link that still nests
 > its children), so the feature works — the warning is informational.
 
@@ -146,7 +146,7 @@ keeping data in a single source file:
 plugins:
   - search
   - table-reader
-  - neoabs
+  - void
 ```
 
 ```text
@@ -159,8 +159,8 @@ docs/
 {! docs/table_data.md !}
 ```
 
-The rendered table picks up NeoAbs table styling automatically
-(`theme.neoabs.content.tables`).
+The rendered table picks up Void table styling automatically
+(`theme.void.content.tables`).
 
 ## mkdocs-git-authors
 
@@ -173,10 +173,10 @@ plugins:
   - git-authors:
       show_email_address: false
       enable_creation_date: false
-  - neoabs
+  - void
 ```
 
-NeoAbs passes `page.meta.git_authors` through untouched (it is the same
+Void passes `page.meta.git_authors` through untouched (it is the same
 `page.meta` the theme reads elsewhere), so you can render it with your own
 [custom head/footer injection](../getting-started/configuration.md). The
 meta footer itself only shows the *date* — it does not show authors by design.
@@ -194,7 +194,7 @@ plugins:
       strict: false
   - search
   - section-index
-  - neoabs
+  - void
 ```
 
 ```text
@@ -215,6 +215,6 @@ order: first
 
 `.github/workflows/integrations.yml` builds a project that uses **all seven**
 recipes at once and asserts the results (rendered "Last updated" date, print
-page, clean strict build, `neoabs doctor` exit 0). See the
+page, clean strict build, `void doctor` exit 0). See the
 [Development page](../development.md) for how to run the same checks
 locally.

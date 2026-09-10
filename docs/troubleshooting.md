@@ -13,7 +13,7 @@ Common issues and their solutions.
 
 **Causes:**
 
-1. `neoabs` is not set as the theme name
+1. `void` is not set as the theme name
 2. CSS file path is incorrect
 3. Browser cache is stale
 
@@ -22,7 +22,7 @@ Common issues and their solutions.
 ```yaml
 # mkdocs.yml
 theme:
-  name: neoabs
+  name: void
 ```
 
 Then:
@@ -52,7 +52,7 @@ Hard-refresh the browser (`Ctrl+Shift+R` / `Cmd+Shift+R`).
 **Fix:**
 
 1. Check browser support (Chrome 76+, Edge 79+, Safari 9+, Firefox 103+)
-2. Inspect the element in DevTools and verify `.neoabs-glass` or `.neoabs-card` classes are applied
+2. Inspect the element in DevTools and verify `.void-glass` or `.void-card` classes are applied
 3. Check for conflicting `background` rules in custom CSS
 
 ## Search Returns No Results
@@ -69,7 +69,7 @@ Hard-refresh the browser (`Ctrl+Shift+R` / `Cmd+Shift+R`).
 ```yaml
 plugins:
   - search
-  - neoabs
+  - void
 ```
 
 ```bash
@@ -92,7 +92,7 @@ mkdocs serve
 **Fix:** Ensure the JavaScript file is loaded:
 
 ```html
-<script src="assets/javascripts/neoabs.js"></script>
+<script src="assets/javascripts/void.js"></script>
 ```
 
 Check the browser console for errors.
@@ -111,7 +111,7 @@ npm run build
 
 ## Python Import Errors
 
-**Symptom:** `ModuleNotFoundError: No module named 'neoabs'`
+**Symptom:** `ModuleNotFoundError: No module named 'void'`
 
 **Fix:**
 

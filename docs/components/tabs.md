@@ -4,7 +4,7 @@ date: 2026-09-07
 
 # Tabs
 
-NeoAbs styles `pymdownx.tabbed` content with a glass-styled tab strip that
+Void styles `pymdownx.tabbed` content with a glass-styled tab strip that
 follows the theme accent. Styling supports up to 10 tabs and adds keyboard
 navigation via a small script.
 

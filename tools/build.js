@@ -7,9 +7,9 @@ const args = process.argv.slice(2);
 const watch = args.includes("--watch");
 const dev = args.includes("--dev");
 
-const SCSS_ENTRY = path.resolve(__dirname, "../neoabs/templates/assets/stylesheets/neoabs.scss");
-const SCSS_COMPONENTS = path.resolve(__dirname, "../neoabs/templates/assets/stylesheets/components.scss");
-const CSS_OUTPUT = path.resolve(__dirname, "../neoabs/templates/assets/neoabs.css");
+const SCSS_ENTRY = path.resolve(__dirname, "../void/templates/assets/stylesheets/void.scss");
+const SCSS_COMPONENTS = path.resolve(__dirname, "../void/templates/assets/stylesheets/components.scss");
+const CSS_OUTPUT = path.resolve(__dirname, "../void/templates/assets/void.css");
 const INCLUDE_PATHS = [
   path.resolve(__dirname, "../"),
   path.resolve(__dirname, "../node_modules"),
@@ -71,7 +71,7 @@ function build() {
         fs.writeFileSync(CSS_OUTPUT, output.css);
         const elapsed = Date.now() - start;
         const mode = dev ? "dev" : "production";
-        console.log(`[${mode}] Built neoabs.css in ${elapsed}ms`);
+        console.log(`[${mode}] Built void.css in ${elapsed}ms`);
       })
       .catch((err) => {
         console.error("PostCSS error:", err.message);
@@ -87,7 +87,7 @@ build();
 
 if (watch) {
   const watchPaths = [
-    path.resolve(__dirname, "../neoabs/templates/assets/stylesheets/"),
+    path.resolve(__dirname, "../void/templates/assets/stylesheets/"),
   ];
 
   console.log("Watching for changes...");

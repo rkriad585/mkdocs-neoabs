@@ -1,0 +1,53 @@
+{% set _pg_toc_levels = (page.meta.void.toc.levels if (page and page.meta and page.meta.void is mapping and page.meta.void.toc is mapping and page.meta.void.toc.levels is mapping) else none) %}
+{% set _toc_levels_eff = _toc_levels_effective if (_toc_levels_effective is defined and _toc_levels_effective is mapping) else {
+    "h2": _comp.toc.show_level_h2 | default(true),
+    "h3": _comp.toc.show_level_h3 | default(true),
+    "h4": _comp.toc.show_level_h4 | default(true),
+    "h5": false,
+    "h6": false
+  } %}
+{% if _pg_toc_levels %}
+{% set _toc_levels_eff = {
+    "h2": _pg_toc_levels.h2 | default(_toc_levels_eff.get("h2", true)),
+    "h3": _pg_toc_levels.h3 | default(_toc_levels_eff.get("h3", true)),
+    "h4": _pg_toc_levels.h4 | default(_toc_levels_eff.get("h4", true)),
+    "h5": _pg_toc_levels.h5 | default(_toc_levels_eff.get("h5", false)),
+    "h6": _pg_toc_levels.h6 | default(_toc_levels_eff.get("h6", false))
+  } %}
+{% endif %}
+{% set _toc_ttl = _toc_title if (_toc_title is defined and _toc_title) else (_i18n.get("toc", {}).get("title", "On this page") if (_i18n is mapping) else "On this page") %}
+{% set _toc_ttl_style = _toc_title_style if (_toc_title_style is defined) else "uppercase" %}
+{% set _toc_gls = _toc_glass if (_toc_glass is defined) else true %}
+
+{% macro render_toc_item(toc_item) %}
+{% set _level_key = "h" ~ toc_item.level %}
+{% set _level_default = false if (_level_key == "h5" or _level_key == "h6") else true %}
+{% if _toc_levels_eff.get(_level_key, _level_default) %}
+{% set active = "void-toc__link--active" if toc_item.active %}
+<li class="void-toc__item void-toc__item--h{{ toc_item.level }}">
+  <a href="{{ toc_item.url }}" class="void-toc__link {{ active }}" title="{{ toc_item.title }}">
+    {{ toc_item.title }}
+  </a>
+  {% if toc_item.children %}
+  <ul class="void-toc__list void-toc__list--nested">
+    {% for toc_item in toc_item.children %}
+    {{ render_toc_item(toc_item) }}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</li>
+{% endif %}
+{% endmacro %}
+
+<aside class="void-toc" data-md-component="toc" aria-labelledby="void-toc-title"{% if not _toc_gls %} data-md-void-toc-glass="false"{% endif %}{% if _toc_ttl_style != "uppercase" %} data-md-void-toc-title-style="{{ _toc_ttl_style }}"{% endif %}>
+  <div class="void-toc__scroll">
+    <div class="void-toc__inner">
+      <h2 class="void-toc__title" id="void-toc-title">{{ _toc_ttl }}</h2>
+      <ul class="void-toc__list">
+        {% for toc_item in page.toc %}
+        {{ render_toc_item(toc_item) }}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</aside>

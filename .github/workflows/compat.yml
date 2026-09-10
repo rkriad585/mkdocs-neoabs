@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "neoabs/**"
+      - "void/**"
       - "pyproject.toml"
       - "requirements.txt"
       - "mkdocs.yml"
@@ -34,21 +34,21 @@ jobs:
       - name: Install MkDocs ${{ matrix.mkdocs }}
         run: pip install "mkdocs==${{ matrix.mkdocs }}"
 
-      - name: Install NeoAbs
+      - name: Install Void
         run: pip install -e .
 
       - name: Scaffold a test project
-        run: neoabs new /tmp/neoabs-compat
+        run: void new /tmp/void-compat
 
       - name: Verify versions
-        working-directory: /tmp/neoabs-compat
-        run: neoabs doctor
+        working-directory: /tmp/void-compat
+        run: void doctor
 
       - name: Build with --strict
-        working-directory: /tmp/neoabs-compat
+        working-directory: /tmp/void-compat
         run: mkdocs build --strict
 
       - name: Confirm pages rendered
         run: |
-          test -f /tmp/neoabs-compat/site/index.html
+          test -f /tmp/void-compat/site/index.html
           echo "Compatibility check passed on mkdocs ${{ matrix.mkdocs }}"

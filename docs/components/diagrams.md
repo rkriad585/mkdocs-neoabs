@@ -4,7 +4,7 @@ date: 2026-09-07
 
 # Diagrams (Mermaid)
 
-NeoAbs renders fenced `mermaid` blocks through [Mermaid.js](https://mermaid.js.org)
+Void renders fenced `mermaid` blocks through [Mermaid.js](https://mermaid.js.org)
 loaded from a CDN. Diagrams are themed to match your light/dark palette and
 draw inside a glass card.
 
@@ -50,8 +50,8 @@ sequenceDiagram
 classDiagram
     class Theme
     class Component
-    Theme <|-- NeoAbs
-    NeoAbs : Component
+    Theme <|-- Void
+    Void : Component
     Component : +render()
 ```
 

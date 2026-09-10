@@ -6,14 +6,14 @@ icon: "⚙️"
 
 # Configuration
 
-NeoAbs is configured through the `theme` key in your `mkdocs.yml`.
+Void is configured through the `theme` key in your `mkdocs.yml`.
 
 ## Basic setup
 
 ```yaml
 site_name: My Docs
 theme:
-  name: neoabs
+  name: void
 ```
 
 ## Full configuration
@@ -21,7 +21,7 @@ theme:
 ```yaml
 site_name: My Docs
 theme:
-  name: neoabs
+  name: void
   favicon: assets/images/favicon.svg
   language: en
   direction: ltr
@@ -46,7 +46,7 @@ theme:
     - content.code.copy
     - search.suggest
     - search.highlight
-  neoabs:
+  void:
     glass: medium
     dot_matrix: true
     animation: normal
@@ -57,7 +57,7 @@ theme:
 
 plugins:
   - search
-  - neoabs
+  - void
 ```
 
 ## Options reference
@@ -87,7 +87,7 @@ palette:
 | `accent` | `"red"` | Accent color (Nothing Red) |
 | `toggle.name` | string | Label for the toggle button |
 
-### `neoabs.glass`
+### `void.glass`
 
 Sets the global glass intensity. This controls `backdrop-filter` blur and transparency on panels, cards, and navigation.
 
@@ -98,23 +98,23 @@ Sets the global glass intensity. This controls `backdrop-filter` blur and transp
 | `"heavy"` | 30px | 1.4 | 12% | Strong blur, lower transparency |
 
 ```yaml
-neoabs:
+void:
   glass: heavy
 ```
 
-### `neoabs.dot_matrix`
+### `void.dot_matrix`
 
 Enables or disables the dot matrix background pattern behind content.
 
 ```yaml
-neoabs:
+void:
   dot_matrix: true
 ```
 
 !!! warning
     Disabling `dot_matrix` removes the background texture. The theme still works, but loses a signature visual element.
 
-### `neoabs.border`
+### `void.border`
 
 Controls the border style on glass panels.
 
@@ -125,11 +125,11 @@ Controls the border style on glass panels.
 | `"none"` | No borders on glass panels |
 
 ```yaml
-neoabs:
+void:
   border: thin
 ```
 
-### `neoabs.animation`
+### `void.animation`
 
 Controls entrance and hover animations.
 
@@ -139,7 +139,7 @@ Controls entrance and hover animations.
 | `"none"` | Disable all animations |
 
 ```yaml
-neoabs:
+void:
   animation: normal
 ```
 
@@ -149,7 +149,7 @@ neoabs:
 ### `font`
 
 Override the default typefaces. The resolved families drive the Google Fonts
-`<link>` **and** the `--neoabs-font-body` / `--neoabs-font-mono` tokens, so the
+`<link>` **and** the `--void-font-body` / `--void-font-mono` tokens, so the
 font stack updates automatically.
 
 ```yaml
@@ -158,7 +158,7 @@ font:
   code: Space Mono
 ```
 
-If you also set `theme.neoabs.typography.font_family` / `font_family_mono`, the
+If you also set `theme.void.typography.font_family` / `font_family_mono`, the
 `theme.font` values take precedence.
 
 !!! tip
@@ -166,7 +166,7 @@ If you also set `theme.neoabs.typography.font_family` / `font_family_mono`, the
 
 ### `features`
 
-Recognized as a Material-compatible passthrough: NeoAbs ships every feature
+Recognized as a Material-compatible passthrough: Void ships every feature
 below **enabled by default**, so the list does not gate any behavior. Omit it
 or list these flags freely — the rendered site is identical:
 
@@ -184,13 +184,13 @@ features:
   - content.code.copy
 ```
 
-To change any single behavior, use the corresponding `theme.neoabs.*` switch
+To change any single behavior, use the corresponding `theme.void.*` switch
 instead.
 
-### `neoabs.social_cards`
+### `void.social_cards`
 
-Phase 4 share + indexing surface. When on (default), every page emits an
-`Article` JSON-LD block in `<head>`, and — when `extra.neoabs_og_image` is set
+Share + indexing surface. When on (default), every page emits an
+`Article` JSON-LD block in `<head>`, and — when `extra.void_og_image` is set
 to the literal value `"__auto__"` — a per-page OG card image is generated at
 build time and published as the page's `og:image`.
 
@@ -201,21 +201,21 @@ build time and published as the page's `og:image`.
 | `cards` | `true` | Auto-generate per-page OG card images (`__auto__` mode) |
 
 ```yaml
-neoabs:
+void:
   social_cards:
     enabled: true   # master on/off
     jsonld: true    # Article JSON-LD in <head>
-    cards: true     # auto og:image cards when extra.neoabs_og_image = __auto__
+    cards: true     # auto og:image cards when extra.void_og_image = __auto__
 ```
 
 Set `enabled: false` to strip the whole surface; keep `enabled` but flip
 `jsonld` or `cards` to disable one half independently. Card rendering needs
-Pillow for PNG files — install it with `pip install mkdocs-neoabs[social-cards]`
+Pillow for PNG files — install it with `pip install mkdocs-void[social-cards]`
 — and falls back to a crisp standalone SVG when Pillow is absent.
 
 ```yaml
 extra:
-  neoabs_og_image: __auto__   # generate per-page social cards at build time
+  void_og_image: __auto__   # generate per-page social cards at build time
 ```
 
 !!! tip
@@ -223,9 +223,9 @@ extra:
     card for that page. If no card exists for a page (e.g. 404 pages), the OG
     block falls back to a summary Twitter card.
 
-### `neoabs.meta`
+### `void.meta`
 
-Phase 5 freshness + "edit the source" bar. A small metadata row under the
+Freshness + "edit the source" bar. A small metadata row under the
 content: a "Last updated" date and an "Edit this page" link. The date is picked
 from `page.meta.git_revision_date_localized` (set by the
 [`mkdocs-git-revision-date-localized`](https://github.com/timvink/mkdocs-git-revision-date-localized)
@@ -245,8 +245,8 @@ installed — or is omitted entirely when neither exists (never breaks).
 
 ```yaml
 theme:
-  name: neoabs
-  neoabs:
+  name: void
+  void:
     meta:
       enabled: true                # master on/off
       show_last_updated: true
@@ -263,15 +263,15 @@ matter:
 
 ```yaml
 ---
-neoabs:
+void:
   meta:
     show_last_updated: false      # hide the date on this page
 ---
 ```
 
-### `neoabs.feedback`
+### `void.feedback`
 
-Phase 6 "Was this page helpful?" widget. Renders under the article and opens a
+"Was this page helpful?" widget. Renders under the article and opens a
 prefilled GitHub issue (positive/negative) in a new tab — a plain issue link, no
 analytics. Only appears when `config.repo_url` is set.
 
@@ -286,18 +286,18 @@ analytics. Only appears when `config.repo_url` is set.
 
 ```yaml
 theme:
-  neoabs:
+  void:
     feedback:
       enabled: true
       github_labels: [feedback]
 ```
 
-### `neoabs.announcement_bar`
+### `void.announcement_bar`
 
-Phase 6 announcement bar: a floating card pinned near an edge. **Off
+Announcement bar: a floating card pinned near an edge. **Off
 by default** — it renders only when `enabled: true` and a non-empty `text` are
 set. The text comes from `announcement_bar.text` (wins) or the legacy
-`extra.neoabs_announce` string. Dismissal persists in `localStorage` keyed by
+`extra.void_announce` string. Dismissal persists in `localStorage` keyed by
 the text, so changing the announcement re-shows it. `position` picks where the
 card floats (`top`/`right`/`bottom`/`left`); `center` opens it as a popup with
 a dimmed backdrop that also dismisses on click.
@@ -306,22 +306,22 @@ a dimmed backdrop that also dismisses on click.
 |-----|---------|-------------|
 | `enabled` | `false` | Master switch — hidden by default; set `true` to opt in |
 | `show` | `true` | Render the bar |
-| `text` | `""` | Announcement text; empty falls back to `extra.neoabs_announce` |
+| `text` | `""` | Announcement text; empty falls back to `extra.void_announce` |
 | `dismissable` | `true` | Show the × dismiss button (false pins the card) |
 | `position` | `"bottom"` | Floating placement: `top`, `right`, `bottom`, `left`, or `center` (popup + backdrop) |
 
 ```yaml
 theme:
-  neoabs:
+  void:
     announcement_bar:
       enabled: true    # opt-in — hidden by default
       text: New in v0.2 — glass components are here!
       position: top    # top | right | bottom | left | center
 ```
 
-### `neoabs.cookie_consent`
+### `void.cookie_consent`
 
-Phase 6 consent banner. Privacy-first: NeoAbs never tracks readers, so the
+Consent banner. Privacy-first: Void never tracks readers, so the
 banner is rendered **only** when the build detects a configured integration
 (`theme.analytics.gtag` or giscus comments enabled with `repo` + `repo_id`) — unless you
 opt in to always showing it with `render: always` (for demo sites). The banner
@@ -341,7 +341,7 @@ delayed integrations like giscus.
 
 ```yaml
 theme:
-  neoabs:
+  void:
     cookie_consent:
       message: We only store your explicit choices.
       privacy_policy: /privacy/
@@ -349,9 +349,9 @@ theme:
       position: bottom        # top | right | bottom | left | center
 ```
 
-### `neoabs.comments`
+### `void.comments`
 
-Phase 6 opt-in comments via [giscus](https://giscus.app) (the only supported
+Opt-in comments via [giscus](https://giscus.app) (the only supported
 provider). Comments are **hidden by default** — nothing renders unless you set
 `enabled: true`. Even then, nothing loads until both `repo` and `repo_id` are
 configured; when a consent-serving integration is present, the giscus script is
@@ -362,7 +362,7 @@ Use an **Announcements**-type category: in it only maintainers and the giscus
 bot can start discussions, so visitors can comment but never create threads.
 With `mapping: pathname` (default), each page maps to a discussion whose title
 equals that page's pathname without the leading slash — e.g. this repo's home
-page (`/mkdocs-neoabs/`) maps to a discussion titled `mkdocs-neoabs/`. Grab the
+page (`/mkdocs-void/`) maps to a discussion titled `mkdocs-void/`. Grab the
 exact `repo_id` / `category_id` on the [giscus setup page](https://giscus.app).
 
 | Key | Default | Description |
@@ -380,7 +380,7 @@ exact `repo_id` / `category_id` on the [giscus setup page](https://giscus.app).
 
 ```yaml
 theme:
-  neoabs:
+  void:
     comments:
       enabled: true          # opt-in — comments are hidden by default
       repo: "user/mkdocs-docs"
@@ -409,7 +409,7 @@ origin itself are never touched.
 ## Generated reference
 
 The canonical reference below is emitted from the plugin's own source tables
-(`_NEOABS_TOKEN_MAP`, `_neoabs_defaults`, and the `_NEOABS_DEFAULT_*` dicts) by
+(`_VOID_TOKEN_MAP`, `_void_defaults`, and the `_VOID_DEFAULT_*` dicts) by
 `tools/emit_config_reference.py`. Regenerate it any time the plugin changes so
 docs and config can never drift:
 
@@ -419,24 +419,24 @@ python tools/emit_config_reference.py
 
 --8<-- "_config_ref.generated.md"
 
-### `extra.neoabs_showcase`
+### `extra.void_showcase`
 
-Phase 10 footer credit: an **opt-in** one-line "Powered by NeoAbs" badge in the
-site footer. **Off by default** — set `extra.neoabs_showcase: true` to show it.
+Footer credit: an **opt-in** one-line "Powered by Void" badge in the
+site footer. **Off by default** — set `extra.void_showcase: true` to show it.
 The badge is a self-contained inline SVG (a dot-matrix mark echoing the
 NothingOS canvas) that links back to the project, so enabling it adds no
-third-party image or CDN request. `extra.neoabs_showcase_url` overrides the
-default link target; the label text follows `theme.neoabs.i18n.footer_powered_by`.
+third-party image or CDN request. `extra.void_showcase_url` overrides the
+default link target; the label text follows `theme.void.i18n.footer_powered_by`.
 
 ```yaml
 extra:
-  neoabs_showcase: true                 # Opt-in footer credit + badge
-  neoabs_showcase_url: "https://github.com/rkriad585/mkdocs-neoabs"   # Optional
+  void_showcase: true                 # Opt-in footer credit + badge
+  void_showcase_url: "https://github.com/rkriad585/mkdocs-void"   # Optional
 ```
 
 ## Plugin configuration
 
-NeoAbs ships with an optional MkDocs plugin that sets theme defaults. See the [Plugin documentation](../plugins/neoabs.md) for details.
+Void ships with an optional MkDocs plugin that sets theme defaults. See the [Plugin documentation](../plugins/void.md) for details.
 
 ## Adding custom CSS
 
@@ -453,8 +453,8 @@ Override any design token:
 
 ```css
 :root {
-  --neoabs-accent: #818cf8;
-  --neoabs-canvas: #050510;
+  --void-accent: #818cf8;
+  --void-canvas: #050510;
 }
 ```
 

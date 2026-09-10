@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>neoabs config builder</title>
+<title>void config builder</title>
 <style>
 /* -------------------------------------------------------------------------
-   neoabs config builder — standalone single-file tool.
+   void config builder — standalone single-file tool.
    No external resources; works offline at file:// and over HTTP.
    ------------------------------------------------------------------------- */
 :root {
@@ -140,7 +140,7 @@ form#cb-form legend {
 </head>
 <body>
 <header>
-  <h1>neoabs config builder</h1>
+  <h1>void config builder</h1>
   <p>Answer the questions, then copy or download your mkdocs.yml. Your answers are saved in this browser only.</p>
 </header>
 <main class="cb-shell">
@@ -166,11 +166,11 @@ form#cb-form legend {
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
-// neoabs config builder — vanilla ES6+, zero dependencies.
-// source: neoabs-standalone-config-builder
+// void config builder — vanilla ES6+, zero dependencies.
+// source: void-standalone-config-builder
 // ---------------------------------------------------------------------------
 
-const CB_STORAGE_KEY = "neoabs-config-builder-v1";
+const CB_STORAGE_KEY = "void-config-builder-v1";
 
 // Single source of truth: a flat list of questions. Each `key` is a dotted
 // YAML path inside the generated mkdocs.yml; `type` picks the widget:
@@ -185,7 +185,7 @@ const SCHEMA = [
   { cat: "Site", key: "repo_url", type: "text", label: "Repo URL", placeholder: "https://github.com/user/repo" },
   { cat: "Site", key: "site_description", type: "text", label: "Description" },
   // Theme core
-  { cat: "Theme", key: "theme.name", type: "select", label: "Theme name", options: ["neoabs"], default: "neoabs" },
+  { cat: "Theme", key: "theme.name", type: "select", label: "Theme name", options: ["void"], default: "void" },
   { cat: "Theme", key: "theme.palette.primary", type: "select", label: "Primary color", options: ["indigo", "blue", "green", "amber", "red", "slate", "black", "white"], default: "indigo" },
   { cat: "Theme", key: "theme.palette.accent", type: "select", label: "Accent color", options: ["red", "blue", "green", "amber", "indigo"], default: "red" },
   { cat: "Theme", key: "theme.features", type: "checks", label: "Theme features", options: [
@@ -195,16 +195,16 @@ const SCHEMA = [
     { label: "Content code copy",   value: "content.code.copy" },
     { label: "Search suggestions",  value: "search.suggest" },
     { label: "Search highlight",    value: "search.highlight" } ] },
-  // NeoAbs components (all ON by default)
-  { cat: "NeoAbs components", key: "theme.neoabs.components.search.show",          type: "toggle", label: "Search",            default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.toc.show",             type: "toggle", label: "Table of contents", default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.reading_mode.show",    type: "toggle", label: "Reading mode",      default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.action_cluster.show",  type: "toggle", label: "Action cluster",    default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.focus_timer.show",     type: "toggle", label: "Focus timer",       default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.repo_popover.show",    type: "toggle", label: "Repo popover",      default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.feedback.show",        type: "toggle", label: "Feedback widget",   default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.announcement.show",    type: "toggle", label: "Announcement bar",  default: true },
-  { cat: "NeoAbs components", key: "theme.neoabs.components.comments.show",        type: "toggle", label: "Comments",          default: true },
+  // Void components (all ON by default)
+  { cat: "Void components", key: "theme.void.components.search.show",          type: "toggle", label: "Search",            default: true },
+  { cat: "Void components", key: "theme.void.components.toc.show",             type: "toggle", label: "Table of contents", default: true },
+  { cat: "Void components", key: "theme.void.components.reading_mode.show",    type: "toggle", label: "Reading mode",      default: true },
+  { cat: "Void components", key: "theme.void.components.action_cluster.show",  type: "toggle", label: "Action cluster",    default: true },
+  { cat: "Void components", key: "theme.void.components.focus_timer.show",     type: "toggle", label: "Focus timer",       default: true },
+  { cat: "Void components", key: "theme.void.components.repo_popover.show",    type: "toggle", label: "Repo popover",      default: true },
+  { cat: "Void components", key: "theme.void.components.feedback.show",        type: "toggle", label: "Feedback widget",   default: true },
+  { cat: "Void components", key: "theme.void.components.announcement.show",    type: "toggle", label: "Announcement bar",  default: true },
+  { cat: "Void components", key: "theme.void.components.comments.show",        type: "toggle", label: "Comments",          default: true },
   // Plugins
   { cat: "Plugins", key: "plugins", type: "checks", label: "Plugins", options: [
     { label: "Search",   value: "search" },
@@ -419,14 +419,14 @@ const PRESETS = {
 function applyPreset(name) {
   resetFormToDefaults();
   if (name === "basic") {
-    ["theme.neoabs.components.feedback.show",
-      "theme.neoabs.components.comments.show",
-      "theme.neoabs.components.announcement.show",
+    ["theme.void.components.feedback.show",
+      "theme.void.components.comments.show",
+      "theme.void.components.announcement.show",
       "theme.features"].forEach((k) => {
       document.querySelectorAll('input[data-key="' + k + '"]').forEach((c) => { c.checked = false; });
     });
   } else if (name === "standard") {
-    ["theme.neoabs.components.comments.show"].forEach((k) => {
+    ["theme.void.components.comments.show"].forEach((k) => {
       document.querySelectorAll('input[data-key="' + k + '"]').forEach((c) => { c.checked = false; });
     });
   }
@@ -514,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
   refresh();
 });
 
-console.log("[neoabs-config-builder] source: neoabs-standalone-config-builder");
+console.log("[void-config-builder] source: void-standalone-config-builder");
 </script>
 </body>
 </html>

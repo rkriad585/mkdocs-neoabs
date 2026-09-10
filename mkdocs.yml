@@ -1,12 +1,12 @@
-site_name: NeoAbs Documentation
+site_name: Void Documentation
 site_description: Glass + NothingOS Design Language for MkDocs
-# The deployed URL. NeoAbs uses it as the production origin so links that are
+# The deployed URL. Void uses it as the production origin so links that are
 # baked/hardcoded with this address are automatically rebased to localhost:{port}
 # when you preview with `mkdocs serve` (see docs/getting-started/configuration.md).
-site_url: https://rkriad585.github.io/mkdocs-neoabs
+site_url: https://rkriad585.github.io/mkdocs-void
 
-repo_url: https://github.com/rkriad585/mkdocs-neoabs
-repo_name: rkriad585/mkdocs-neoabs
+repo_url: https://github.com/rkriad585/mkdocs-void
+repo_name: rkriad585/mkdocs-void
 
 # Intentionally not part of the nav: the auto-generated config reference is
 # pulled into Configuration via a snippets include, not linked as its own page.
@@ -14,10 +14,10 @@ repo_name: rkriad585/mkdocs-neoabs
 not_in_nav: |
   _config_ref.generated.md
 
-copyright: "&copy; 2025 rkriad585. Built with NeoAbs."
+copyright: "&copy; 2025 rkriad585. Built with Void."
 
 theme:
-  name: neoabs
+  name: void
   logo: assets/images/logo.svg
   favicon: assets/images/favicon.svg
   language: en
@@ -33,16 +33,16 @@ theme:
       accent: red
       toggle:
         name: Switch to dark mode
-  # --- Phase 1: theme.font (optional) ----------------------------------
-  # Drives the Google Fonts <link> AND the --neoabs-font-body / --neoabs-font-mono
+ #Theme.font (optional) ----------------------------------
+  # Drives the Google Fonts <link> AND the --void-font-body / --void-font-mono
   # tokens, so the body/code stacks update automatically. Overrides any matching
-  # theme.neoabs.typography value; defaults are Space Grotesk / Space Mono.
+  # theme.void.typography value; defaults are Space Grotesk / Space Mono.
   font:
     text: Space Grotesk
     code: Space Mono
   # features: is a Material-compatible passthrough — every behavior below ships
   # enabled by default, so the list does not gate anything. Keep it or drop it;
-  # to change a behavior use a theme.neoabs.* switch instead.
+  # to change a behavior use a theme.void.* switch instead.
   features:
     - navigation.sections
     - navigation.top
@@ -50,20 +50,20 @@ theme:
     - content.code.copy
     - search.suggest
     - search.highlight
-  neoabs:
+  void:
     glass: medium
     dot_matrix: true
     animation: normal
     border: thin
-    # --- Phase 4: Social cards & structured data ------------------------------
+ #Social cards & structured data ------------------------------
     # Per-page Article JSON-LD + auto-generated OG card images. Every key
-    # defaults ON; `cards` only fires when `extra.neoabs_og_image` is set to the
-    # literal value "__auto__" (see the Phase 12 extra block below).
+    # defaults ON; `cards` only fires when `extra.void_og_image` is set to the
+ #Literal value "__auto__" (see the extra block below).
     social_cards:
       enabled: true   # Master on/off: JSON-LD + auto card images (default true)
       jsonld: true    # Article JSON-LD structured data in <head> (default true)
       cards: true     # Build per-page og:image cards when og_image = __auto__ (default true)
-    # --- Phase 5: Page metadata bar -----------------------------------------
+ #Page metadata bar -----------------------------------------
     # "Last updated" date + "Edit this page" link under the content. The date
     # works with mkdocs-git-revision-date-localized (page.meta.git_revision_date_localized)
     # and falls back to `date:` front matter, or is omitted when neither exists.
@@ -74,7 +74,7 @@ theme:
       last_updated_label: Last updated
       edit_label: Edit this page
       date_source: auto            # auto | front_matter | git
-    # --- Phase 6: Engagement & privacy --------------------------------------
+ #Engagement & privacy --------------------------------------
     # "Was this page helpful?" feedback (opens a prefilled GitHub issue — no
     # analytics), a dismissable announcement bar, a consent banner, and opt-in
     # giscus comments. Feedback + announcement + consent (render: always) are
@@ -100,7 +100,7 @@ theme:
     # announcement_bar:
       # enabled: true  # opt-in — hidden by default; set true to show
       # show: true     # Render the bar (default true)
-      # text: "NeoAbs is live — glass design for MkDocs"
+      # text: "Void is live — glass design for MkDocs"
       # dismissable: true
       # position: bottom # top | right | bottom | left | center
     # The privacy-first default (`render: auto`) shows the banner only when a
@@ -130,8 +130,8 @@ theme:
     #     category_id on the giscus setup page alongside the repo ID.
     #   * mapping: how a page finds its thread. With `pathname` (default) each
     #     page looks for a discussion whose TITLE equals the page pathname
-    #     without the leading slash — e.g. this home page (`/mkdocs-neoabs/`)
-    #     maps to a discussion titled `mkdocs-neoabs/`. Create/rename threads to
+    #     without the leading slash — e.g. this home page (`/mkdocs-void/`)
+    #     maps to a discussion titled `mkdocs-void/`. Create/rename threads to
     #     match, or let giscus create them automatically on first comment.
     #   * term: only used with mapping: specific.
     #   * theme.light / theme.dark: giscus themes per palette scheme.
@@ -140,7 +140,7 @@ theme:
     comments:
       enabled: true          # opt-in — hidden by default; set true to show
       provider: giscus       # only supported provider
-      repo: "rkriad585/mkdocs-neoabs"
+      repo: "rkriad585/mkdocs-void"
       repo_id: "R_kgDOT6uASQ"
       category: "Announcements"            # Announcements-type category
       category_id: "DIC_kwDOT6uASc4DFG1d"
@@ -149,20 +149,20 @@ theme:
       theme:
         light: light
         dark: dark
-    # --- Phase 1: Design token overrides (optional) -------------------------
+ #Design token overrides (optional) -------------------------
     # Uncomment any value to override the theme's default design token. Values
     # map to CSS custom properties and win against the compiled stylesheet.
     # colors:
-    #   primary: "#ff3030"            # --neoabs-accent
-    #   primary_light: "#ff6b6b"      # --neoabs-accent-glow
-    #   primary_dark: "#c62828"       # --neoabs-accent-strong
-    #   background: "#000000"         # --neoabs-ink
-    #   surface: "rgba(255,255,255,0.08)"   # --neoabs-glass-bg
-    #   surface_light: "rgba(255,255,255,0.15)" # --neoabs-glass-bg-strong
-    #   text: "#ffffff"               # --neoabs-text-primary
-    #   text_secondary: "#aaaaaa"     # --neoabs-text-secondary
-    #   border: "rgba(255,255,255,0.18)"    # --neoabs-glass-border
-    #   overlay: "rgba(0,0,0,0.5)"    # --neoabs-overlay-color
+    #   primary: "#ff3030"            # --void-accent
+    #   primary_light: "#ff6b6b"      # --void-accent-glow
+    #   primary_dark: "#c62828"       # --void-accent-strong
+    #   background: "#000000"         # --void-ink
+    #   surface: "rgba(255,255,255,0.08)"   # --void-glass-bg
+    #   surface_light: "rgba(255,255,255,0.15)" # --void-glass-bg-strong
+    #   text: "#ffffff"               # --void-text-primary
+    #   text_secondary: "#aaaaaa"     # --void-text-secondary
+    #   border: "rgba(255,255,255,0.18)"    # --void-glass-border
+    #   overlay: "rgba(0,0,0,0.5)"    # --void-overlay-color
     # typography:                     # theme.font above wins over font_family/font_family_mono
     #   font_family: "Space Grotesk, sans-serif"
     #   font_family_display: "Space Grotesk, sans-serif"
@@ -191,7 +191,7 @@ theme:
     #   small: "0 1px 2px rgba(0,0,0,0.3)"
     #   medium: "0 4px 12px rgba(0,0,0,0.4)"
     #   large: "0 8px 32px rgba(0,0,0,0.5)"
-    # --- Phase 2: Component visibility toggles (optional) --------------------
+ #Component visibility toggles (optional) --------------------
     # Show/hide any individual component or UI section from here. Every toggle
     # defaults to ON; uncomment only the keys you want to change. `show: false`
     # hides the piece (via config only, nothing is removed from the theme).
@@ -260,7 +260,7 @@ theme:
     #     show: true                 # Enable toast notification system
     #   keyboard_help:
     #     show: true                 # Enable the "?" keyboard-shortcuts help
-    # --- Phase 11: Content area customization (optional) ------------------------
+ #Content area customization (optional) ------------------------
     # Full control over content rendering. Every option defaults to the theme's
     # current look; set only the keys you want to change. `content.max_width` and
     # `content.padding` accept any CSS length and override the layout variables.
@@ -305,7 +305,7 @@ theme:
     #     enabled: true                # Task-list checkbox handling
     #     custom_checkbox: true        # false = native browser checkboxes
     #     persist_state: true          # Remember checked state per page
-    # --- Phase 3: Header & navbar customization (optional) ---------------------
+ #Header & navbar customization (optional) ---------------------
     # Customize the header bar. Every option defaults to the theme's current
     # look; uncomment only the keys you want to change. `position`, `height`
     # and `z_index` are applied via inline CSS custom properties; `glass`,
@@ -338,11 +338,11 @@ theme:
     #     #   new_tab: false
     #     # - type: button             # Styled button
     #     #   label: "Star on GitHub"
-    #     #   url: "https://github.com/rkriad585/mkdocs-neoabs"
+    #     #   url: "https://github.com/rkriad585/mkdocs-void"
     #     #   style: "primary"         # primary | glass | outline
     #     #   icon: "star"
     #     #   new_tab: true
-    # --- Phase 4: Footer customization (optional) ------------------------------
+ #Footer customization (optional) ------------------------------
     # Customize the footer bar. Every option defaults to the theme's current
     # look; uncomment only the keys you want to change. `position` is applied
     # via an inline CSS custom property (`fixed` docks the footer to the
@@ -377,7 +377,7 @@ theme:
     #         - label: "Pricing"
     #           url: "/pricing/"
     #           new_tab: false
-    # --- Phase 5: Sidebar & navigation customization (optional) -----------------
+ #Sidebar & navigation customization (optional) -----------------
     # Customize the navigation sidebar. Every option defaults to the theme's
     # current look; uncomment only the keys you want to change. `position` and
     # `width` are applied via an inline CSS custom variable on <body>; `glass`
@@ -400,10 +400,10 @@ theme:
     #   sections:
     #     show: true                   # Show section heading rows (default true)
     #     style: "uppercase"           # uppercase | bold | default (default uppercase)
-    # --- Phase 6: Table of contents customization (optional) -------------------
+ #Table of contents customization (optional) -------------------
     # Customize the right sidebar "On this page" rail. Every option defaults to
     # the theme's current look; uncomment only the keys you want to change.
-    # `position` reuses the Phase 5 swap mechanism (data attribute on <body>;
+ #`position` reuses the swap mechanism (data attribute on <body>;
     # `left` swaps TOC & sidebar); `width` is applied via an inline CSS custom
     # variable on <body>; `glass`, `title_style` via data attributes on <aside>.
     # toc:
@@ -425,7 +425,7 @@ theme:
     #     offset: "100px"              # Scroll offset for activation (default 25% viewport)
     #   permalink: true                # Show # anchor links on headings (default true)
     #   permalink_symbol: ""           # Replace the permalink glyph (empty = markdown default)
-    # --- Phase 7: Keyboard shortcuts customization (optional) --------------------
+ #Keyboard shortcuts customization (optional) --------------------
     # Remap every built-in global shortcut and/or add your own. Every option
     # defaults to the current key binding; uncomment only the keys you want to
     # change. `enabled: false` disables a single shortcut; `persisted` controls
@@ -474,24 +474,24 @@ theme:
     #       key: "?"                   # Show the keyboard-shortcuts modal (default "?")
     #       label: "Show keyboard shortcuts"
     #     toggle_reading_mode:
-    #       key: "Alt+Shift+R"         # Enter/exit reading mode (Phase 15; default Alt+Shift+R)
+ #Key: "Alt+Shift+R" # Enter/exit reading mode (; default Alt+Shift+R)
     #       label: "Toggle reading mode"
     #       enabled: true              # Set false to disable this shortcut
     #       persisted: true            # Remember reading mode across reloads (default true)
     #     toggle_action_cluster:
-    #       key: "Alt+Shift+A"         # Expand/collapse the action cluster (Phase 16; default Alt+Shift+A)
+ #Key: "Alt+Shift+A" # Expand/collapse the action cluster (; default Alt+Shift+A)
     #       label: "Toggle action cluster"
     #       enabled: true              # Set false to disable this shortcut
     #     timer_toggle:
-    #       key: "Alt+Shift+T"         # Open focus timer settings (Phase 17; default Alt+Shift+T)
+ #Key: "Alt+Shift+T" # Open focus timer settings (; default Alt+Shift+T)
     #       label: "Toggle focus timer"
     #       enabled: true              # Set false to disable this shortcut
     #     toggle_scheme:
-    #       key: "Ctrl+Shift+L"        # Switch to the next color scheme (Phase 20; default Ctrl+Shift+L)
+ #Key: "Ctrl+Shift+L" # Switch to the next color scheme (; default Ctrl+Shift+L)
     #       label: "Toggle color scheme"
     #       enabled: true              # Set false to disable this shortcut
     #     toggle_repo_popover:
-    #       key: "Ctrl+Shift+G"        # Show/hide the repo popover (Phase 20; default Ctrl+Shift+G). Falls back to opening the repo link when unavailable.
+ #Key: "Ctrl+Shift+G" # Show/hide the repo popover (; default Ctrl+Shift+G). Falls back to opening the repo link when unavailable.
     #       label: "Toggle repo popover"
     #       enabled: true              # Set false to disable this shortcut
     #   custom:                        # Your own shortcuts (list of entries)
@@ -501,7 +501,7 @@ theme:
     #     - key: "r"                   #   Press "r" to flip reading mode
     #       label: "Toggle reading mode"
     #       action: "toggle_reading_mode"
-    # --- Phase 8: Custom CSS, JS & head injection (optional) ------------------
+ #Custom CSS, JS & head injection (optional) ------------------
     # Inject your own stylesheets, scripts, raw markup and extra <html>
     # attributes without forking the theme. Local file paths are resolved
     # relative to docs_dir (like the standard MkDocs keys) and copied into the
@@ -519,7 +519,7 @@ theme:
     #   - assets/javascripts/custom.js
     #   - "https://cdn.example.com/widget.js"
 
-    # --- Phase 9: Advanced visual customization (optional) --------------------
+ #Advanced visual customization (optional) --------------------
     # Fine-grained visual control beyond the design tokens: glass, dot matrix,
     # animations, borders, shadows, scrollbar and text selection. These render
     # as CSS custom properties / data attributes in the built page and override
@@ -561,7 +561,7 @@ theme:
     #   background: ""                 # Text selection background color
     #   color: ""                      # Text selection text color
 
-    # --- Phase 10: Search customization (optional) ----------------------------
+ #Search customization (optional) ----------------------------
     # Full control over the search dialog behavior and appearance. Every key
     # defaults to the current behavior and the built-in MkDocs search plugin is
     # still driven by its own worker + lunr index. `enabled: false` removes the
@@ -586,10 +586,10 @@ theme:
     #     show_breadcrumb: true        # Show page path in results
     #     show_highlights: true        # Highlight terms inside matched text
     #     show_share: true             # Show "copy link" button on results
-    # --- Phase 13: Page-level overrides (front matter) -------------------------
+ #Page-level overrides (front matter) -------------------------
     # Any page can override these theme settings *for that page only* with a
-    # `neoabs:` block in its front matter. Absent keys keep the theme config.
-    # The keys mirror their Phase 1-12 counterparts: header/sidebar/toc/footer
+    # `void:` block in its front matter. Absent keys keep the theme config.
+ #The keys mirror their counterparts: header/sidebar/toc/footer
     # `show`, toc `levels` (h2/h3/h4), content `show_progress_bar`/`glass`, the
     # scalar `glass` ("light"|"medium"|"heavy"|"none"), `dot_matrix: false`,
     # a per-page `custom_css` and `layout` ("default"|"wide"|"full").
@@ -597,7 +597,7 @@ theme:
     #
     # ---
     # title: "My Page"
-    # neoabs:
+    # void:
     #   header:
     #     show: false
     #   sidebar:
@@ -616,7 +616,7 @@ theme:
     #   custom_css: "page-specific.css"
     #   layout: "wide"                # default | wide | full
     # ---
-    # --- Phase 15: Reading mode (optional) --------------------------------------
+ #Reading mode (optional) --------------------------------------
     # One keypress (default Alt+Shift+R) enters a distraction-free reading view:
     # the header, sidebars, TOC, footer, and progress chrome are hidden and the
     # article re-measures to the full width. The active colour scheme (dark by
@@ -640,7 +640,7 @@ theme:
     #   scheme:
     #     enabled: true
     #     name: "ink"                  # Optional label; unused by the engine
-    #     colors:                      # Optional Phase 1 token overrides; empty =
+ #Colors: # Optional token overrides; empty =
     #                                  # inherit the active colour scheme (dark default)
     #       background: "#000000"
     #       surface: ""
@@ -652,7 +652,7 @@ theme:
     #     font_size: "1.125rem"
     #     line_height: "1.75"
     #     measure: "100%"
-    # --- Phase 16: Action cluster (optional) ------------------------------------
+ #Action cluster (optional) ------------------------------------
     # A floating "plus" hub (bottom-left by default) that expands into a stack
     # of quick actions: keyboard shortcuts, notes, focus timer, reading mode.
     # Every aspect is configurable; defaults keep the feature fully ON. When
@@ -674,7 +674,7 @@ theme:
     #     close_on_select: true         # Collapse after an action is chosen
     #     close_on_escape: true
     #     close_on_outside: true
-    #     animation: "normal"           #  normal | reduced | none (Phase 9 tokens apply)
+ #Animation: "normal" # normal | reduced | none ( tokens apply)
     #     tooltips: true                # Show action labels on hover / focus
     #     focus_trap: true              # Keep Tab cycling inside the open cluster
     #   actions:                        # Each slot is independently configurable
@@ -683,7 +683,7 @@ theme:
     #     - { id: timer,          icon: "timer",   label: "Focus timer",        enabled: true }
     #     - { id: reading_mode,   icon: "reading", label: "Reading mode",       enabled: true }
     #   replaces_notes_button: true     # Hide the standalone notes launcher
-    # --- Phase 17: Focus timer (optional) ---------------------------------------
+ #Focus timer (optional) ---------------------------------------
     # A built-in focus timer (25-minute default session) shown in the TOC panel
     # and as a chip while reading mode is active (the TOC is hidden there). The
     # cluster's timer action or Alt+Shift+T always opens the settings popup, so
@@ -696,28 +696,28 @@ theme:
     #   default_minutes: 25             # Duration used when starting fresh
     #   toc:
     #     show: true                    # Status widget inside the TOC panel
-    #     position: "bottom"            #  top | bottom of the .neoabs-toc column
+    #     position: "bottom"            #  top | bottom of the .void-toc column
     #     style: "ring"                 #  ring | bar | digits
     #   reading:
     #     show: true                    # Chip visible while reading mode is active
     #   notifications:
     #     enabled: true
-    #     toast: true                   #  neoabsToast("session complete")
+    #     toast: true                   #  voidToast("session complete")
     #     sound: true                   #  short WebAudio chime
     #   persist: true                   # Keep elapsed/remaining across reloads + SPA nav
     #   settings_popup: true            # Config popup opened from the timer action
     #   colors:
     #     progress: "#8a5a33"           # Ring/bar progress accent while running
-    # --- Phase 18: Action shortcuts & cluster customization (optional) --------
+ #Action shortcuts & cluster customization (optional) --------
     # Per-action shortcuts and a live remaining-time badge on the cluster, the
     # timer display format, an opt-in tab-title countdown, and auto-starting
     # the focus timer when reading mode turns on. Action shortcuts are additive
-    # on the Phase 7 layer: when a shortcut aliases an enabled built-in (e.g.
+ #On the layer: when a shortcut aliases an enabled built-in (e.g.
     # `timer`/Alt+Shift+T vs `keyboard.shortcuts.timer_toggle`), the built-in
     # wins and the action shortcut is skipped so nothing double-fires; re-keying
     # or disabling that built-in lets the action shortcut take over.
     # action_cluster:
-    #   actions:                        # Phase 18 adds per-action shortcut + badge
+ #Actions: # adds per-action shortcut + badge
     #     - { id: keyboard_help, icon: "help",    label: "Keyboard shortcuts", shortcut: "?",             badge: none, enabled: true }
     #     - { id: notes,          icon: "notes",   label: "Open notes panel",  shortcut: "Ctrl+Shift+N", badge: none, enabled: true }
     #     - { id: timer,          icon: "timer",   label: "Focus timer",        shortcut: "Alt+Shift+T",  badge: time, enabled: true }
@@ -727,7 +727,7 @@ theme:
     #   display_format: "mm:ss"        #  mm:ss | m:ss | SS (seconds only)
     #   document_title: false          # Opt-in: live mm:ss + " — <page>" in the tab title while running
     #   badge_in_cluster: true         # Mirror the remaining time into the cluster timer action badge
-    # --- Phase 21: Standalone config builder (demo: ON to showcase the tool) --
+ #Standalone config builder (demo: ON to showcase the tool) --
     # The demo enables the dev tool so its two entry points are visible in
     # these docs: a gear action inside the action cluster and a pinned trigger
     # at the bottom of the TOC. Real sites keep the feature OFF by default.
@@ -737,7 +737,7 @@ theme:
       open_target: _blank         # _blank | _self
       cluster_action: true        # Gear action in the cluster when enabled
       toc_footer: true            # Pinned trigger at the bottom of the TOC
-    # --- Phase 21: Standalone config builder (optional, OFF by default) -----
+ #Standalone config builder (optional, OFF by default) -----
     # A completely self-contained HTML tool (`docs/assets/config-builder.html`)
     # that generates a mkdocs.yml from grouped questions, with a live YAML
     # preview and copy/download. It is a dev tool, NOT a runtime theme feature,
@@ -750,11 +750,11 @@ theme:
     #   open_target: "_blank"            #  _blank | _self
     #   cluster_action: true             # Gear action in the cluster when enabled
     #   toc_footer: true                 # Pinned trigger at the bottom of the TOC
-    # --- Phase 19: AI-readable content mode (optional) ------------------------
+ #AI-readable content mode (optional) ------------------------
     # Every page ships a watermarked markdown mirror alongside its HTML so AI
     # agents can `curl`/`webfetch` the raw source directly. The HTML output gains
     # a `<link rel="alternate" type="text/markdown">` head tag plus a
-    # `<!-- neoabs-ai-readable: <url> -->` comment for discoverability, an
+    # `<!-- void-ai-readable: <url> -->` comment for discoverability, an
     # `llms.txt` index and a concatenated `llms-full.txt` land at the site root,
     # and the mirror URLs are appended to sitemap.xml. Purely additive build
     # output: the rendered site is otherwise unchanged.
@@ -773,12 +773,12 @@ theme:
     #     enabled: true
     #     header: true                  # Metadata block at the top of every mirror
     #     footer: true                  # Short closing line at the bottom
-    #     text: "Generated by NeoAbs for AI agents."   # Marker line
+    #     text: "Generated by Void for AI agents."   # Marker line
     #     include_site: true            #   site_name
     #     include_url: true             #   canonical URL of the page
     #     include_generated: true       #   build timestamp (UTC)
     #     include_version: true         #   theme version
-    # --- Phase 7: Identity & i18n (optional) ----------------------------------
+ #Identity & i18n (optional) ----------------------------------
     # brand, chrome strings, breadcrumbs, nav icons, dark-aware images and the
     # auto PWA manifest. i18n keys are flat aliases over the nested surfaces the
     # client reads (search_, toc_, back_to_top, copy_to_clipboard, comments_title,
@@ -794,7 +794,7 @@ theme:
     #   manifest: true                # Emit manifest.webmanifest at the site root
     #   display: "standalone"         #  standalone | fullscreen | minimal-ui | browser
     #   icons: true                   # Local logo wins; a remote logo/favicon URL is fetched at build time
-    #   theme_color: ""               # Fallback: extra.neoabs_theme_color, then background_color
+    #   theme_color: ""               # Fallback: extra.void_theme_color, then background_color
     #   background_color: "#111114"
     #   start_url: ""                 # Fallback: site_url, then "/"
     # assets:
@@ -804,52 +804,52 @@ theme:
     #   timeout: 20                   # build-time fetch timeout (seconds) per file
 
 extra:
-  neoabs_version: 23
-  neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
-  neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
-  neoabs_favicon_dark: assets/images/favicon.svg
-  neoabs_favicon_light: assets/images/favicon-light.svg
-  # --- Phase 12: Global branding & meta (extra) -------------------------------
+  void_version: 23
+  void_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-void/main/docs/assets/images/logo.svg
+  void_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-void/main/docs/assets/images/logo-light.svg
+  void_favicon_dark: assets/images/favicon.svg
+  void_favicon_light: assets/images/favicon-light.svg
+ #Global branding & meta (extra) -------------------------------
   # Site identity + social metadata. All keys default to empty (absent); set a
   # value to publish the corresponding tag. The tagline/badge render next to the
   # header site name; og/twitter/theme-color/manifest tags land in <head>.
   # "__auto__" generates a per-page social-card og:image at build time
-  # (theme.neoabs.social_cards.cards must be enabled; Pillow required for PNG,
+  # (theme.void.social_cards.cards must be enabled; Pillow required for PNG,
   # otherwise a crisp SVG fallback is emitted).
-  neoabs_og_image: __auto__                      # Per-page auto social-card OG image
-  # neoabs_theme_color: "#000000"                        # Browser <meta name="theme-color">
-  # neoabs_manifest: "/manifest.json"                    # PWA manifest <link rel="manifest">
-  # neoabs_twitter_handle: "@username"                   # Twitter card @handle (also used for site/creator)
-  # neoabs_site_tagline: "Glass + NothingOS Design"      # Subtitle shown under the header site name
-  # neoabs_site_badge: "v0.1.2"                          # Version pill shown next to the site name
-  # --- Phase 10: community flywheel (extra) -----------------------------------
-  # "Powered by NeoAbs" footer credit + dot-matrix badge. Opt-in: set true to
+  void_og_image: __auto__                      # Per-page auto social-card OG image
+  # void_theme_color: "#000000"                        # Browser <meta name="theme-color">
+  # void_manifest: "/manifest.json"                    # PWA manifest <link rel="manifest">
+  # void_twitter_handle: "@username"                   # Twitter card @handle (also used for site/creator)
+  # void_site_tagline: "Glass + NothingOS Design"      # Subtitle shown under the header site name
+  # void_site_badge: "v0.1.2"                          # Version pill shown next to the site name
+ #Community flywheel (extra) -----------------------------------
+  # "Powered by Void" footer credit + dot-matrix badge. Opt-in: set true to
   # show a one-line credit linking back to the project (self-contained badge,
-  # no external image request). neoabs_showcase_url overrides the default repo.
-  neoabs_showcase: true
-  # neoabs_showcase_url: "https://github.com/rkriad585/mkdocs-neoabs"
-  # --- Phase 8: raw markup / <html> attribute injection (extra) ---------------
+  # no external image request). void_showcase_url overrides the default repo.
+  void_showcase: true
+  # void_showcase_url: "https://github.com/rkriad585/mkdocs-void"
+ #Raw markup / <html> attribute injection (extra) ---------------
   # Custom markup is injected verbatim (no escaping), so blocks are fine and
   # anything that is valid HTML there is valid on the page. All keys are empty
   # by default. <head> content lands after the theme styles; body_start is the
   # first child of <body>; body_end is the last element before </body>.
-  # neoabs_custom_head: |            # Raw HTML appended at the end of <head>
+  # void_custom_head: |            # Raw HTML appended at the end of <head>
   #   <meta name="theme-color" content="#000000">
   #   <link rel="preconnect" href="https://fonts.googleapis.com">
   #   <style>.my-class { color: red; }</style>
-  # neoabs_custom_body_start: |      # Raw HTML as the first child of <body>
+  # void_custom_body_start: |      # Raw HTML as the first child of <body>
   #   <div id="announcement">New release!</div>
-  # neoabs_custom_body_end: |        # Raw HTML just before </body>
+  # void_custom_body_end: |        # Raw HTML just before </body>
   #   <script>console.log("custom")</script>
-  # neoabs_custom_html_attrs: 'data-custom="true" lang="en"'   # Extra attributes on the <html> tag
+  # void_custom_html_attrs: 'data-custom="true" lang="en"'   # Extra attributes on the <html> tag
 
 plugins:
   - search
-  - neoabs:
-      # --- Phase 14: Plugin configuration passthrough (optional) ---------------
-      # Every theme setting can also be configured directly on the `- neoabs:`
+  - void:
+ #Plugin configuration passthrough (optional) ---------------
+      # Every theme setting can also be configured directly on the `- void:`
       # plugin entry, so a site can be tuned from a single place. Options given
-      # here are merged over `theme.neoabs` (the plugin wins on conflicts) and
+      # here are merged over `theme.void` (the plugin wins on conflicts) and
       # validated exactly like the theme keys — a wrong type or an out-of-range
       # value aborts the build with a clear message naming the offending key.
       # Nothing is required: leave this empty to keep the theme defaults.
@@ -859,8 +859,8 @@ plugins:
       # notes: true                  # Notes/annotations panel (default true)
       # notes_ttl: 259200000         # Notes TTL in ms (default 259200000 = 3 days)
       #
-      # The Phase 1-16 `theme.neoabs.*` keys are all accepted here as a
-      # convenience and behave identically (and win over `theme.neoabs`):
+ #The `theme.void.*` keys are all accepted here as a
+      # convenience and behave identically (and win over `theme.void`):
       # glass, dot_matrix, animation, border, colors, typography, spacing,
       # border_radius, transitions, shadows, components, header, footer,
       # sidebar, toc, search, keyboard, content, reading_mode, action_cluster,
@@ -907,7 +907,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Why NeoAbs: why-neoabs.md
+  - Why Void: why-void.md
   - Showcase: showcase.md
   - Getting Started:
     - Installation: getting-started/installation.md
@@ -939,7 +939,7 @@ nav:
     - Keyboard Shortcuts: components/shortcuts.md
     - Feedback & Announcements: components/engagement.md
   - Plugins:
-    - NeoAbs Plugin: plugins/neoabs.md
+    - Void Plugin: plugins/void.md
     - Third-Party Integrations: plugins/integrations.md
   - Architecture: architecture.md
   - Performance: performance.md

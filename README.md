@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="150">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/docs/assets/images/logo.svg" alt="Void Logo" height="150">
 </p>
 
-<h1 align="center">mkdocs-neoabs</h1>
+<h1 align="center">mkdocs-void</h1>
 
 <p align="center">
   <strong>Glass + NothingOS Design Language for MkDocs</strong>
@@ -20,16 +20,16 @@
 
 ## Overview
 
-NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics of Glass design system with the minimal, industrial clarity of NothingOS. It combines pure black canvas, glass morphism panels, dot-matrix typography, and Nothing Red accents into a cohesive documentation experience.
+Void is a custom MkDocs theme that blends the translucent, layered aesthetics of Glass design system with the minimal, industrial clarity of NothingOS. It combines pure black canvas, glass morphism panels, dot-matrix typography, and Nothing Red accents into a cohesive documentation experience.
 
 ## Screenshot
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/home.png" alt="NeoAbs home screen" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/home.png" alt="Void home screen" width="80%">
 </p>
 
 <p align="center">
-  <em>More screenshots: <a href="https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/screenshots.md">View all screenshots</a></em>
+  <em>More screenshots: <a href="https://github.com/rkriad585/mkdocs-void/blob/main/docs/screenshots.md">View all screenshots</a></em>
 </p>
 
 ---
@@ -81,10 +81,10 @@ NeoAbs is a custom MkDocs theme that blends the translucent, layered aesthetics 
 ## Installation
 
 ```bash
-pip install mkdocs-neoabs
+pip install mkdocs-void
 ```
 
-This installs both the NeoAbs theme and the companion MkDocs plugin automatically.
+This installs both the Void theme and the companion MkDocs plugin automatically.
 
 ---
 
@@ -93,7 +93,7 @@ This installs both the NeoAbs theme and the companion MkDocs plugin automaticall
 1. Install the package:
 
    ```bash
-   pip install mkdocs-neoabs
+   pip install mkdocs-void
    ```
 
 2. Create a new MkDocs project:
@@ -108,7 +108,7 @@ This installs both the NeoAbs theme and the companion MkDocs plugin automaticall
    ```yaml
    site_name: My Docs
    theme:
-     name: neoabs
+     name: void
    ```
 
 4. Start the dev server:
@@ -127,14 +127,14 @@ This installs both the NeoAbs theme and the companion MkDocs plugin automaticall
 
 ```yaml
 theme:
-  name: neoabs
+  name: void
 ```
 
 ### Full
 
 ```yaml
 theme:
-  name: neoabs
+  name: void
   favicon: assets/images/favicon.svg
   language: en
   palette:
@@ -158,7 +158,7 @@ theme:
     - content.code.copy
     - search.suggest
     - search.highlight
-  neoabs:
+  void:
     glass: medium
     dot_matrix: true
     animation: normal
@@ -166,17 +166,17 @@ theme:
 
 plugins:
   - search
-  - neoabs
+  - void
 ```
 
 ### Theme Options
 
 | Option | Values | Default | Description |
 |--------|--------|---------|-------------|
-| `neoabs.glass` | `"light"`, `"medium"`, `"heavy"` | `"medium"` | Glass panel blur intensity |
-| `neoabs.dot_matrix` | `true`, `false` | `true` | Dot-matrix background pattern |
-| `neoabs.animation` | `"normal"`, `"none"` | `"normal"` | Entrance and hover animations |
-| `neoabs.border` | `"thin"`, `"thick"`, `"none"` | `"thin"` | Glass panel border style |
+| `void.glass` | `"light"`, `"medium"`, `"heavy"` | `"medium"` | Glass panel blur intensity |
+| `void.dot_matrix` | `true`, `false` | `true` | Dot-matrix background pattern |
+| `void.animation` | `"normal"`, `"none"` | `"normal"` | Entrance and hover animations |
+| `void.border` | `"thin"`, `"thick"`, `"none"` | `"thin"` | Glass panel border style |
 
 ---
 
@@ -186,7 +186,7 @@ plugins:
 
 ```markdown
 !!! note "Glass Note"
-    This is a styled admonition with the NeoAbs design.
+    This is a styled admonition with the Void design.
 
 !!! warning "Accent Warning"
     This uses the Nothing Red accent color.
@@ -200,7 +200,7 @@ plugins:
 ````markdown
 ```python
 def hello():
-    print("Hello from NeoAbs")
+    print("Hello from Void")
 ```
 ````
 
@@ -210,18 +210,18 @@ def hello():
 === "Python"
 
     ```python
-    pip install mkdocs-neoabs
+    pip install mkdocs-void
     ```
 
 === "Node.js"
 
-    Not applicable — NeoAbs is a Python package.
+    Not applicable — Void is a Python package.
 ```
 
 ### Task Lists
 
 ```markdown
-- [x] Install NeoAbs
+- [x] Install Void
 - [x] Configure mkdocs.yml
 - [ ] Deploy documentation
 ```
@@ -232,30 +232,30 @@ def hello():
 
 | Page | Description |
 |------|-------------|
-| [Getting Started](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/getting-started/installation.md) | Installation and setup guide |
-| [Configuration](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/getting-started/configuration.md) | Full theme configuration reference |
-| [Design System Overview](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/design/overview.md) | How the design language works |
-| [Colors](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/design/colors.md) | Color tokens and palette reference |
-| [Typography](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/design/typography.md) | Font system and type scale |
-| [Glass Effects](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/design/glass.md) | Glass morphism implementation details |
-| [Buttons](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/components/buttons.md) | Button component variants |
-| [Cards](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/components/cards.md) | Card component with glass effects |
-| [Forms](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/components/forms.md) | Form elements and validation |
-| [NeoAbs Plugin](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/plugins/neoabs.md) | Plugin configuration and options |
-| [Architecture](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/architecture.md) | Project structure and internals |
-| [Development](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/development.md) | Contributing and dev workflow |
-| [Deployment](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/deployment.md) | Build and deployment guide |
-| [Troubleshooting](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/troubleshooting.md) | Common issues and fixes |
-| [Benchmarks](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/benchmarks.md) | CI-regenerated page-weight + Lighthouse receipts |
-| [FAQ](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/faq.md) | Frequently asked questions |
-| [Screenshots](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/screenshots.md) | Visual gallery of the theme |
-| [About](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/about.md) | Credits and license |
+| [Getting Started](https://github.com/rkriad585/mkdocs-void/blob/main/docs/getting-started/installation.md) | Installation and setup guide |
+| [Configuration](https://github.com/rkriad585/mkdocs-void/blob/main/docs/getting-started/configuration.md) | Full theme configuration reference |
+| [Design System Overview](https://github.com/rkriad585/mkdocs-void/blob/main/docs/design/overview.md) | How the design language works |
+| [Colors](https://github.com/rkriad585/mkdocs-void/blob/main/docs/design/colors.md) | Color tokens and palette reference |
+| [Typography](https://github.com/rkriad585/mkdocs-void/blob/main/docs/design/typography.md) | Font system and type scale |
+| [Glass Effects](https://github.com/rkriad585/mkdocs-void/blob/main/docs/design/glass.md) | Glass morphism implementation details |
+| [Buttons](https://github.com/rkriad585/mkdocs-void/blob/main/docs/components/buttons.md) | Button component variants |
+| [Cards](https://github.com/rkriad585/mkdocs-void/blob/main/docs/components/cards.md) | Card component with glass effects |
+| [Forms](https://github.com/rkriad585/mkdocs-void/blob/main/docs/components/forms.md) | Form elements and validation |
+| [Void Plugin](https://github.com/rkriad585/mkdocs-void/blob/main/docs/plugins/void.md) | Plugin configuration and options |
+| [Architecture](https://github.com/rkriad585/mkdocs-void/blob/main/docs/architecture.md) | Project structure and internals |
+| [Development](https://github.com/rkriad585/mkdocs-void/blob/main/docs/development.md) | Contributing and dev workflow |
+| [Deployment](https://github.com/rkriad585/mkdocs-void/blob/main/docs/deployment.md) | Build and deployment guide |
+| [Troubleshooting](https://github.com/rkriad585/mkdocs-void/blob/main/docs/troubleshooting.md) | Common issues and fixes |
+| [Benchmarks](https://github.com/rkriad585/mkdocs-void/blob/main/docs/benchmarks.md) | CI-regenerated page-weight + Lighthouse receipts |
+| [FAQ](https://github.com/rkriad585/mkdocs-void/blob/main/docs/faq.md) | Frequently asked questions |
+| [Screenshots](https://github.com/rkriad585/mkdocs-void/blob/main/docs/screenshots.md) | Visual gallery of the theme |
+| [About](https://github.com/rkriad585/mkdocs-void/blob/main/docs/about.md) | Credits and license |
 
 ---
 
 ## Interface
 
-NeoAbs is a **MkDocs theme** — it provides HTML templates, CSS, and JavaScript that render your Markdown documentation as a styled website.
+Void is a **MkDocs theme** — it provides HTML templates, CSS, and JavaScript that render your Markdown documentation as a styled website.
 
 ### Header
 
@@ -291,11 +291,11 @@ NeoAbs is a **MkDocs theme** — it provides HTML templates, CSS, and JavaScript
 ## Architecture
 
 ```tree
-mkdocs-neoabs/
-├── neoabs/                          # Python package
+mkdocs-void/
+├── void/                          # Python package
 │   ├── __init__.py                  # Version (0.1.2)
 │   ├── plugins/
-│   │   └── neoabs_plugin.py         # MkDocs plugin (theme defaults)
+│   │   └── void_plugin.py         # MkDocs plugin (theme defaults)
 │   ├── templates/
 │   │   ├── base.html                # Root HTML template
 │   │   ├── main.html                # Content wrapper
@@ -313,12 +313,12 @@ mkdocs-neoabs/
 │   │   │   └── javascripts/
 │   │   │       └── palette.html     # FOUC prevention script
 │   │   └── assets/
-│   │       ├── neoabs.css           # Compiled CSS
+│   │       ├── void.css           # Compiled CSS
 │   │       ├── stylesheets/
-│   │       │   ├── neoabs.scss      # Design tokens + base
+│   │       │   ├── void.scss      # Design tokens + base
 │   │       │   └── components.scss  # Component styles
 │   │       ├── javascripts/
-│   │       │   └── neoabs.js        # Theme JS (vanilla ES6+)
+│   │       │   └── void.js        # Theme JS (vanilla ES6+)
 │   │       └── images/
 │   │           ├── logo.svg         # Theme logo
 │   │           └── favicon.svg      # Browser favicon
@@ -342,7 +342,7 @@ mkdocs-neoabs/
 ```mermaid
 graph TD
     A[Markdown Files] --> B[MkDocs]
-    B --> C[neoabs_plugin.py]
+    B --> C[void_plugin.py]
     C --> D[HTML Templates]
     D --> E[base.html]
     E --> F[partials/header.html]
@@ -351,22 +351,22 @@ graph TD
     E --> I[partials/toc.html]
     E --> J[partials/footer.html]
     E --> K[partials/search.html]
-    E --> L[assets/neoabs.css]
-    E --> M[assets/javascripts/neoabs.js]
-    N[neoabs.scss] --> O[tools/build.js]
-    O --> P[neoabs.css]
+    E --> L[assets/void.css]
+    E --> M[assets/javascripts/void.js]
+    N[void.scss] --> O[tools/build.js]
+    O --> P[void.css]
 ```
 
 ### CSS Architecture
 
 The stylesheet is organized in layers:
 
-1. **Design Tokens** (`neoabs.scss` `:root`) — CSS custom properties for colors, spacing, typography, glass, shadows, z-index, animations
+1. **Design Tokens** (`void.scss` `:root`) — CSS custom properties for colors, spacing, typography, glass, shadows, z-index, animations
 2. **Light Mode Overrides** (`[data-md-color-scheme="default"]`) — Token overrides for light theme
-3. **Glass Intensity Variants** — Light/medium/heavy glass via `data-md-neoabs-glass` attribute
+3. **Glass Intensity Variants** — Light/medium/heavy glass via `data-md-void-glass` attribute
 4. **Base Resets** — Box-sizing, font smoothing, reduced motion
 5. **Dot Matrix Overlay** — Radial gradient pattern
-6. **Glass Components** — `.neoabs-glass`, `.neoabs-card`
+6. **Glass Components** — `.void-glass`, `.void-card`
 7. **Typography** — Display, labels, body, code
 8. **Components** (`components.scss`) — Layout, header, nav, content, TOC, footer, search, tabs, admonitions, code blocks, tables, and more
 
@@ -394,8 +394,8 @@ The stylesheet is organized in layers:
 ### Clone and Install
 
 ```bash
-git clone https://github.com/rkriad585/mkdocs-neoabs.git
-cd mkdocs-neoabs
+git clone https://github.com/rkriad585/mkdocs-void.git
+cd mkdocs-void
 pip install -e .
 npm install
 ```
@@ -427,7 +427,7 @@ mkdocs serve
 ### Lint
 
 ```bash
-ruff check neoabs/
+ruff check void/
 ```
 
 ### Clean
@@ -454,11 +454,11 @@ make help       # Show all commands
 ## Community
 
 - **Discussions** — ask questions and share showsites at
-  [github.com/rkriad585/mkdocs-neoabs/discussions](https://github.com/rkriad585/mkdocs-neoabs/discussions)
+  [github.com/rkriad585/mkdocs-void/discussions](https://github.com/rkriad585/mkdocs-void/discussions)
 - **Good first issues** — browse
-  [issues labeled `good first issue`](https://github.com/rkriad585/mkdocs-neoabs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  [issues labeled `good first issue`](https://github.com/rkriad585/mkdocs-void/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   to start contributing
-- **Translations** — see the [Translating NeoAbs](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/identity.md#translating-neoabs) guide
+- **Translations** — see the [Translating Void](https://github.com/rkriad585/mkdocs-void/blob/main/docs/identity.md#translating-void) guide
 - **Sponsor** — fund development via [GitHub Sponsors](https://github.com/sponsors/rkriad585)
 
 ---
@@ -477,6 +477,6 @@ make help       # Show all commands
 
 *Make documentation feel app-like — fast, private, distinctive.*
 
-[GitHub](https://github.com/rkriad585/mkdocs-neoabs) · [Docs](https://rkriad585.github.io/mkdocs-neoabs) · [Changelog](https://github.com/rkriad585/mkdocs-neoabs/blob/main/CHANGELOG.md) · [Discussions](https://github.com/rkriad585/mkdocs-neoabs/discussions)
+[GitHub](https://github.com/rkriad585/mkdocs-void) · [Docs](https://rkriad585.github.io/mkdocs-void) · [Changelog](https://github.com/rkriad585/mkdocs-void/blob/main/CHANGELOG.md) · [Discussions](https://github.com/rkriad585/mkdocs-void/discussions)
 
 </div>

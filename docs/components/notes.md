@@ -4,7 +4,7 @@ date: 2026-09-07
 
 # Notes & Annotations
 
-NeoAbs ships a **browser-local** note layer. Open the notes panel and save
+Void ships a **browser-local** note layer. Open the notes panel and save
 lightweight sticky notes; they persist in your browser across reloads and are
 **global** — they appear on every page. Notes are never sent to a server.
 
@@ -37,7 +37,7 @@ same set from anywhere on the site.
 
 ## Storage & retention
 
-Notes are stored in `localStorage` (`neoabs-notes`). Each note has a timestamp
+Notes are stored in `localStorage` (`void-notes`). Each note has a timestamp
 and is **automatically purged after 3 days** (default). Because storage is
 per-browser, your notes don't travel between devices.
 
@@ -47,7 +47,7 @@ Control the feature from `mkdocs.yml`:
 
 ```yaml
 theme:
-  neoabs:
+  void:
     notes: true        # disable to turn off the whole feature
     notes_ttl: 259200000   # retention window in milliseconds (3 days)
 ```

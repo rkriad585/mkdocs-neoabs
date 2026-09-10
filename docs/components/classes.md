@@ -5,7 +5,7 @@ title: CSS Classes in Markdown
 
 # Adding CSS Classes in Markdown
 
-NeoAbs enables the `attr_list` extension, which lets you **attach component classes (and other attributes) directly to Markdown elements** using a `{.class .another}` suffix. This is the recommended way to style content without writing raw HTML.
+Void enables the `attr_list` extension, which lets you **attach component classes (and other attributes) directly to Markdown elements** using a `{.class .another}` suffix. This is the recommended way to style content without writing raw HTML.
 
 !!! note "Enabled by default"
     `attr_list` and `md_in_html` are both enabled in the theme. No configuration required.
@@ -14,13 +14,13 @@ NeoAbs enables the `attr_list` extension, which lets you **attach component clas
 
 Append `{ .lang .class }` to the opening fence to add classes to the resulting `<pre><code>` — useful for sizing or styling a block:
 
-```py { .neoabs-card .neoabs-p-4 }
-print("Hello NeoAbs")
+```py { .void-card .void-p-4 }
+print("Hello Void")
 ```
 
 ````markdown
-```py { .neoabs-card .neoabs-p-4 }
-print("Hello NeoAbs")
+```py { .void-card .void-p-4 }
+print("Hello Void")
 ```
 ````
 
@@ -29,25 +29,25 @@ The classes land on the `<code>` element, so you can target them in custom CSS.
 ## On images
 
 ```markdown
-![alt](img.png){ .neoabs-img-round width="140" }
+![alt](img.png){ .void-img-round width="140" }
 ```
 
 Both classes and other attributes (`width`, `height`, `loading`) are applied.
 
 ```
-![Round](img.png){ .neoabs-img-round width="140" }
-![Ghost](img.png){ .neoabs-img-ghost }
-![Banner](img.png){ .neoabs-image--banner }
+![Round](img.png){ .void-img-round width="140" }
+![Ghost](img.png){ .void-img-ghost }
+![Banner](img.png){ .void-image--banner }
 ```
 
 ## On headings
 
 ```markdown
-## Installation { .neoabs-accent }
+## Installation { .void-accent }
 ```
 
 ```html
-<h2 class="neoabs-accent">Installation</h2>
+<h2 class="void-accent">Installation</h2>
 ```
 
 ## On any block element
@@ -55,13 +55,13 @@ Both classes and other attributes (`width`, `height`, `loading`) are applied.
 Attach classes to paragraphs, lists, blockquotes, and more:
 
 ```markdown
-> A highlighted quote { .neoabs-card }
+> A highlighted quote { .void-card }
 ```
 
 ```
 | Head | Head |
 |------|------|
-| A    | B    | { .neoabs-table }
+| A    | B    | { .void-table }
 ```
 
 ## Combining with your own classes

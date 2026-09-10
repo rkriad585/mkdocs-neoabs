@@ -1,0 +1,81 @@
+{% set ns = namespace(n=0) %}
+
+{% macro nav_id() %}{%- set ns.n = ns.n + 1 -%}{{ "nav-" ~ ns.n }}{% endmacro %}
+
+{% set _sbr_cfg = config.theme.void.sidebar if (config.theme.void is mapping and config.theme.void.sidebar is mapping) else {} %}
+{#Page-level front-matter override — whole-sidebar hide is applied by
+   base.html; keep the flag consistent if this partial is included standalone. #}
+{% set _pg_sidebar_hide = _pg_sidebar_hide if (_pg_sidebar_hide is defined) else ((page.meta.void is mapping and page.meta.void.sidebar is mapping and page.meta.void.sidebar.show == false) if (page and page.meta and page.meta.void is mapping) else false) %}
+{% set _sbr_nav_cfg = _sbr_cfg.get("nav") if (_sbr_cfg.get("nav") is mapping) else {} %}
+{% set _sbr_sec_cfg = _sbr_cfg.get("sections") if (_sbr_cfg.get("sections") is mapping) else {} %}
+{% set _sbr_sections_show = _sbr_sec_cfg.show if (_sbr_sec_cfg.show is defined) else true %}
+{% set _sbr_sections_style = _sbr_sec_cfg.style if (_sbr_sec_cfg.style is defined) else "uppercase" %}
+{% set _sbr_toggles = _sbr_nav_cfg.show_toggle_buttons if (_sbr_nav_cfg.show_toggle_buttons is defined) else true %}
+{% set _sbr_max_depth = _sbr_nav_cfg.max_depth if (_sbr_nav_cfg.max_depth is defined) else none %}
+{% set _sbr_sidebar_glass = _sbr_cfg.glass if (_sbr_cfg.glass is defined) else true %}
+{% set _sbr_sidebar_blur = _sbr_cfg.blur if (_sbr_cfg.blur is defined) else true %}
+{% set _sbr_active_border = _sbr_nav_cfg.show_active_border if (_sbr_nav_cfg.show_active_border is defined) else true %}
+{% set _sbr_indent_nested = _sbr_nav_cfg.indent_nested if (_sbr_nav_cfg.indent_nested is defined) else true %}
+{% set _sbr_style = namespace(parts=[]) %}
+{% if not _sbr_indent_nested %}
+{% set _sbr_style.parts = _sbr_style.parts + ["--void-nav-indent: 0"] %}
+{% elif _sbr_nav_cfg.indent_size is defined %}
+{% set _sbr_style.parts = _sbr_style.parts + ["--void-nav-indent: " ~ _sbr_nav_cfg.indent_size] %}
+{% endif %}
+{% if _sbr_nav_cfg.active_border_color is defined and _sbr_nav_cfg.active_border_color %}
+{% set _sbr_style.parts = _sbr_style.parts + ["--void-nav-active-border-color: " ~ _sbr_nav_cfg.active_border_color] %}
+{% endif %}
+
+{% macro render_nav_item(nav_item, depth=1) %}
+{% set active = "void-nav__link--active" if nav_item.active %}
+{% set _nav_meta = nav_item.meta if (nav_item.is_page and nav_item.meta) else {} %}
+{% set _nav_icon = _nav_meta.get("icon") if (_nav_meta is mapping and _nav_meta.get("icon")) else "" %}
+{% if nav_item.children %}
+{% set _id = nav_id() %}
+<li class="void-nav__item void-nav__item--parent">
+  {% if nav_item.url %}
+  <a href="{{ nav_item.url | url }}" class="void-nav__link {{ active }}" title="{{ nav_item.title }}" {% if nav_item.active %}aria-current="page"{% endif %}>
+    {% if _nav_icon %}<span class="void-nav__icon" aria-hidden="true">{{ _nav_icon }}</span>{% endif %}
+    {{ nav_item.title }}
+  </a>
+  {% elif _sbr_sections_show and _sbr_toggles %}
+  <button type="button" class="void-nav__toggle void-nav__toggle--open {% if active %}void-nav__link--active{% endif %}" aria-expanded="true" aria-controls="{{ _id }}">
+    <span class="void-nav__title">{{ nav_item.title }}</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+    </svg>
+  </button>
+  {% elif _sbr_sections_show %}
+  <span class="void-nav__toggle void-nav__toggle--static {% if active %}void-nav__link--active{% endif %}">
+    <span class="void-nav__title void-nav__title--section">{{ nav_item.title }}</span>
+  </span>
+  {% endif %}
+  <ul class="void-nav__list void-nav__list--nested" id="{{ _id }}">
+    {% if not _sbr_max_depth or depth < _sbr_max_depth %}
+    {% for child in nav_item.children %}
+    {{ render_nav_item(child, depth + 1) }}
+    {% endfor %}
+    {% endif %}
+  </ul>
+</li>
+{% else %}
+<li class="void-nav__item {{ active }}">
+  <a href="{{ nav_item.url | url }}" class="void-nav__link {{ active }}" title="{{ nav_item.title }}" {% if nav_item.active %}aria-current="page"{% endif %}>
+    {% if _nav_icon %}<span class="void-nav__icon" aria-hidden="true">{{ _nav_icon }}</span>{% endif %}
+    {{ nav_item.title }}
+  </a>
+</li>
+{% endif %}
+{% endmacro %}
+
+<nav class="void-nav" data-md-component="nav" aria-label="{{ _i18n.get('navigation', {}).get('label', 'Navigation') if (_i18n is mapping) else 'Navigation' }}"{% if not _sbr_sidebar_glass %} data-md-void-sidebar-glass="false"{% endif %}{% if not _sbr_sidebar_blur %} data-md-void-sidebar-blur="false"{% endif %}{% if not _sbr_active_border %} data-md-void-nav-active-border="false"{% endif %}{% if _sbr_sections_style != "uppercase" %} data-md-void-nav-sections-style="{{ _sbr_sections_style }}"{% endif %}{% if _sbr_style.parts %} style="{{ _sbr_style.parts | join('; ') }}"{% endif %}>
+  <div class="void-nav__scroll">
+    <div class="void-nav__inner">
+      <ul class="void-nav__list">
+        {% for nav_item in nav %}
+        {{ render_nav_item(nav_item) }}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</nav>

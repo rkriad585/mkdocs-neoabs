@@ -17,7 +17,7 @@ watch: ## Watch and rebuild CSS on changes
 	npm start
 
 lint: ## Run linter on Python code
-	ruff check neoabs/
+	ruff check void/
 
 clean: ## Remove build artifacts
 	rm -rf site/ dist/ build/ *.egg-info .ruff_cache/

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <clipPath id="upper">
+      <polygon points="130,110 440,110 440,320 130,490"/>
+    </clipPath>
+    <clipPath id="lower">
+      <polygon points="130,490 440,320 440,530 130,530"/>
+    </clipPath>
+  </defs>
+  <!-- V with two-tone split -->
+  <g clip-path="url(#upper)">
+    <path d="M184 490 L272 150" stroke="#ff3030" stroke-width="48" stroke-linecap="square" fill="none"/>
+    <path d="M360 150 L272 490" stroke="#ff3030" stroke-width="48" stroke-linecap="square" fill="none"/>
+  </g>
+  <g clip-path="url(#lower)">
+    <path d="M184 490 L272 150" stroke="#FFFFFF" stroke-width="48" stroke-linecap="square" fill="none"/>
+    <path d="M360 150 L272 490" stroke="#FFFFFF" stroke-width="48" stroke-linecap="square" fill="none"/>
+  </g>
+  <!-- O -->
+  <path d="M508 150 L580 150 L620 190 L620 450 L580 490 L508 490 L468 450 L468 190 Z" stroke="#FFFFFF" stroke-width="48" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+  <!-- I -->
+  <path d="M754 490 L754 150" stroke="#FFFFFF" stroke-width="48" stroke-linecap="square" fill="none"/>
+  <!-- D -->
+  <path d="M888 490 L888 150 L1000 150 L1040 190 L1040 450 L1000 490 L888 490" stroke="#FFFFFF" stroke-width="48" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+</svg>

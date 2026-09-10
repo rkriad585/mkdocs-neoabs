@@ -5,7 +5,7 @@ title: Design System Overview
 
 # Design System Overview
 
-NeoAbs blends two design languages into one coherent system: the translucency and depth of **Glass** with the minimalism and grid-driven identity of **NothingOS**.
+Void blends two design languages into one coherent system: the translucency and depth of **Glass** with the minimalism and grid-driven identity of **NothingOS**.
 
 ## Design Principles
 
@@ -19,7 +19,7 @@ NeoAbs blends two design languages into one coherent system: the translucency an
 
 ## Color System
 
-NeoAbs defines a small, tightly controlled palette centered on Nothing Red (`#ff3030`) against a pure black canvas. Tokens are mapped to CSS custom properties on `:root` so they can be overridden without touching component styles.
+Void defines a small, tightly controlled palette centered on Nothing Red (`#ff3030`) against a pure black canvas. Tokens are mapped to CSS custom properties on `:root` so they can be overridden without touching component styles.
 
 See [Colors](colors.md) for the full token reference.
 
@@ -60,15 +60,15 @@ All components inherit from the design tokens. Changing the accent color or glas
 ## Architecture
 
 ```
-neoabs/
+void/
 ├── templates/
 │   ├── assets/
-│   │   ├── neoabs.css              # Compiled output
+│   │   ├── void.css              # Compiled output
 │   │   ├── stylesheets/
-│   │   │   ├── neoabs.scss         # Design tokens, resets, glass, typography
+│   │   │   ├── void.scss         # Design tokens, resets, glass, typography
 │   │   │   └── components.scss     # All component styles
 │   │   ├── javascripts/
-│   │   │   └── neoabs.js           # Theme JavaScript
+│   │   │   └── void.js           # Theme JavaScript
 │   │   └── images/
 │   │       ├── logo.svg
 │   │       └── favicon.svg
@@ -76,7 +76,7 @@ neoabs/
 │   ├── base.html                   # Root template
 │   └── mkdocs_theme.yml            # Theme registration
 ├── plugins/
-│   └── neoabs_plugin.py            # MkDocs plugin
+│   └── void_plugin.py            # MkDocs plugin
 └── __init__.py                     # Version
 ```
 

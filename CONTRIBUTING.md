@@ -1,14 +1,14 @@
-# Contributing to NeoAbs
+# Contributing to Void
 
-Thank you for your interest in contributing to mkdocs-neoabs.
+Thank you for your interest in contributing to mkdocs-void.
 
 ## Getting Started
 
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/your-username/mkdocs-neoabs.git
-   cd mkdocs-neoabs
+   git clone https://github.com/your-username/mkdocs-void.git
+   cd mkdocs-void
    ```
 3. Install dependencies:
    ```bash
@@ -49,14 +49,14 @@ mkdocs serve
 ### Lint Python
 
 ```bash
-ruff check neoabs/
+ruff check void/
 ```
 
 ## Project Structure
 
 ```
-mkdocs-neoabs/
-├── neoabs/
+mkdocs-void/
+├── void/
 │   ├── plugins/          # MkDocs plugin
 │   ├── templates/        # Theme templates and assets
 │   │   ├── partials/     # HTML partials
@@ -79,7 +79,7 @@ mkdocs-neoabs/
 ## Guidelines
 
 - Follow the existing code style
-- Use BEM naming with `neoabs-` prefix for CSS classes
+- Use BEM naming with `void-` prefix for CSS classes
 - Keep JavaScript vanilla (no frameworks)
 - Test changes across dark and light modes
 - Verify responsive behavior on mobile viewports
@@ -103,26 +103,26 @@ so it is part of the feature, not a nicety.
 
 ## Reporting Issues
 
-Use the [GitHub issue tracker](https://github.com/rkriad585/mkdocs-neoabs/issues) to report bugs or request features.
+Use the [GitHub issue tracker](https://github.com/rkriad585/mkdocs-void/issues) to report bugs or request features.
 
 ## Good First Issues
 
 New to the project? Start with a
 
-[`good first issue`](https://github.com/rkriad585/mkdocs-neoabs/labels/good%20first%20issue)
+[`good first issue`](https://github.com/rkriad585/mkdocs-void/labels/good%20first%20issue)
 — issues we tag as small, well-scoped, and friendly to a first contributor.
-[`help wanted`](https://github.com/rkriad585/mkdocs-neoabs/labels/help%20wanted)
+[`help wanted`](https://github.com/rkriad585/mkdocs-void/labels/help%20wanted)
 issues need a maintainer assist and are fair game too. Say “I'll take this” in
 the issue thread before opening a PR so nobody collides.
 
 ## Translations
 
-NeoAbs chrome strings live in `_NEOABS_DEFAULT_I18N` (`neoabs/plugins/neoabs_plugin.py`)
-and are overridable per site with `theme.neoabs.i18n` — see
-[Translating NeoAbs](docs/identity.md#translating-neoabs) for the full
+Void chrome strings live in `_VOID_DEFAULT_I18N` (`void/plugins/void_plugin.py`)
+and are overridable per site with `theme.void.i18n` — see
+[Translating Void](docs/identity.md#translating-void) for the full
 onboarding (which keys exist, how flat aliases map, how to verify a build).
 
 ## Community
 
-- [Discussions](https://github.com/rkriad585/mkdocs-neoabs/discussions) — questions, showsites, ideas
+- [Discussions](https://github.com/rkriad585/mkdocs-void/discussions) — questions, showsites, ideas
 - [GitHub Sponsors](https://github.com/sponsors/rkriad585) — fund development

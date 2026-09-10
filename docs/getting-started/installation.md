@@ -6,7 +6,7 @@ icon: "🚀"
 
 # Installation
 
-Get NeoAbs up and running in a few steps.
+Get Void up and running in a few steps.
 
 ## Requirements
 
@@ -17,11 +17,11 @@ Get NeoAbs up and running in a few steps.
 ## Install
 
 ```bash
-pip install mkdocs-neoabs
+pip install mkdocs-void
 ```
 
 !!! note
-    NeoAbs depends on MkDocs. If you don't have it installed yet, it will be pulled in automatically.
+    Void depends on MkDocs. If you don't have it installed yet, it will be pulled in automatically.
 
 ## Create a project
 
@@ -37,7 +37,7 @@ Replace the contents of `mkdocs.yml`:
 ```yaml
 site_name: My Docs
 theme:
-  name: neoabs
+  name: void
 ```
 
 ## Serve
@@ -46,7 +46,7 @@ theme:
 mkdocs serve
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. You should see the NeoAbs theme with glass panels, dot matrix background, and the default palette.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. You should see the Void theme with glass panels, dot matrix background, and the default palette.
 
 ## Verify installation
 
@@ -54,7 +54,7 @@ Run the following to confirm everything is in place:
 
 ```bash
 mkdocs --version
-pip show mkdocs-neoabs
+pip show mkdocs-void
 ```
 
 !!! tip

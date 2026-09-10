@@ -3,19 +3,19 @@ date: 2026-09-07
 title: Screenshots
 ---
 
-# NeoAbs — Screenshots
+# Void — Screenshots
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="100">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/docs/assets/images/logo.svg" alt="Void Logo" height="100">
 </p>
 
-Visual gallery of the NeoAbs theme — real browser captures framed like macOS
+Visual gallery of the Void theme — real browser captures framed like macOS
 windows (and a phone bezel for mobile), all live from the repository.
 
 ## Home
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/home.png" alt="NeoAbs home page" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/home.png" alt="Void home page" width="80%">
 </p>
 
 <p align="center"><em>The home page with glass navigation, dot-matrix background, and Nothing Red accents.</em></p>
@@ -23,7 +23,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Dark Mode
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/dark-mode.png" alt="Dark mode" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/dark-mode.png" alt="Dark mode" width="80%">
 </p>
 
 <p align="center"><em>Default dark mode with pure black canvas and translucent glass panels.</em></p>
@@ -31,7 +31,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Light Mode
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/light-mode.png" alt="Light mode" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/light-mode.png" alt="Light mode" width="80%">
 </p>
 
 <p align="center"><em>Light mode with white canvas and subtle glass effects.</em></p>
@@ -39,7 +39,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Search
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/search.png" alt="Search modal" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/search.png" alt="Search modal" width="80%">
 </p>
 
 <p align="center"><em>Full-screen search modal with instant results and keyboard navigation.</em></p>
@@ -47,7 +47,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Sidebar Navigation
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/sidebar.png" alt="Sidebar navigation" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/sidebar.png" alt="Sidebar navigation" width="80%">
 </p>
 
 <p align="center"><em>Collapsible sidebar with section grouping and active page tracking.</em></p>
@@ -55,7 +55,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Code Blocks
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/code-blocks.png" alt="Code blocks" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/code-blocks.png" alt="Code blocks" width="80%">
 </p>
 
 <p align="center"><em>Syntax-highlighted code blocks with one-click copy button.</em></p>
@@ -63,7 +63,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Mobile
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/mobile.png" alt="Mobile view" width="40%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/mobile.png" alt="Mobile view" width="40%">
 </p>
 
 <p align="center"><em>Responsive mobile layout with drawer navigation.</em></p>
@@ -71,7 +71,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Installation
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/getting-started.png" alt="Installation" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/getting-started.png" alt="Installation" width="80%">
 </p>
 
 <p align="center"><em>Getting started — quick install guide.</em></p>
@@ -79,7 +79,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Configuration
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/configuration.png" alt="Configuration" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/configuration.png" alt="Configuration" width="80%">
 </p>
 
 <p align="center"><em>Full configuration reference for the theme and plugin.</em></p>
@@ -87,7 +87,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Design Overview
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/design-overview.png" alt="Design overview" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/design-overview.png" alt="Design overview" width="80%">
 </p>
 
 <p align="center"><em>Design language overview — glass depth and NothingOS minimalism.</em></p>
@@ -95,7 +95,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Color Tokens
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/colors.png" alt="Color tokens" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/colors.png" alt="Color tokens" width="80%">
 </p>
 
 <p align="center"><em>Color token system with semantic roles.</em></p>
@@ -103,7 +103,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Typography
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/typography.png" alt="Typography" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/typography.png" alt="Typography" width="80%">
 </p>
 
 <p align="center"><em>Dot-matrix inspired typographic scale.</em></p>
@@ -111,7 +111,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Glass Effects
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/glass.png" alt="Glass effects" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/glass.png" alt="Glass effects" width="80%">
 </p>
 
 <p align="center"><em>Frosted glass panels and dynamic transparency.</em></p>
@@ -119,7 +119,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Buttons
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/buttons.png" alt="Buttons" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/buttons.png" alt="Buttons" width="80%">
 </p>
 
 <p align="center"><em>Button styles and states.</em></p>
@@ -127,7 +127,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Cards
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/cards.png" alt="Cards" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/cards.png" alt="Cards" width="80%">
 </p>
 
 <p align="center"><em>Card components for content layouts.</em></p>
@@ -135,7 +135,7 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Forms
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/forms.png" alt="Forms" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/forms.png" alt="Forms" width="80%">
 </p>
 
 <p align="center"><em>Form inputs, selects, and validation states.</em></p>
@@ -143,10 +143,10 @@ windows (and a phone bezel for mobile), all live from the repository.
 ## Plugin
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/Screenshots/plugin.png" alt="NeoAbs plugin" width="80%">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/Screenshots/plugin.png" alt="Void plugin" width="80%">
 </p>
 
-<p align="center"><em>The NeoAbs MkDocs plugin — full configuration reference.</em></p>
+<p align="center"><em>The Void MkDocs plugin — full configuration reference.</em></p>
 
 ## Generating Screenshots
 

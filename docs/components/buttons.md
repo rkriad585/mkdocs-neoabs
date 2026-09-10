@@ -5,119 +5,119 @@ title: Buttons
 
 # Buttons
 
-NeoAbs provides button classes built on the design tokens. All buttons use
+Void provides button classes built on the design tokens. All buttons use
 Space Grotesk and inherit accent colors from the palette.
 
 !!! note
     The following classes are built into the theme — no custom CSS required.
 
 !!! tip
-    Clicking any `.neoabs-btn` shows a brief toast notification (e.g. "Clicked: Default") and a pressed-scale feedback effect. This is wired up automatically by `initUIExamples()` — no extra JavaScript needed.
+    Clicking any `.void-btn` shows a brief toast notification (e.g. "Clicked: Default") and a pressed-scale feedback effect. This is wired up automatically by `initUIExamples()` — no extra JavaScript needed.
 
 ## Default
 
 The standard filled button.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn">Default</button>
+<button class="void-btn">Default</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn">Default</button>
+<button class="void-btn">Default</button>
 ```
 
 ## Accent (outline)
 
 A bordered variant with transparent background.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn neoabs-btn--accent">Accent</button>
+<button class="void-btn void-btn--accent">Accent</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn neoabs-btn--accent">Accent</button>
+<button class="void-btn void-btn--accent">Accent</button>
 ```
 
 ## Ghost
 
 No background, no border. Muted text that highlights on hover.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn neoabs-btn--ghost">Ghost</button>
+<button class="void-btn void-btn--ghost">Ghost</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn neoabs-btn--ghost">Ghost</button>
+<button class="void-btn void-btn--ghost">Ghost</button>
 ```
 
 ## Pill
 
 Rounded, filled, and prominent — best for key calls to action.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn neoabs-btn--pill">Pill</button>
+<button class="void-btn void-btn--pill">Pill</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn neoabs-btn--pill">Pill</button>
+<button class="void-btn void-btn--pill">Pill</button>
 ```
 
 ## Sizes
 
 Add `--sm` or `--lg` to any variant to adjust size.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn neoabs-btn--sm">Small</button>
-<button class="neoabs-btn">Default</button>
-<button class="neoabs-btn neoabs-btn--lg">Large</button>
+<button class="void-btn void-btn--sm">Small</button>
+<button class="void-btn">Default</button>
+<button class="void-btn void-btn--lg">Large</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn neoabs-btn--sm">Small</button>
-<button class="neoabs-btn">Default</button>
-<button class="neoabs-btn neoabs-btn--lg">Large</button>
+<button class="void-btn void-btn--sm">Small</button>
+<button class="void-btn">Default</button>
+<button class="void-btn void-btn--lg">Large</button>
 ```
 
 ## Disabled
 
 Add the native `disabled` attribute to dim and deactivate any button.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn" disabled>Disabled</button>
-<button class="neoabs-btn neoabs-btn--accent" disabled>Disabled</button>
-<button class="neoabs-btn neoabs-btn--ghost" disabled>Disabled</button>
+<button class="void-btn" disabled>Disabled</button>
+<button class="void-btn void-btn--accent" disabled>Disabled</button>
+<button class="void-btn void-btn--ghost" disabled>Disabled</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn" disabled>Disabled</button>
-<button class="neoabs-btn neoabs-btn--accent" disabled>Disabled</button>
-<button class="neoabs-btn neoabs-btn--ghost" disabled>Disabled</button>
+<button class="void-btn" disabled>Disabled</button>
+<button class="void-btn void-btn--accent" disabled>Disabled</button>
+<button class="void-btn void-btn--ghost" disabled>Disabled</button>
 ```
 
 ## Combining variants
 
 Modifiers can be mixed freely.
 
-<div class="neoabs-container" markdown>
+<div class="void-container" markdown>
 
-<button class="neoabs-btn neoabs-btn--accent neoabs-btn--pill">Accent Pill</button>
-<button class="neoabs-btn neoabs-btn--ghost neoabs-btn--lg">Large Ghost</button>
+<button class="void-btn void-btn--accent void-btn--pill">Accent Pill</button>
+<button class="void-btn void-btn--ghost void-btn--lg">Large Ghost</button>
 
 </div>
 
 ```html
-<button class="neoabs-btn neoabs-btn--accent neoabs-btn--pill">Accent Pill</button>
-<button class="neoabs-btn neoabs-btn--ghost neoabs-btn--lg">Large Ghost</button>
+<button class="void-btn void-btn--accent void-btn--pill">Accent Pill</button>
+<button class="void-btn void-btn--ghost void-btn--lg">Large Ghost</button>
 ```

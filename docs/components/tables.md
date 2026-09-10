@@ -58,10 +58,10 @@ Rows highlight on hover and the header is a distinct glass band:
 
 ## HTML Tables with Classes
 
-For more control, use a raw HTML table and add the `neoabs-table` class (and optionally wrap it in a `neoabs-table__wrap` for responsive scrolling):
+For more control, use a raw HTML table and add the `void-table` class (and optionally wrap it in a `void-table__wrap` for responsive scrolling):
 
-<div class="neoabs-table__wrap">
-  <table class="neoabs-table">
+<div class="void-table__wrap">
+  <table class="void-table">
     <thead>
       <tr>
         <th>Keyboard</th>
@@ -82,8 +82,8 @@ For more control, use a raw HTML table and add the `neoabs-table` class (and opt
 </div>
 
 ```html
-<div class="neoabs-table__wrap">
-  <table class="neoabs-table">
+<div class="void-table__wrap">
+  <table class="void-table">
     <thead>
       <tr><th>Keyboard</th><th>Action</th></tr>
     </thead>
@@ -97,6 +97,6 @@ For more control, use a raw HTML table and add the `neoabs-table` class (and opt
 
 ## Styling Notes
 
-- **`.neoabs-table__wrap`** — adds a scrollable container so wide tables scroll horizontally on small screens.
+- **`.void-table__wrap`** — adds a scrollable container so wide tables scroll horizontally on small screens.
 - Plain `<table>` (Markdown output) is styled identically without needing any class.
 - Header cells use the theme's mono font and uppercase tracking for a consistent technical look.

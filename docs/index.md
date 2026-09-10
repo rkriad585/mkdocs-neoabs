@@ -3,12 +3,12 @@ date: 2026-09-07
 ---
 
 <p align="center">
-  <img src="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg" alt="NeoAbs Logo" height="120"
-       data-md-scheme-dark="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo.svg"
-       data-md-scheme-light="https://github.com/rkriad585/mkdocs-neoabs/raw/main/logo/logo-light.svg">
+  <img src="https://github.com/rkriad585/mkdocs-void/raw/main/docs/assets/images/logo.svg" alt="Void Logo" height="120"
+       data-md-scheme-dark="https://github.com/rkriad585/mkdocs-void/raw/main/docs/assets/images/logo.svg"
+       data-md-scheme-light="https://github.com/rkriad585/mkdocs-void/raw/main/docs/assets/images/logo-light.svg">
 </p>
 
-<h1 align="center">Welcome to NeoAbs</h1>
+<h1 align="center">Welcome to Void</h1>
 
 <p align="center">
   <strong>Glass + NothingOS Design Language for MkDocs</strong>
@@ -16,7 +16,7 @@ date: 2026-09-07
 
 ---
 
-NeoAbs combines the translucent depth of Glass with the industrial minimalism of NothingOS to create a unique documentation experience.
+Void combines the translucent depth of Glass with the industrial minimalism of NothingOS to create a unique documentation experience.
 
 ## Design Principles
 
@@ -48,13 +48,13 @@ NeoAbs combines the translucent depth of Glass with the industrial minimalism of
 ## Quick Start
 
 ```bash
-pip install mkdocs-neoabs
+pip install mkdocs-void
 ```
 
 ```yaml
 # mkdocs.yml
 theme:
-  name: neoabs
+  name: void
 ```
 
 ```bash
@@ -64,7 +64,7 @@ mkdocs serve
 ## Example
 
 !!! note "Glass Note"
-    This is a glass-styled admonition with the NeoAbs design.
+    This is a glass-styled admonition with the Void design.
 
 !!! warning "Accent Warning"
     This uses the Nothing Red accent color.
@@ -74,6 +74,6 @@ mkdocs serve
 
 ---
 
-*NeoAbs — Where glass meets minimalism.*
+*Void — Where glass meets minimalism.*
 
-[About](https://github.com/rkriad585/mkdocs-neoabs/blob/main/docs/about.md) · [GitHub](https://github.com/rkriad585/mkdocs-neoabs) · [Report an Issue](https://github.com/rkriad585/mkdocs-neoabs/issues)
+[About](https://github.com/rkriad585/mkdocs-void/blob/main/docs/about.md) · [GitHub](https://github.com/rkriad585/mkdocs-void) · [Report an Issue](https://github.com/rkriad585/mkdocs-void/issues)
