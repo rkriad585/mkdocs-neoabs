@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+<!-- AUTO-CHANGELOG:start -->
+### Commits since the last release (auto)
+- no commits since the last release
+<!-- AUTO-CHANGELOG:end -->
+
+
+## [0.2.0] - 2026-09-10
+
 ### Added
 
 - Phase 6 — engagement & privacy:
@@ -104,8 +112,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - [Changed] docs: add phase 4 footer customization config reference to mkdocs.yml
 - [Changed] docs: add phase 3 header customization config reference to mkdocs.yml
 <!-- AUTO-CHANGELOG:end -->
-
-
 ## [0.1.2] - 2026-09-04
 
 ### Added
