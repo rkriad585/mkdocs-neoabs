@@ -61,7 +61,7 @@ jobs:
           cat > /tmp/void-recipes/docs/guide/usage.md <<'EOF'
           # Usage
 
-          {! docs/table_data.md !}
+          {{ read_raw("docs/table_data.md") }}
           EOF
           cat > /tmp/void-recipes/docs/table_data.md <<'EOF'
           | Tool | Purpose |
@@ -104,8 +104,7 @@ jobs:
             - table-reader
             - print-site:
                 add_to_navigation: true
-                print_page_path: print_page
-                theme: void
+                print_page_basename: print_page
             - void
           YAML
 
@@ -129,9 +128,9 @@ jobs:
           test -f /tmp/void-recipes/site/print_page/index.html || exit 1
           grep -q "Last updated" /tmp/void-recipes/site/guide/usage/index.html || exit 1
           grep -q "<table" /tmp/void-recipes/site/guide/usage/index.html || exit 1
-          # section-index: the "Guide" nav entry must be a clickable link
-          # pointing at the section's index page
-          grep -q 'href="[^"]*guide/"' /tmp/void-recipes/site/guide/usage/index.html || exit 1
+          # section-index: the "Guide" nav entry on the home page must be a
+          # clickable link pointing at the section's index page
+          grep -q 'href="guide/"' /tmp/void-recipes/site/index.html || exit 1
           echo "Recipes proven: print page, last-updated date, table-reader, and section index all rendered"
 
       - name: Doctor reports healthy

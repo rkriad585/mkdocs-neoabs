@@ -92,8 +92,9 @@ consider keeping it if you only need click-to-zoom.
 
 ## mkdocs-print-site-plugin
 
-Renders a combined "print site" (single-page HTML you can save as PDF). It
-can reuse the Void theme for the generated print pages:
+Renders a combined "print site" (single-page HTML you can save as PDF). The
+generated page is rendered with the **active theme's own templates**, so a Void
+site gets Void styling automatically:
 
 ```yaml
 # mkdocs.yml
@@ -101,9 +102,7 @@ plugins:
   - search
   - print-site:
       add_to_navigation: true
-      print_page_path: print_page
-      theme: void
-      numbered_headings: true
+      print_page_basename: print_page
   - void
 ```
 
@@ -164,7 +163,7 @@ docs/
 
 ```markdown
 <!-- in any page -->
-{! docs/table_data.md !}
+{{ read_raw("docs/table_data.md") }}
 ```
 
 The rendered table picks up Void table styling automatically
