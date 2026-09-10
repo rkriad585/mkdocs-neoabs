@@ -55,18 +55,6 @@ theme:
     dot_matrix: true
     animation: normal
     border: thin
-    # --- Phase 21: Interactive config builder -----------------------------------
-    # The official website hosts the dev tool (generates a mkdocs.yml from
-    # checkbox feature toggles, guided questions and presets). It stays OFF for
-    # every other site until they opt in with `enabled: true`.
-    config_builder:
-      enabled: true
-      toc_icon: true
-      cluster_icon: true
-      presets: ["default", "standard", "custom"]
-      download: true
-      copy: true
-      target: "mkdocs.yml"
     # --- Phase 4: Social cards & structured data ------------------------------
     # Per-page Article JSON-LD + auto-generated OG card images. Every key
     # defaults ON; `cards` only fires when `extra.neoabs_og_image` is set to the
@@ -791,25 +779,9 @@ theme:
     #   inline_critical_css: false    # inline vendored hljs + KaTeX CSS as <style> in <head>
     #   vendor_dir: assets/vendor     # where local/bundle copies live under site/
     #   timeout: 20                   # build-time fetch timeout (seconds) per file
-    # --- Phase 21: Interactive config builder (OFF by default) -----------------
-    # A client-side "mkdocs.yml generator" for the official website. This is the
-    # one feature that intentionally breaks the default-ON rule: it is a
-    # developer tool, so it ships OFF until `enabled: true`. When on, a build
-    # icon is pinned to the bottom of the TOC panel (mirrored into the action
-    # cluster whenever the TOC is hidden), and the dialog assembles a config
-    # from checkboxes, guided questions and Default/Standard/Custom presets with
-    # a live YAML preview plus Download / Copy actions.
-    # config_builder:
-    #   enabled: false                 # Master switch (opt-in; default OFF)
-    #   toc_icon: true                 # Build icon pinned to the TOC panel
-    #   cluster_icon: true             # Mirror the icon into the action cluster when the TOC is hidden
-    #   presets: ["default", "standard", "custom"]
-    #   download: true                 # Download generated mkdocs.yml
-    #   copy: true                     # Copy generated YAML to the clipboard
-    #   target: "mkdocs.yml"           # Filename used by the Download action
 
 extra:
-  neoabs_version: 23
+  neoabs_version: 22
   neoabs_logo_dark: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo.svg
   neoabs_logo_light: https://raw.githubusercontent.com/rkriad585/mkdocs-neoabs/main/logo/logo-light.svg
   neoabs_favicon_dark: assets/images/favicon.svg
