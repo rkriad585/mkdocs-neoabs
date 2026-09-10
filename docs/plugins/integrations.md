@@ -26,17 +26,15 @@ thumb:
 5. `void` last is always safe: the theme reads the `page.meta` that earlier
    plugins have written.
 
-## mkdocs-git-revision-date-localized
+## mkdocs-git-revision-date-localized-plugin
 
 Adds a real "Last updated" date from your Git history. Void renders it
 natively — the footer's `theme.void.meta` block reads
 `page.meta.git_revision_date_localized` and shows it with your configured
 label.
 
-> The package is published on PyPI as
-> `mkdocs-git-revision-date-localized-plugin` (the plugin's internal id stays
-> `git-revision-date-localized`, so `pip install` and `plugins:` config match
-> the example below).
+> The plugin's internal id stays `git-revision-date-localized`, so the
+> `plugins:` config below is unchanged.
 
 ```yaml
 # mkdocs.yml
@@ -92,7 +90,7 @@ plugins:
 The built-in lightbox needs no JavaScript library and no extra pip install —
 consider keeping it if you only need click-to-zoom.
 
-## mkdocs-print-site
+## mkdocs-print-site-plugin
 
 Renders a combined "print site" (single-page HTML you can save as PDF). It
 can reuse the Void theme for the generated print pages:
@@ -111,6 +109,10 @@ plugins:
 
 The generated page lands at `print_page/index.html` and ships with the rest of
 the site, so it works offline like every other Void page.
+
+> Install with `pip install mkdocs-print-site-plugin` (the PyPI package is
+> published under that name; the plugin id `print-site` used in `plugins:` is
+> unchanged).
 
 ## mkdocs-section-index
 
@@ -142,7 +144,7 @@ docs/
 > pages natively (the section title becomes a clickable link that still nests
 > its children), so the feature works — the warning is informational.
 
-## mkdocs-table-reader
+## mkdocs-table-reader-plugin
 
 Reads table files straight into your pages from CSV or Markdown — handy for
 keeping data in a single source file:
@@ -168,7 +170,9 @@ docs/
 The rendered table picks up Void table styling automatically
 (`theme.void.content.tables`).
 
-## mkdocs-git-authors
+> Install with `pip install mkdocs-table-reader-plugin`.
+
+## mkdocs-git-authors-plugin
 
 Adds author information from your Git history to `page.meta.git_authors`:
 
@@ -187,7 +191,9 @@ Void passes `page.meta.git_authors` through untouched (it is the same
 [custom head/footer injection](../getting-started/configuration.md). The
 meta footer itself only shows the *date* — it does not show authors by design.
 
-## mkdocs-awesome-pages
+> Install with `pip install mkdocs-git-authors-plugin`.
+
+## mkdocs-awesome-pages-plugin
 
 Builds the navigation automatically from your folder structure (no explicit
 `nav:`), with per-folder ordering and hiding through a `.pages` file:
@@ -216,6 +222,8 @@ docs/
 title: Guide
 order: first
 ```
+
+> Install with `pip install mkdocs-awesome-pages-plugin`.
 
 ## Verified in CI
 

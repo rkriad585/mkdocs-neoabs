@@ -36,11 +36,11 @@ jobs:
           pip install \
             mkdocs-git-revision-date-localized-plugin \
             mkdocs-glightbox \
-            mkdocs-print-site \
+            mkdocs-print-site-plugin \
             mkdocs-section-index \
-            mkdocs-table-reader \
-            mkdocs-git-authors \
-            mkdocs-awesome-pages
+            mkdocs-table-reader-plugin \
+            mkdocs-git-authors-plugin \
+            mkdocs-awesome-pages-plugin
 
       - name: Scaffold recipe project
         run: |
@@ -67,7 +67,7 @@ jobs:
           | Tool | Purpose |
           | ---- | ------- |
           | mkdocs-git-revision-date-localized-plugin | Last-updated date |
-          | mkdocs-table-reader | Inline tables from files |
+          | mkdocs-table-reader-plugin | Inline tables from files |
           EOF
 
       - name: Apply combined recipe config
