@@ -33,6 +33,11 @@ natively — the footer's `theme.void.meta` block reads
 `page.meta.git_revision_date_localized` and shows it with your configured
 label.
 
+> The package is published on PyPI as
+> `mkdocs-git-revision-date-localized-plugin` (the plugin's internal id stays
+> `git-revision-date-localized`, so `pip install` and `plugins:` config match
+> the example below).
+
 ```yaml
 # mkdocs.yml
 theme:
@@ -54,6 +59,7 @@ plugins:
   - void
 ```
 
+- Install with `pip install mkdocs-git-revision-date-localized-plugin`.
 - `auto` (default) prefers the Git date and falls back to the page's `date:`
   front matter; `git` uses only Git, `front_matter` ignores Git entirely.
 - Without the plugin nothing breaks — the footer simply falls back to

@@ -228,8 +228,9 @@ extra:
 Freshness + "edit the source" bar. A small metadata row under the
 content: a "Last updated" date and an "Edit this page" link. The date is picked
 from `page.meta.git_revision_date_localized` (set by the
-[`mkdocs-git-revision-date-localized`](https://github.com/timvink/mkdocs-git-revision-date-localized)
-plugin) and falls back to the page's `date:` front matter when the plugin is not
+[`mkdocs-git-revision-date-localized`](https://pypi.org/project/mkdocs-git-revision-date-localized-plugin/)
+plugin; install the PyPI package `mkdocs-git-revision-date-localized-plugin`)
+and falls back to the page's `date:` front matter when the plugin is not
 installed — or is omitted entirely when neither exists (never breaks).
 
 | Key | Default | Description |

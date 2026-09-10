@@ -34,7 +34,7 @@ jobs:
         run: |
           pip install -e .
           pip install \
-            mkdocs-git-revision-date-localized \
+            mkdocs-git-revision-date-localized-plugin \
             mkdocs-glightbox \
             mkdocs-print-site \
             mkdocs-section-index \
@@ -66,7 +66,7 @@ jobs:
           cat > /tmp/void-recipes/docs/table_data.md <<'EOF'
           | Tool | Purpose |
           | ---- | ------- |
-          | mkdocs-git-revision-date-localized | Last-updated date |
+          | mkdocs-git-revision-date-localized-plugin | Last-updated date |
           | mkdocs-table-reader | Inline tables from files |
           EOF
 

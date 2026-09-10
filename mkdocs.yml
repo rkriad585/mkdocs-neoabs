@@ -65,7 +65,7 @@ theme:
       cards: true     # Build per-page og:image cards when og_image = __auto__ (default true)
  #Page metadata bar -----------------------------------------
     # "Last updated" date + "Edit this page" link under the content. The date
-    # works with mkdocs-git-revision-date-localized (page.meta.git_revision_date_localized)
+    # works with mkdocs-git-revision-date-localized-plugin (page.meta.git_revision_date_localized)
     # and falls back to `date:` front matter, or is omitted when neither exists.
     meta:
       enabled: true                # Master on/off (default true)

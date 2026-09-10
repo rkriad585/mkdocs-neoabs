@@ -115,7 +115,8 @@ extra:
 
 Freshness bar: a "Last updated" date and an "Edit this page" link under
 the content. The date reads `page.meta.git_revision_date_localized` when the
-`mkdocs-git-revision-date-localized` plugin is installed, falls back to the
+`mkdocs-git-revision-date-localized` plugin is installed (package on PyPI:
+`mkdocs-git-revision-date-localized-plugin`), falls back to the
 page's `date:` front matter, and is omitted when neither is present (so nothing
 breaks without the git plugin). The edit link points at the page source in the
 repository configured by `repo_url`.
