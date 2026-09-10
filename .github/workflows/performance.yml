@@ -18,3 +18,4 @@ jobs:
         with:
           urls: https://rkriad585.github.io/mkdocs-void/
           configPath: .lighthouseci.json
+          temporaryPublicStorage: true
